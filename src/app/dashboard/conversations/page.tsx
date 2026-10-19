@@ -408,7 +408,8 @@ export default function ConversationsPage() {
                         borderRadius: isPatient ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                         background: isPatient
                           ? 'linear-gradient(135deg, hsl(221 83% 58%) 0%, hsl(265 83% 65%) 100%)'
-                          : 'hsl(var(--color-surface-hover))',
+                          : 'hsl(var(--color-surface-2))',
+                        border: isPatient ? 'none' : '1px solid hsl(var(--color-border))',
                         color: 'white',
                         fontSize: '0.875rem',
                         lineHeight: 1.5,

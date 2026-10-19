@@ -13,7 +13,7 @@ import { resolveOrgFromWhatsAppNumber } from '@/lib/security/tenant';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { checkQuota, recordAiUsage } from '@/lib/ai/usage';
 import { AIProviderFactory } from '@/lib/ai/provider';
-import { buildSystemPrompt } from '@/lib/ai/prompts';
+import { buildSystemPrompt, parseAssistantResponse } from '@/lib/ai/prompts';
 import { executeTool } from '@/lib/ai/tools';
 import { nanoid } from 'nanoid';
 
@@ -159,6 +159,12 @@ async function processIncomingMessage(payload: Record<string, unknown>): Promise
     delivered_at: new Date().toISOString(),
   });
 
+  // 11b. Guard: If conversation is managed by human or already handed off, do not call AI or send automated reply!
+  if (conversation.owner === 'human' || conversation.status === 'handed_off') {
+    console.log(`[Meta WhatsApp] Conversation ${conversation.id} (${incomingMessage.fromPhone}) is managed by a human / handed off. Silencing automated AI response.`);
+    return;
+  }
+
   // 12. Load conversation history (last 20 messages)
   const { data: history } = await admin
     .from('messages')
@@ -215,16 +221,7 @@ async function processIncomingMessage(payload: Record<string, unknown>): Promise
   );
 
   // 16. Parse AI response
-  let parsedResponse: {
-    user_message: string;
-    tool_calls?: Array<{ name: string; arguments: Record<string, unknown> }>;
-    handoff_required?: boolean;
-  };
-  try {
-    parsedResponse = JSON.parse(aiResponse.response.content);
-  } catch {
-    parsedResponse = { user_message: aiResponse.response.content };
-  }
+  const parsedResponse = parseAssistantResponse(aiResponse.response.content);
 
   // 17. Execute validated tool calls (if any)
   const toolContext = {
@@ -244,11 +241,30 @@ async function processIncomingMessage(payload: Record<string, unknown>): Promise
     }
   }
 
-  // 18. Handle human handoff
+  // 18. Handle human handoff or personal / out of scope conversation
+  if (parsedResponse.intent === 'out_of_scope' || !parsedResponse.user_message?.trim()) {
+    console.log(`[Meta WhatsApp] Message from ${incomingMessage.fromPhone} identified as personal/day-to-day conversation (out_of_scope). Silently handing off to human.`);
+    await admin
+      .from('conversations')
+      .update({
+        owner: 'human',
+        status: 'handed_off',
+        handoff_reason: 'personal_day_to_day_chat',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', conversation.id);
+    return; // Strictly remain silent — do not send any message
+  }
+
   if (parsedResponse.handoff_required) {
     await admin
       .from('conversations')
-      .update({ owner: 'human', status: 'handed_off' })
+      .update({
+        owner: 'human',
+        status: 'handed_off',
+        handoff_reason: 'ai_handoff_requested',
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', conversation.id);
   }
 
@@ -338,18 +354,17 @@ async function loadClinicContext(organizationId: string) {
 async function getOrCreateConversation(
   organizationId: string,
   patientPhone: string
-): Promise<{ id: string }> {
+): Promise<{ id: string; owner: string; status: string }> {
   const admin = createSupabaseAdminClient();
 
-  // Try to find active conversation (not handed off or expired)
+  // Try to find active or handed off conversation
   const { data: existing } = await admin
     .from('conversations')
-    .select('id')
+    .select('id, owner, status')
     .eq('organization_id', organizationId)
     .eq('patient_phone', patientPhone)
-    .eq('owner', 'ai')
-    .in('status', ['active'])
-    .order('created_at', { ascending: false })
+    .in('status', ['active', 'handed_off'])
+    .order('last_message_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
@@ -368,9 +383,11 @@ async function getOrCreateConversation(
       organization_id: organizationId,
       patient_phone: patientPhone,
       channel: 'whatsapp',
+      status: 'active',
+      owner: 'ai',
       last_message_at: new Date().toISOString(),
     })
-    .select('id')
+    .select('id, owner, status')
     .single();
 
   return created!;

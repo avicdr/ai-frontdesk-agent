@@ -145,7 +145,7 @@ export default function AgentTestPage() {
       </div>
 
       {/* Playground Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '1.5rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
         {/* WhatsApp Mobile Chat Simulator */}
         <div className="card" style={{ padding: 0, overflow: 'hidden', border: '1px solid hsl(var(--color-border))' }}>
           {/* Chat Window Header */}

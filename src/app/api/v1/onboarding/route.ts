@@ -157,16 +157,23 @@ export async function GET(request: NextRequest) {
       return successResponse({ status: 'not_started', currentStep: 0 });
     }
 
-    const { data: profile } = await admin
-      .from('clinic_profiles')
-      .select('onboarding_step, onboarding_completed_at')
-      .eq('organization_id', membership.organization_id)
-      .single();
+    const [profileRes, agentRes, servicesRes, policyRes, orgRes] = await Promise.all([
+      admin.from('clinic_profiles').select('*').eq('organization_id', membership.organization_id).maybeSingle(),
+      admin.from('agent_configurations').select('*').eq('organization_id', membership.organization_id).order('version', { ascending: false }).limit(1).maybeSingle(),
+      admin.from('services').select('*').eq('organization_id', membership.organization_id).eq('is_active', true).order('sort_order', { ascending: true }),
+      admin.from('booking_policies').select('*').eq('organization_id', membership.organization_id).maybeSingle(),
+      admin.from('organizations').select('name').eq('id', membership.organization_id).maybeSingle(),
+    ]);
 
     return successResponse({
-      status: profile?.onboarding_completed_at ? 'completed' : 'in_progress',
-      currentStep: profile?.onboarding_step ?? 1,
+      status: profileRes.data?.onboarding_completed_at ? 'completed' : 'in_progress',
+      currentStep: profileRes.data?.onboarding_step ?? 1,
       organizationId: membership.organization_id,
+      clinicProfile: profileRes.data,
+      agentConfig: agentRes.data,
+      services: servicesRes.data ?? [],
+      bookingPolicy: policyRes.data,
+      organizationName: orgRes.data?.name,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown';
@@ -231,12 +238,20 @@ export async function PUT(request: NextRequest) {
     if (body.clinicInfo) {
       await admin.from('clinic_profiles').update({
         clinic_name: body.clinicInfo.clinicName,
-        phone_number: body.clinicInfo.phone,
+        phone: body.clinicInfo.phone,
         address_line1: body.clinicInfo.address,
         city: body.clinicInfo.city,
         timezone: body.clinicInfo.timezone || 'Asia/Kolkata',
         updated_at: new Date().toISOString(),
       }).eq('organization_id', orgId);
+
+      if (body.clinicInfo.clinicName) {
+        await admin.from('organizations').update({
+          name: body.clinicInfo.clinicName,
+          timezone: body.clinicInfo.timezone || 'Asia/Kolkata',
+          updated_at: new Date().toISOString(),
+        }).eq('id', orgId);
+      }
     }
 
     // 2. Update agent configuration
@@ -249,20 +264,65 @@ export async function PUT(request: NextRequest) {
       }).eq('organization_id', orgId);
     }
 
-    // 3. Update services
+    // 3. Update services safely without violating foreign key constraints
     if (Array.isArray(body.services) && body.services.length > 0) {
-      // Clear previous and re-insert
-      await admin.from('services').delete().eq('organization_id', orgId);
-      const servicesToInsert = body.services.map((s: any, idx: number) => ({
-        organization_id: orgId,
-        name: s.name,
-        price_display: s.price ? `₹${s.price}` : null,
-        duration_minutes: s.duration || 30,
-        is_bookable: s.isBookable !== false,
-        sort_order: idx + 1,
-        is_active: true,
-      }));
-      await admin.from('services').insert(servicesToInsert);
+      const { data: existingServicesData } = await admin
+        .from('services')
+        .select('id, name')
+        .eq('organization_id', orgId);
+
+      const existingServices = (existingServicesData || []) as Array<{ id: string; name: string }>;
+      const existingByName = new Map<string, string>(
+        existingServices.map(s => [s.name.toLowerCase().trim(), s.id])
+      );
+      const processedIds = new Set<string>();
+
+      for (let idx = 0; idx < body.services.length; idx++) {
+        const s = body.services[idx];
+        const normName = (s.name || '').trim();
+        if (!normName) continue;
+
+        const cleanPrice = s.price ? String(s.price).replace(/[^0-9.]/g, '') : null;
+        const priceDisplay = cleanPrice ? `₹${cleanPrice}` : null;
+        const priceAmount = cleanPrice ? parseFloat(cleanPrice) : null;
+        const existingId = existingByName.get(normName.toLowerCase());
+
+        if (existingId) {
+          processedIds.add(existingId);
+          await admin.from('services').update({
+            name: normName,
+            price_display: priceDisplay,
+            price_min: priceAmount,
+            duration_minutes: s.duration || 30,
+            is_bookable: s.isBookable !== false,
+            sort_order: idx + 1,
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          }).eq('id', existingId);
+        } else {
+          const { data: inserted } = await admin.from('services').insert({
+            organization_id: orgId,
+            name: normName,
+            price_display: priceDisplay,
+            price_min: priceAmount,
+            duration_minutes: s.duration || 30,
+            is_bookable: s.isBookable !== false,
+            sort_order: idx + 1,
+            is_active: true,
+          }).select('id').single();
+          if (inserted?.id) processedIds.add(inserted.id as string);
+        }
+      }
+
+      // Safely deactivate any removed services so we don't violate appointment foreign keys
+      if (existingServices.length > 0) {
+        const toDeactivate = existingServices
+          .filter(s => !processedIds.has(s.id))
+          .map(s => s.id);
+        if (toDeactivate.length > 0) {
+          await admin.from('services').update({ is_active: false, is_bookable: false }).in('id', toDeactivate);
+        }
+      }
     }
 
     // 4. Update working hours

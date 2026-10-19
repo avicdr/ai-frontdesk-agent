@@ -3,7 +3,7 @@
 // src/app/dashboard/configuration/page.tsx
 // Clinic Configuration Page: Clinic Details, AI Persona, Services, Hours & Policies
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface Service {
   name: string;
@@ -24,19 +24,20 @@ export default function ConfigurationPage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'agent' | 'services' | 'policies'>('profile');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Clinic Profile State
-  const [clinicName, setClinicName] = useState('Apex Dental & Orthodontics');
+  const [clinicName, setClinicName] = useState('Don\'t Go Home Clinic');
   const [phone, setPhone] = useState('+91 98765 43210');
-  const [address, setAddress] = useState('42 Park Avenue, Koramangala');
+  const [address, setAddress] = useState('What\'s My Location');
   const [city, setCity] = useState('Bengaluru');
   const [timezone, setTimezone] = useState('Asia/Kolkata');
 
   // AI Agent State
-  const [assistantName, setAssistantName] = useState('Aria');
+  const [assistantName, setAssistantName] = useState('Roma');
   const [tone, setTone] = useState<'friendly' | 'professional' | 'concise'>('friendly');
   const [greeting, setGreeting] = useState(
-    "Hello! Welcome to Apex Dental & Orthodontics. I'm Aria, your AI receptionist. How can I assist you with your dental care today?"
+    "Hello! Welcome to Don't Go Home Clinic. I'm Roma, your AI receptionist. How can I assist you with your dental care today?"
   );
 
   // Services State
@@ -56,6 +57,67 @@ export default function ConfigurationPage() {
   const [maxAdvanceDays, setMaxAdvanceDays] = useState('30');
   const [cancellationHours, setCancellationHours] = useState('12');
   const [bufferMinutes, setBufferMinutes] = useState('10');
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/v1/onboarding');
+        const json = await res.json();
+        if (json?.success && json?.data && isMounted) {
+          const { clinicProfile, agentConfig, services: loadedServices, bookingPolicy, organizationName } = json.data;
+          if (clinicProfile?.clinic_name || organizationName) {
+            setClinicName(clinicProfile?.clinic_name || organizationName);
+          }
+          if (clinicProfile?.phone) setPhone(clinicProfile.phone);
+          if (clinicProfile?.address_line1) setAddress(clinicProfile.address_line1);
+          if (clinicProfile?.city) setCity(clinicProfile.city);
+          if (clinicProfile?.timezone) setTimezone(clinicProfile.timezone);
+
+          if (agentConfig?.assistant_name) setAssistantName(agentConfig.assistant_name);
+          if (agentConfig?.tone) setTone(agentConfig.tone);
+          if (agentConfig?.greeting_message) setGreeting(agentConfig.greeting_message);
+
+          if (Array.isArray(loadedServices) && loadedServices.length > 0) {
+            const seen = new Set<string>();
+            const cleaned: Service[] = [];
+            for (const s of loadedServices) {
+              const norm = (s.name || '').toLowerCase().trim();
+              if (!norm || seen.has(norm)) continue;
+              seen.add(norm);
+
+              const rawPrice = s.price_display
+                ? String(s.price_display).replace(/[^0-9.]/g, '')
+                : (s.price_min != null ? String(s.price_min) : (s.price_minor_units ? String(s.price_minor_units / 100) : '0'));
+
+              cleaned.push({
+                name: s.name,
+                duration: s.duration_minutes ?? 30,
+                price: rawPrice || '0',
+                isBookable: s.is_bookable !== false && s.is_active !== false,
+              });
+            }
+            if (cleaned.length > 0) {
+              setServices(cleaned);
+            }
+          }
+
+          if (bookingPolicy) {
+            if (bookingPolicy.min_advance_hours != null) setMinAdvanceHours(String(bookingPolicy.min_advance_hours));
+            if (bookingPolicy.max_advance_days != null) setMaxAdvanceDays(String(bookingPolicy.max_advance_days));
+            if (bookingPolicy.cancellation_hours != null) setCancellationHours(String(bookingPolicy.cancellation_hours));
+            if (bookingPolicy.buffer_minutes != null) setBufferMinutes(String(bookingPolicy.buffer_minutes));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load clinic configuration:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadConfig();
+    return () => { isMounted = false; };
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
@@ -132,7 +194,7 @@ export default function ConfigurationPage() {
   };
 
   return (
-    <div style={{ maxWidth: 960 }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
@@ -433,11 +495,11 @@ export default function ConfigurationPage() {
             <table className="data-table" style={{ width: '100%' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '42%' }}>Service Name</th>
-                  <th style={{ width: '20%' }}>Duration</th>
-                  <th style={{ width: '22%' }}>Price (₹) <span style={{ color: '#4ade80' }}>• Editable</span></th>
-                  <th style={{ width: '12%', textAlign: 'center' }}>Bookable</th>
-                  <th style={{ width: '4%' }}></th>
+                  <th style={{ minWidth: 260 }}>Service Name</th>
+                  <th style={{ width: 130, whiteSpace: 'nowrap' }}>Duration</th>
+                  <th style={{ width: 150, whiteSpace: 'nowrap' }}>Price (₹) <span style={{ color: '#4ade80' }}>• Editable</span></th>
+                  <th style={{ width: 110, textAlign: 'center', whiteSpace: 'nowrap' }}>Bookable</th>
+                  <th style={{ width: 50, textAlign: 'right' }}></th>
                 </tr>
               </thead>
               <tbody>

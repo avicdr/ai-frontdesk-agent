@@ -87,21 +87,91 @@ export async function getClinicHours(
   };
 }
 
-export function parseDateInput(dateInput?: string): Date {
-  if (!dateInput) return addDays(new Date(), 1);
-  const lower = dateInput.trim().toLowerCase();
-  const now = new Date();
-  if (lower === 'today') return now;
-  if (lower === 'tomorrow') return addDays(now, 1);
-  if (lower === 'day after tomorrow') return addDays(now, 2);
+export function getTimezoneOffsetMinutes(timeZone: string, date: Date = new Date()): number {
+  try {
+    const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+    const tzDate = new Date(date.toLocaleString('en-US', { timeZone }));
+    return Math.round((tzDate.getTime() - utcDate.getTime()) / 60000);
+  } catch {
+    return 330; // Default +05:30 for India
+  }
+}
 
-  const parsedIso = parseISO(dateInput);
-  if (!isNaN(parsedIso.getTime())) return parsedIso;
+/**
+ * Returns YYYY-MM-DD for a date offset in the specified timezone
+ */
+export function getClinicDateStr(timeZone: string = 'Asia/Kolkata', daysOffset: number = 0): string {
+  const d = new Date(Date.now() + daysOffset * 24 * 60 * 60 * 1000);
+  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+}
 
-  const parsedDate = new Date(dateInput);
-  if (!isNaN(parsedDate.getTime())) return parsedDate;
+/**
+ * Converts a date/time string from the clinic's local timezone into a UTC Date object.
+ * Handles inputs like "2026-10-20T11:00:00", "2026-10-20T11:00:00Z", "2026-10-20 11:00", etc.
+ */
+export function parseClinicDateTime(dateTimeInput: string, timeZone: string = 'Asia/Kolkata'): Date {
+  if (!dateTimeInput) {
+    const fallback = addDays(new Date(), 1);
+    fallback.setHours(10, 0, 0, 0);
+    return fallback;
+  }
 
-  return addDays(now, 1);
+  // If string contains explicit non-Z offset like +05:30, +0530, -04:00, parse directly
+  const hasExplicitOffset = /[+-]\d{2}:?\d{2}$/.test(dateTimeInput.trim());
+  if (hasExplicitOffset) {
+    const d = new Date(dateTimeInput);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  // Strip trailing 'Z' if present: LLMs emit 'Z' suffix thinking it's standard format,
+  // but the user and clinic specified local wall-clock time (e.g. 11:00 AM).
+  const cleanStr = dateTimeInput.trim().replace(/Z$/i, '');
+  const match = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+
+  if (match) {
+    const [, y, m, d, hr, min, sec] = match;
+    const naiveUtc = new Date(Date.UTC(+y, +m - 1, +d, +hr, +min, +(sec || 0)));
+    const offsetMinutes = getTimezoneOffsetMinutes(timeZone, naiveUtc);
+    return new Date(naiveUtc.getTime() - offsetMinutes * 60000);
+  }
+
+  const parsed = new Date(dateTimeInput);
+  if (!isNaN(parsed.getTime())) return parsed;
+
+  const fallback = addDays(new Date(), 1);
+  fallback.setHours(10, 0, 0, 0);
+  return fallback;
+}
+
+export function parseDateInput(dateInput?: string, timeZone: string = 'Asia/Kolkata'): { dateStr: string; dayOfWeek: number } {
+  const lower = (dateInput || '').trim().toLowerCase();
+  let dateStr: string;
+
+  if (!dateInput || lower === 'tomorrow') {
+    dateStr = getClinicDateStr(timeZone, 1);
+  } else if (lower === 'today') {
+    dateStr = getClinicDateStr(timeZone, 0);
+  } else if (lower === 'day after tomorrow') {
+    dateStr = getClinicDateStr(timeZone, 2);
+  } else {
+    const match = lower.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      dateStr = match[0];
+    } else {
+      const parsed = new Date(dateInput);
+      if (!isNaN(parsed.getTime())) {
+        dateStr = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(parsed);
+      } else {
+        dateStr = getClinicDateStr(timeZone, 1);
+      }
+    }
+  }
+
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const naiveUtc = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  const dayOfWeek = naiveUtc.getUTCDay();
+
+  return { dateStr, dayOfWeek };
 }
 
 // ============================================================
@@ -116,10 +186,10 @@ export async function checkAvailability(
   message: string;
 }> {
   const admin = createSupabaseAdminClient();
+  const tz = ctx.timezone || 'Asia/Kolkata';
 
-  // Parse requested date safely supporting relative ('tomorrow', 'today') and ISO strings
-  const requestedDate = parseDateInput(args.date);
-  const dayOfWeek = requestedDate.getDay();
+  // Parse requested date safely supporting relative ('tomorrow', 'today') and ISO strings in clinic timezone
+  const { dateStr, dayOfWeek } = parseDateInput(args.date, tz);
 
   // Check working hours
   const { data: hours } = await admin
@@ -138,7 +208,7 @@ export async function checkAvailability(
     .from('holidays')
     .select('name')
     .eq('organization_id', ctx.organizationId)
-    .eq('date', format(requestedDate, 'yyyy-MM-dd'))
+    .eq('date', dateStr)
     .maybeSingle();
 
   if (holiday) {
@@ -157,20 +227,18 @@ export async function checkAvailability(
   const minAdvanceMs = (policy?.min_advance_hours ?? 1) * 60 * 60 * 1000;
   const maxAdvanceDays = policy?.max_advance_days ?? 60;
 
-  // Enforce advance booking limits
-  if (requestedDate < now) {
+  // Boundary timestamps for the requested day in the clinic's timezone
+  const startOfDay = parseClinicDateTime(`${dateStr}T00:00:00`, tz);
+  const endOfDay = parseClinicDateTime(`${dateStr}T23:59:59`, tz);
+
+  if (endOfDay < now) {
     return { available: false, slots: [], message: 'Cannot book appointments in the past.' };
   }
-  if (requestedDate > addDays(now, maxAdvanceDays)) {
+  if (startOfDay > addDays(now, maxAdvanceDays)) {
     return { available: false, slots: [], message: `Appointments can only be booked up to ${maxAdvanceDays} days in advance.` };
   }
 
-  // Get existing appointments for the day
-  const startOfDay = new Date(requestedDate);
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date(requestedDate);
-  endOfDay.setHours(23, 59, 59, 999);
-
+  // Query existing appointments for the day
   const { data: existing } = await admin
     .from('appointments')
     .select('starts_at, ends_at')
@@ -179,16 +247,14 @@ export async function checkAvailability(
     .lte('starts_at', endOfDay.toISOString())
     .not('status', 'in', '("cancelled","rescheduled")');
 
-  // Generate available slots
-  const slots: Array<{ startTime: string; endTime: string }> = [];
-  const [openHour, openMin] = (hours.open_time ?? '09:00').split(':').map(Number);
-  const [closeHour, closeMin] = (hours.close_time ?? '18:00').split(':').map(Number);
-
-  let current = new Date(requestedDate);
-  current.setHours(openHour, openMin, 0, 0);
-  const close = new Date(requestedDate);
-  close.setHours(closeHour, closeMin, 0, 0);
+  // Generate available slots using clinic opening and closing times
+  const openTime = hours.open_time ?? '09:00';
+  const closeTime = hours.close_time ?? '18:00';
+  let current = parseClinicDateTime(`${dateStr}T${openTime}:00`, tz);
+  const close = parseClinicDateTime(`${dateStr}T${closeTime}:00`, tz);
   const buffer = policy?.buffer_minutes ?? 10;
+
+  const slots: Array<{ startTime: string; endTime: string }> = [];
 
   while (isBefore(current, close)) {
     const slotEnd = addMinutes(current, duration);
@@ -208,11 +274,13 @@ export async function checkAvailability(
     });
 
     if (!hasConflict) {
+      const localSlotHour = current.toLocaleTimeString('en-US', { timeZone: tz, hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const [hPart, mPart] = localSlotHour.split(':');
       slots.push({
-        startTime: format(current, "yyyy-MM-dd'T'HH:mm:ssxxx"),
-        endTime: format(slotEnd, "yyyy-MM-dd'T'HH:mm:ssxxx"),
+        startTime: `${dateStr}T${hPart}:${mPart}:00`,
+        endTime: slotEnd.toISOString(),
       });
-      if (slots.length >= 5) break; // Show max 5 slots
+      if (slots.length >= 8) break;
     }
 
     current = addMinutes(current, duration + buffer);
@@ -220,15 +288,31 @@ export async function checkAvailability(
 
   const formattedSlots = slots
     .slice(0, 5)
-    .map(s => format(parseISO(s.startTime), 'h:mm a'))
+    .map(s => {
+      const d = parseClinicDateTime(s.startTime, tz);
+      return d.toLocaleTimeString('en-US', {
+        timeZone: tz,
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    })
     .join(', ');
+
+  const dateFormatted = new Date(startOfDay.getTime() + 12 * 3600 * 1000).toLocaleDateString('en-US', {
+    timeZone: tz,
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 
   return {
     available: slots.length > 0,
     slots,
     message: slots.length > 0
-      ? `Found available slots on ${format(requestedDate, 'EEEE, MMMM d, yyyy')}: ${formattedSlots}.`
-      : `No available slots on ${format(requestedDate, 'EEEE, MMMM d, yyyy')}.`,
+      ? `Found available slots on ${dateFormatted}: ${formattedSlots}.`
+      : `No available slots on ${dateFormatted}.`,
   };
 }
 
@@ -239,6 +323,7 @@ export async function getPatientAppointments(
   ctx: ToolContext
 ): Promise<{ appointments: Array<{ id: string; service: string | null; date: string; time: string; status: string }> }> {
   const admin = createSupabaseAdminClient();
+  const tz = ctx.timezone || 'Asia/Kolkata';
 
   const { data } = await admin
     .from('appointments')
@@ -253,8 +338,8 @@ export async function getPatientAppointments(
     appointments: (data ?? []).map((a: Record<string, unknown>) => ({
       id: a.id as string,
       service: (a.services as Record<string, unknown> | null)?.name as string | null ?? null,
-      date: format(parseISO(a.starts_at as string), 'MMMM d, yyyy'),
-      time: format(parseISO(a.starts_at as string), 'h:mm a'),
+      date: new Date(a.starts_at as string).toLocaleDateString('en-US', { timeZone: tz, month: 'short', day: 'numeric', year: 'numeric' }),
+      time: new Date(a.starts_at as string).toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true }),
       status: a.status as string,
     })),
   };
@@ -275,26 +360,69 @@ export async function createAppointment(
   }
 ): Promise<{ success: boolean; appointmentId?: string; message: string; externalEventId?: string }> {
   const admin = createSupabaseAdminClient();
+  const tz = ctx.timezone || 'Asia/Kolkata';
 
-  // Re-validate the slot in the same transaction (TOCTOU protection)
-  let startTime = parseISO(args.startTime);
-  if (isNaN(startTime.getTime())) {
-    startTime = new Date(args.startTime);
-  }
-  if (isNaN(startTime.getTime())) {
-    startTime = addDays(new Date(), 1);
-    startTime.setHours(10, 0, 0, 0);
-  }
+  // Parse clinic local time into true UTC Date
+  let startTime = parseClinicDateTime(args.startTime, tz);
 
-  // Get service details
-  const { data: service } = await admin
+  // Get service details — smart search with fallback
+  let service: { id: string; name: string; duration_minutes: number; is_bookable: boolean } | null = null;
+
+  // 1. Direct substring match
+  const { data: directMatches } = await admin
     .from('services')
     .select('id, name, duration_minutes, is_bookable')
     .eq('organization_id', ctx.organizationId)
-    .ilike('name', `%${args.serviceName}%`)
+    .ilike('name', `%${args.serviceName.trim()}%`)
     .eq('is_active', true)
     .eq('is_bookable', true)
-    .maybeSingle();
+    .limit(1);
+
+  if (directMatches?.[0]) {
+    service = directMatches[0];
+  }
+
+  // 2. Strip parentheses (e.g. "Teeth Whitening (Laser Bleaching)" -> "Teeth Whitening")
+  if (!service) {
+    const stripped = args.serviceName.replace(/\(.*?\)/g, '').trim();
+    if (stripped && stripped.toLowerCase() !== args.serviceName.toLowerCase()) {
+      const { data: strippedMatches } = await admin
+        .from('services')
+        .select('id, name, duration_minutes, is_bookable')
+        .eq('organization_id', ctx.organizationId)
+        .ilike('name', `%${stripped}%`)
+        .eq('is_active', true)
+        .eq('is_bookable', true)
+        .limit(1);
+      if (strippedMatches?.[0]) {
+        service = strippedMatches[0];
+      }
+    }
+  }
+
+  // 3. Match by key procedure terms
+  if (!service) {
+    const keywords = args.serviceName
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .split(/\s+/)
+      .filter(w => w.length >= 4);
+
+    for (const kw of keywords) {
+      const { data: kwMatches } = await admin
+        .from('services')
+        .select('id, name, duration_minutes, is_bookable')
+        .eq('organization_id', ctx.organizationId)
+        .ilike('name', `%${kw}%`)
+        .eq('is_active', true)
+        .eq('is_bookable', true)
+        .limit(1);
+
+      if (kwMatches?.[0]) {
+        service = kwMatches[0];
+        break;
+      }
+    }
+  }
 
   if (!service) {
     return { success: false, message: `Service "${args.serviceName}" is not available for booking.` };
@@ -314,16 +442,17 @@ export async function createAppointment(
     return { success: true, appointmentId: existing.id, message: 'Your appointment has already been confirmed.' };
   }
 
-  // Re-check availability
+  // Re-check availability in clinic timezone
+  const dateStr = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(startTime);
   const availabilityCheck = await checkAvailability(ctx, {
-    date: format(startTime, 'yyyy-MM-dd'),
+    date: dateStr,
     durationMinutes: service.duration_minutes,
   });
 
   const slotAvailable = availabilityCheck.available && (
     availabilityCheck.slots.length === 0 ||
     availabilityCheck.slots.some(
-      s => Math.abs(parseISO(s.startTime).getTime() - startTime.getTime()) <= 45 * 60 * 1000
+      s => Math.abs(parseClinicDateTime(s.startTime, tz).getTime() - startTime.getTime()) <= 45 * 60 * 1000
     )
   );
 
@@ -344,7 +473,7 @@ export async function createAppointment(
       notes: args.notes ?? null,
       starts_at: startTime.toISOString(),
       ends_at: endTime.toISOString(),
-      timezone: ctx.timezone,
+      timezone: tz,
       status: 'confirmed',
       source: 'whatsapp',
       idempotency_key: idempotencyKey,
@@ -377,7 +506,7 @@ export async function createAppointment(
       startsAt: startTime.toISOString(),
       endsAt: endTime.toISOString(),
       notes: args.notes,
-      clinicTimezone: ctx.timezone,
+      clinicTimezone: tz,
     });
     if (calEvent?.id) {
       calendarEventId = calEvent.id;
@@ -387,13 +516,26 @@ export async function createAppointment(
     console.warn('Calendar sync error during booking:', calErr);
   }
 
+  const displayTime = startTime.toLocaleTimeString('en-US', {
+    timeZone: tz,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+  const displayDate = startTime.toLocaleDateString('en-US', {
+    timeZone: tz,
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
   // Clinic owner notification
   try {
     await createNotification({
       organizationId: ctx.organizationId,
       type: 'appointment_booked',
       title: 'New Appointment Booked',
-      message: `${args.patientName} (${args.patientPhone}) booked ${args.serviceName} for ${format(startTime, 'MMM d, yyyy h:mm a')}.`,
+      message: `${args.patientName} (${args.patientPhone}) booked ${args.serviceName} for ${displayDate} at ${displayTime}.`,
       metadata: { appointmentId: appointment.id, startsAt: startTime.toISOString() },
     });
   } catch (notifErr) {
@@ -404,7 +546,7 @@ export async function createAppointment(
     success: true,
     appointmentId: appointment.id,
     externalEventId: calendarEventId,
-    message: `Your appointment has been booked for ${format(startTime, 'MMMM d, yyyy')} at ${format(startTime, 'h:mm a')}.`,
+    message: `Your appointment has been booked for ${displayDate} at ${displayTime}.`,
   };
 }
 

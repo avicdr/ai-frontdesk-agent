@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         patient_phone: patientPhone,
         patient_email: patientEmail,
         service_id: serviceId,
-        startsAt: startTime.toISOString(),
+        starts_at: startTime.toISOString(),
         ends_at: endTime.toISOString(),
         status: 'confirmed',
         source: 'manual',

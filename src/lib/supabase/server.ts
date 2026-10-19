@@ -40,6 +40,11 @@ export async function createSupabaseServerClient() {
  * Never expose this to the browser.
  */
 export function createSupabaseAdminClient() {
+  if (typeof globalThis.WebSocket === 'undefined') {
+    try {
+      globalThis.WebSocket = require('ws');
+    } catch {}
+  }
   const { createClient } = require('@supabase/supabase-js');
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

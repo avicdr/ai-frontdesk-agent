@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { isSuperAdminEmail } from '@/lib/security/admin';
+import { SidebarNav } from '@/components/dashboard/SidebarNav';
 
 export const dynamic = 'force-dynamic';
 
@@ -148,28 +149,10 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
         </div>
 
         {/* Navigation */}
-        <nav style={{ flex: 1, padding: '0.75rem 0.625rem', overflowY: 'auto' }}>
-          {navItems.map(item => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="sidebar-nav-item"
-            >
-              <span style={{ fontSize: '1rem' }}>{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          ))}
-
-          {(profile?.is_super_admin || isSuperAdminEmail(user.email)) && (
-            <>
-              <div className="divider" />
-              <Link href="/admin" className="sidebar-nav-item" style={{ color: 'hsl(265, 83%, 70%)' }}>
-                <span>👑</span>
-                <span>Admin Dashboard</span>
-              </Link>
-            </>
-          )}
-        </nav>
+        <SidebarNav
+          navItems={navItems}
+          isSuperAdmin={profile?.is_super_admin || isSuperAdminEmail(user.email)}
+        />
 
         {/* User info / Sign out */}
         <div style={{

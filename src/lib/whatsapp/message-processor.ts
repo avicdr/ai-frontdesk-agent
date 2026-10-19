@@ -78,6 +78,12 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
     delivered_at: new Date().toISOString(),
   });
 
+  // 6b. Guard: If conversation is managed by human or already handed off, do not call AI or send automated reply!
+  if (conversation.owner === 'human' || conversation.status === 'handed_off') {
+    console.log(`[WhatsApp] Conversation ${conversation.id} (${fromPhone}) is managed by a human / handed off. Silencing automated AI response.`);
+    return;
+  }
+
   // 7. Load conversation history
   const { data: history } = await admin
     .from('messages')
@@ -135,6 +141,21 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
   // 11. Parse response & execute tools safely
   const parsedResponse = parseAssistantResponse(aiResponse.response.content);
 
+  // 12. Human handoff if requested or personal / day-to-day conversation
+  if (parsedResponse.intent === 'out_of_scope' || !parsedResponse.user_message?.trim()) {
+    console.log(`[WhatsApp] Message from ${fromPhone} identified as personal/day-to-day conversation (out_of_scope). Silently handing off to human.`);
+    await admin
+      .from('conversations')
+      .update({
+        owner: 'human',
+        status: 'handed_off',
+        handoff_reason: 'personal_day_to_day_chat',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', conversation.id);
+    return; // Strictly remain silent — do not send any message!
+  }
+
   const toolContext = {
     organizationId,
     conversationId: conversation.id,
@@ -156,11 +177,16 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
     }
   }
 
-  // 12. Human handoff if requested
+  // Handle explicit handoff if requested
   if (parsedResponse.handoff_required) {
     await admin
       .from('conversations')
-      .update({ owner: 'human', status: 'handed_off' })
+      .update({
+        owner: 'human',
+        status: 'handed_off',
+        handoff_reason: 'ai_handoff_requested',
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', conversation.id);
   }
 

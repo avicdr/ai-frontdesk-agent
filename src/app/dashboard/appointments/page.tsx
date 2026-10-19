@@ -130,7 +130,7 @@ export default function AppointmentsPage() {
       </div>
 
       {/* Metrics Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         {[
           { label: 'Total Scheduled', value: total, icon: '📋', color: 'hsl(221 83% 58%)' },
           { label: 'Confirmed / Upcoming', value: confirmed, icon: '⏰', color: 'hsl(142 71% 45%)' },
@@ -223,10 +223,20 @@ export default function AppointmentsPage() {
                   </td>
                   <td>
                     <div style={{ fontWeight: 600 }}>
-                      {new Date(appt.starts_at).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {new Date(appt.starts_at).toLocaleDateString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                      {new Date(appt.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(appt.starts_at).toLocaleTimeString('en-US', {
+                        timeZone: 'Asia/Kolkata',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
                     </div>
                   </td>
                   <td>
