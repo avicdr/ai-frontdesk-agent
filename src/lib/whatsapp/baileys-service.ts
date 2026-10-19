@@ -13,7 +13,7 @@ import makeWASocket, {
 import pino from 'pino';
 import QRCode from 'qrcode';
 import { Boom } from '@hapi/boom';
-import { getPersistentAuthState } from './session-storage';
+import { getPersistentAuthState, getSessionsBaseDir } from './session-storage';
 import { processTenantIncomingMessage } from './message-processor';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
@@ -302,7 +302,7 @@ export async function startBaileysSession(
     if (type !== 'notify') return;
 
     for (const msg of messages) {
-      if (!msg.message || msg.key.fromMe) continue;
+      if (!msg.message) continue;
 
       const remoteJid = msg.key.remoteJid;
       if (!remoteJid || remoteJid.includes('@g.us') || remoteJid === 'status@broadcast') {
@@ -315,9 +315,73 @@ export async function startBaileysSession(
         msg.message.imageMessage?.caption ||
         '';
 
+      const contactPhone = remoteJid.split('@')[0].split(':')[0];
+
+      // If doctor manually messages or replies from their own WhatsApp:
+      if (msg.key.fromMe) {
+        // Automatically switch conversation to human / handed off so AI doesn't interrupt
+        try {
+          const admin = createSupabaseAdminClient();
+          const { data: conv } = await admin
+            .from('conversations')
+            .select('id')
+            .eq('organization_id', organizationId)
+            .eq('patient_phone', contactPhone)
+            .in('status', ['active', 'handed_off'])
+            .order('last_message_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          let targetConvId = conv?.id;
+          if (!targetConvId) {
+            const { data: newConv } = await admin
+              .from('conversations')
+              .insert({
+                organization_id: organizationId,
+                patient_phone: contactPhone,
+                channel: 'whatsapp',
+                status: 'handed_off',
+                owner: 'human',
+                handoff_reason: 'manual_reply_from_phone',
+                last_message_at: new Date().toISOString(),
+              })
+              .select('id')
+              .single();
+            targetConvId = newConv?.id;
+          } else {
+            await admin
+              .from('conversations')
+              .update({
+                owner: 'human',
+                status: 'handed_off',
+                handoff_reason: 'manual_reply_from_phone',
+                last_message_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', targetConvId);
+          }
+
+          if (targetConvId && text.trim()) {
+            await admin.from('messages').insert({
+              conversation_id: targetConvId,
+              organization_id: organizationId,
+              external_id: msg.key.id || `doc-${Date.now()}`,
+              role: 'assistant',
+              content: text.trim(),
+              status: 'sent',
+              sent_at: new Date().toISOString(),
+              metadata: { sent_by_owner: true, from_me: true },
+            });
+          }
+        } catch (err) {
+          console.error(`[Baileys] Error updating handoff on manual phone reply to ${contactPhone}:`, err);
+        }
+        continue;
+      }
+
       if (!text.trim()) continue;
 
-      const senderPhone = remoteJid.split('@')[0].split(':')[0];
+      const senderPhone = contactPhone;
       const messageId = msg.key.id || `baileys-${Date.now()}`;
       const senderName = msg.pushName || undefined;
 
@@ -380,7 +444,7 @@ export async function getBaileysSessionStatus(organizationId: string): Promise<B
   }
 
   // 1. Check if registered credentials already exist in local session storage
-  const sessionDir = path.resolve(process.cwd(), '.whatsapp-sessions', organizationId);
+  const sessionDir = path.join(getSessionsBaseDir(), organizationId);
   const credsFile = path.join(sessionDir, 'creds.json');
   if (fs.existsSync(credsFile)) {
     try {
@@ -468,6 +532,9 @@ export async function disconnectBaileysSession(organizationId: string): Promise<
  * Automatically resumes all registered WhatsApp sessions across organizations on server boot.
  */
 export async function autoResumeAllActiveBaileysSessions(): Promise<void> {
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return;
+  }
   if (globalStore.__baileysAutoResumeStarted) {
     return;
   }
@@ -478,7 +545,7 @@ export async function autoResumeAllActiveBaileysSessions(): Promise<void> {
 
   // 1. Scan filesystem .whatsapp-sessions directory
   try {
-    const sessionsBaseDir = path.resolve(process.cwd(), '.whatsapp-sessions');
+    const sessionsBaseDir = getSessionsBaseDir();
     if (fs.existsSync(sessionsBaseDir)) {
       const entries = fs.readdirSync(sessionsBaseDir, { withFileTypes: true });
       for (const entry of entries) {
@@ -538,7 +605,11 @@ export async function autoResumeAllActiveBaileysSessions(): Promise<void> {
 }
 
 // Automatically trigger on server module initialization
-if (typeof window === 'undefined' && process.env.NEXT_RUNTIME !== 'edge') {
+if (
+  typeof window === 'undefined' &&
+  process.env.NEXT_RUNTIME !== 'edge' &&
+  process.env.NEXT_PHASE !== 'phase-production-build'
+) {
   setImmediate(() => {
     autoResumeAllActiveBaileysSessions().catch(err => {
       console.warn('[Baileys] Background auto-resume trigger error:', err);

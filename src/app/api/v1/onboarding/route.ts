@@ -157,16 +157,23 @@ export async function GET(request: NextRequest) {
       return successResponse({ status: 'not_started', currentStep: 0 });
     }
 
-    const { data: profile } = await admin
-      .from('clinic_profiles')
-      .select('onboarding_step, onboarding_completed_at')
-      .eq('organization_id', membership.organization_id)
-      .single();
+    const [profileRes, agentRes, servicesRes, policyRes, orgRes] = await Promise.all([
+      admin.from('clinic_profiles').select('*').eq('organization_id', membership.organization_id).maybeSingle(),
+      admin.from('agent_configurations').select('*').eq('organization_id', membership.organization_id).order('version', { ascending: false }).limit(1).maybeSingle(),
+      admin.from('services').select('*').eq('organization_id', membership.organization_id).order('sort_order', { ascending: true }),
+      admin.from('booking_policies').select('*').eq('organization_id', membership.organization_id).maybeSingle(),
+      admin.from('organizations').select('name').eq('id', membership.organization_id).maybeSingle(),
+    ]);
 
     return successResponse({
-      status: profile?.onboarding_completed_at ? 'completed' : 'in_progress',
-      currentStep: profile?.onboarding_step ?? 1,
+      status: profileRes.data?.onboarding_completed_at ? 'completed' : 'in_progress',
+      currentStep: profileRes.data?.onboarding_step ?? 1,
       organizationId: membership.organization_id,
+      clinicProfile: profileRes.data,
+      agentConfig: agentRes.data,
+      services: servicesRes.data ?? [],
+      bookingPolicy: policyRes.data,
+      organizationName: orgRes.data?.name,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown';
@@ -231,12 +238,20 @@ export async function PUT(request: NextRequest) {
     if (body.clinicInfo) {
       await admin.from('clinic_profiles').update({
         clinic_name: body.clinicInfo.clinicName,
-        phone_number: body.clinicInfo.phone,
+        phone: body.clinicInfo.phone,
         address_line1: body.clinicInfo.address,
         city: body.clinicInfo.city,
         timezone: body.clinicInfo.timezone || 'Asia/Kolkata',
         updated_at: new Date().toISOString(),
       }).eq('organization_id', orgId);
+
+      if (body.clinicInfo.clinicName) {
+        await admin.from('organizations').update({
+          name: body.clinicInfo.clinicName,
+          timezone: body.clinicInfo.timezone || 'Asia/Kolkata',
+          updated_at: new Date().toISOString(),
+        }).eq('id', orgId);
+      }
     }
 
     // 2. Update agent configuration

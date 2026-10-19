@@ -116,7 +116,7 @@ You have access to backend tools to check slots and schedule appointments. To ca
      "patientName": "Patient's Full Name",
      "patientPhone": "Patient's Phone number",
      "serviceName": "<Name of chosen service from SERVICES list (e.g. Consultation, Teeth Cleaning, Root Canal, etc.)>",
-     "startTime": "YYYY-MM-DDTHH:mm:ss (or ISO date-time of the selected slot)"
+     "startTime": "YYYY-MM-DDTHH:mm:ss in clinic local time (e.g. '2026-10-20T11:00:00' for 11:00 AM)"
    }
 
 3. cancel_appointment:
@@ -138,14 +138,32 @@ If a patient describes a medical emergency or life-threatening situation:
 4. Trigger a human handoff notification
 `}
 
+=== DAY-TO-DAY & PERSONAL MESSAGES DETECTION ===
+CRITICAL: This WhatsApp number belongs to the clinic doctor/owner's personal device and is used for daily life, family, and friends in addition to clinic inquiries.
+You MUST distinguish between CLINIC/PATIENT INQUIRIES and PERSONAL/DAY-TO-DAY CONVERSATIONS:
+
+1. PERSONAL / DAY-TO-DAY MESSAGES (intent: "out_of_scope"):
+   - Casual messages from friends, family, acquaintances, or non-clinic contacts (e.g., "Where are you?", "Bro", "Bhai", "Dude", "Call me", "Are we meeting?", "Send me the photos", "Did you reach?", "Have you eaten?", "Mummy here", personal slang, casual chat in Hindi/English/Hinglish).
+   - Any message that has NOTHING to do with dental health, teeth, appointments, doctor consultation, clinic address, clinic hours, or medical services.
+   - For ANY personal or day-to-day message:
+     * Set "intent": "out_of_scope"
+     * Set "handoff_required": true
+     * Set "user_message": "" (STRICTLY EMPTY STRING - DO NOT SEND ANY GREETING OR RECEPTIONIST MESSAGE)
+     * Set "proposed_action": "handoff"
+     * STRICTLY REMAIN SILENT — NEVER send a receptionist greeting or clinic introduction to personal contacts!
+
+2. CLINIC / PATIENT INQUIRIES:
+   - When someone asks about dental care, tooth pain, treatments, booking, clinic timing, prices, location, or formal inquiries.
+   - Respond warmly and helpfully as ${agentConfig.assistant_name} for ${clinicProfile.clinic_name}.
+
 === HUMAN HANDOFF ===
 ${agentConfig.handoff_message ?? 'I\'ll connect you with a team member right away.'}
-Trigger handoff when: patient requests human, you cannot answer, medical emergency, complex billing, or complaint escalation.
+Trigger handoff when: patient requests human, you cannot answer, medical emergency, complex billing, complaint escalation, or personal/day-to-day chats.
 
 === OUTPUT FORMAT ===
 Always respond in valid JSON with this structure:
 {
-  "user_message": "Friendly response to the patient. ALWAYS provide a polite reply acknowledging their request or confirming their booking. Never leave null or empty.",
+  "user_message": "Friendly response to the patient, OR strictly empty string \"\" if the message is a personal/day-to-day conversation (intent: out_of_scope).",
   "intent": "greeting|faq|availability_check|booking|cancellation|reschedule|handoff|out_of_scope|emergency",
   "required_follow_up": true,
   "proposed_action": null|"check_availability"|"create_appointment"|"cancel_appointment"|"reschedule"|"handoff",
@@ -221,11 +239,20 @@ export function parseAssistantResponse(rawContent: string): ParsedAgentResponse 
     };
   };
 
+  const isValidParsedResponse = (res: ParsedAgentResponse | null): res is ParsedAgentResponse => {
+    if (!res) return false;
+    if (res.intent === 'out_of_scope') return true;
+    if (res.user_message && res.user_message.trim().length > 0) return true;
+    if (res.tool_calls && res.tool_calls.length > 0) return true;
+    if (res.handoff_required) return true;
+    return false;
+  };
+
   // 1. Direct JSON parse
   try {
     const direct = JSON.parse(trimmed);
     const sanitized = sanitize(direct);
-    if (sanitized && (sanitized.user_message || (sanitized.tool_calls && sanitized.tool_calls.length > 0))) {
+    if (isValidParsedResponse(sanitized)) {
       return sanitized;
     }
   } catch {}
@@ -244,7 +271,7 @@ export function parseAssistantResponse(rawContent: string): ParsedAgentResponse 
   try {
     const fromCleaned = JSON.parse(cleaned);
     const sanitized = sanitize(fromCleaned);
-    if (sanitized && (sanitized.user_message || (sanitized.tool_calls && sanitized.tool_calls.length > 0))) {
+    if (isValidParsedResponse(sanitized)) {
       return sanitized;
     }
   } catch {}
@@ -256,7 +283,7 @@ export function parseAssistantResponse(rawContent: string): ParsedAgentResponse 
     try {
       const extracted = JSON.parse(cleaned.substring(firstBrace, lastBrace + 1));
       const sanitized = sanitize(extracted);
-      if (sanitized && (sanitized.user_message || (sanitized.tool_calls && sanitized.tool_calls.length > 0))) {
+      if (isValidParsedResponse(sanitized)) {
         return sanitized;
       }
     } catch {}

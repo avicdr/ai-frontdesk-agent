@@ -365,10 +365,19 @@ export default async function DashboardPage() {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '0.75rem', color: 'hsl(221, 83%, 70%)', fontWeight: 600 }}>
-                      {new Date(appt.starts_at as string).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                      {new Date(appt.starts_at as string).toLocaleDateString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
                     </div>
                     <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))' }}>
-                      {new Date(appt.starts_at as string).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(appt.starts_at as string).toLocaleTimeString('en-US', {
+                        timeZone: 'Asia/Kolkata',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
                     </div>
                   </div>
                 </div>

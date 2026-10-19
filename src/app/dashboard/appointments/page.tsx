@@ -223,10 +223,20 @@ export default function AppointmentsPage() {
                   </td>
                   <td>
                     <div style={{ fontWeight: 600 }}>
-                      {new Date(appt.starts_at).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {new Date(appt.starts_at).toLocaleDateString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                      {new Date(appt.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(appt.starts_at).toLocaleTimeString('en-US', {
+                        timeZone: 'Asia/Kolkata',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
                     </div>
                   </td>
                   <td>

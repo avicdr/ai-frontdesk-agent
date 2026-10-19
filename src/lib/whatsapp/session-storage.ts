@@ -4,14 +4,38 @@
 
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { useMultiFileAuthState as initMultiFileAuthState, AuthenticationState, BufferJSON } from '@whiskeysockets/baileys';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
-const SESSIONS_BASE_DIR = path.resolve(process.cwd(), '.whatsapp-sessions');
+/**
+ * Returns the writable base directory for WhatsApp session storage.
+ * On serverless platforms (Vercel, AWS Lambda), the deployment root is read-only (/var/task),
+ * so we use os.tmpdir() (/tmp/.whatsapp-sessions).
+ * On persistent servers/containers or local dev, process.cwd()/.whatsapp-sessions is used.
+ */
+export function getSessionsBaseDir(): string {
+  if (process.env.WHATSAPP_SESSIONS_DIR) {
+    return process.env.WHATSAPP_SESSIONS_DIR;
+  }
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT) {
+    return path.join(os.tmpdir(), '.whatsapp-sessions');
+  }
+  try {
+    const localDir = path.resolve(process.cwd(), '.whatsapp-sessions');
+    if (!fs.existsSync(localDir)) {
+      fs.mkdirSync(localDir, { recursive: true });
+    }
+    return localDir;
+  } catch {
+    return path.join(os.tmpdir(), '.whatsapp-sessions');
+  }
+}
 
-function getOrgSessionDir(organizationId: string): string {
-  const dir = path.join(SESSIONS_BASE_DIR, organizationId);
-  if (!fs.existsSync(dir)) {
+export function getOrgSessionDir(organizationId: string): string {
+  const baseDir = getSessionsBaseDir();
+  const dir = path.join(/*turbopackIgnore: true*/ baseDir, organizationId);
+  if (!fs.existsSync(/*turbopackIgnore: true*/ dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
   return dir;
@@ -23,8 +47,8 @@ function getOrgSessionDir(organizationId: string): string {
  */
 async function restoreSessionFromDatabase(organizationId: string, sessionDir: string): Promise<boolean> {
   try {
-    const credsFile = path.join(sessionDir, 'creds.json');
-    if (fs.existsSync(credsFile)) {
+    const credsFile = path.join(/*turbopackIgnore: true*/ sessionDir, 'creds.json');
+    if (fs.existsSync(/*turbopackIgnore: true*/ credsFile)) {
       return true; // Already exists locally
     }
 
@@ -105,7 +129,7 @@ export async function getPersistentAuthState(organizationId: string): Promise<{
   // 4. Wrapped clearSession to completely wipe keys on logout
   const clearSession = async () => {
     try {
-      if (fs.existsSync(sessionDir)) {
+      if (fs.existsSync(/*turbopackIgnore: true*/ sessionDir)) {
         fs.rmSync(sessionDir, { recursive: true, force: true });
       }
       const admin = createSupabaseAdminClient();
