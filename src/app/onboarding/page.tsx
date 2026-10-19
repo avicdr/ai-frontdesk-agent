@@ -23,6 +23,57 @@ const DEFAULT_SERVICES: DentalService[] = [
   { name: 'Emergency Dental Pain Relief', duration: 30, price: '800', isBookable: true },
 ];
 
+const PLATFORM_UPI_VPA = process.env.NEXT_PUBLIC_PLATFORM_UPI_ID || process.env.NEXT_PUBLIC_UPI_VPA || 'aviwasasleep@ptaxis';
+
+const PRICING_PLANS = [
+  {
+    id: 'starter',
+    name: 'Starter Practice',
+    price: '₹999',
+    chats: '500 AI chats/mo',
+    features: ['WhatsApp Cloud API Integration', 'Operating Hours Logic', 'Gemini 1.5 Flash AI', 'Single Clinician'],
+  },
+  {
+    id: 'pro',
+    name: 'Pro Clinic (Recommended)',
+    price: '₹1,599',
+    chats: '2,000 AI chats/mo',
+    features: ['Google Calendar 2-Way Sync', 'OpenAI Auto-Fallback', 'Unlimited Bookings', 'Live Human Takeover Inbox'],
+    badge: 'Most Popular',
+  },
+  {
+    id: 'growth',
+    name: 'Growth & Multi-Doctor',
+    price: '₹2,999',
+    chats: '5,000 AI chats/mo',
+    features: ['Multi-Doctor Rosters', 'Custom AI Clinical Voice', 'Priority WhatsApp Webhooks', 'Dedicated Account Manager'],
+  },
+];
+
+const POPULAR_DENTAL_PRESETS = [
+  { name: 'Invisible Aligners Consultation', duration: 30, price: '1500' },
+  { name: 'Dental Implant Consultation', duration: 45, price: '2000' },
+  { name: 'Composite Dental Veneers', duration: 60, price: '4000' },
+  { name: 'Wisdom Tooth Surgical Extraction', duration: 45, price: '3500' },
+  { name: 'Zirconia Ceramic Crown', duration: 45, price: '7500' },
+  { name: 'Pediatric Fluoride Treatment', duration: 30, price: '1200' },
+];
+
+const GREETING_TEMPLATES = [
+  {
+    label: '🌸 Warm & Welcoming',
+    text: "Hello! Welcome to Apex Dental & Orthodontics. I'm Aria, your AI receptionist. How can I assist you with your dental care today?",
+  },
+  {
+    label: '⚡ Swift Booking Focus',
+    text: "Hi there! Welcome to Apex Dental. I can help you check real-time open slots, schedule an appointment, or quote service fees. Which treatment are you looking for?",
+  },
+  {
+    label: '🚨 Emergency Friendly',
+    text: "Hello! You have reached Apex Dental & Orthodontics. If you are experiencing severe toothache or urgent pain, let me know right away so I can prioritize an emergency slot.",
+  },
+];
+
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function OnboardingPage() {
@@ -34,7 +85,7 @@ export default function OnboardingPage() {
   // Step 1: Clinic Info
   const [clinicName, setClinicName] = useState('Apex Dental & Orthodontics');
   const [ownerName, setOwnerName] = useState('Dr. Sarah Verma');
-  const [phone, setPhone] = useState('+919876543210');
+  const [phone, setPhone] = useState('+91 98765 43210');
   const [address, setAddress] = useState('42 Park Avenue, Koramangala');
   const [city, setCity] = useState('Bengaluru');
   const [timezone, setTimezone] = useState('Asia/Kolkata');
@@ -42,12 +93,11 @@ export default function OnboardingPage() {
   // Step 2: AI Receptionist Persona
   const [assistantName, setAssistantName] = useState('Aria');
   const [tone, setTone] = useState<'friendly' | 'professional' | 'concise'>('friendly');
-  const [language, setLanguage] = useState('English & Hindi (Hinglish)');
   const [greeting, setGreeting] = useState(
     "Hello! Welcome to Apex Dental & Orthodontics. I'm Aria, your AI receptionist. How can I assist you with your dental care today?"
   );
 
-  // Step 3: Services
+  // Step 3: Services & Fees
   const [services, setServices] = useState<DentalService[]>(DEFAULT_SERVICES);
   const [newServiceName, setNewServiceName] = useState('');
   const [newServicePrice, setNewServicePrice] = useState('');
@@ -73,6 +123,8 @@ export default function OnboardingPage() {
   const [phoneNumberId, setPhoneNumberId] = useState('');
   const [wabaId, setWabaId] = useState('');
   const [waAccessToken, setWaAccessToken] = useState('');
+  const [showWaToken, setShowWaToken] = useState(false);
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
 
   // Step 7: Calendar
   const [calendarConnected, setCalendarConnected] = useState(false);
@@ -80,7 +132,7 @@ export default function OnboardingPage() {
   // Step 8: Plan & UPI
   const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'growth'>('pro');
   const [utrNumber, setUtrNumber] = useState('');
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [copiedVpa, setCopiedVpa] = useState(false);
 
   // Add a service
   const handleAddService = () => {
@@ -96,10 +148,66 @@ export default function OnboardingPage() {
     ]);
     setNewServiceName('');
     setNewServicePrice('');
+    setNewServiceDuration('30');
   };
 
   const handleRemoveService = (index: number) => {
     setServices(services.filter((_, idx) => idx !== index));
+  };
+
+  const handleUpdateServicePrice = (index: number, newPrice: string) => {
+    const updated = [...services];
+    updated[index] = { ...updated[index], price: newPrice };
+    setServices(updated);
+  };
+
+  const handleUpdateServiceDuration = (index: number, newDuration: number) => {
+    const updated = [...services];
+    updated[index] = { ...updated[index], duration: newDuration };
+    setServices(updated);
+  };
+
+  const handleUpdateServiceName = (index: number, newName: string) => {
+    const updated = [...services];
+    updated[index] = { ...updated[index], name: newName };
+    setServices(updated);
+  };
+
+  const handleToggleServiceBookable = (index: number) => {
+    const updated = [...services];
+    updated[index] = { ...updated[index], isBookable: !updated[index].isBookable };
+    setServices(updated);
+  };
+
+  const handleAddPreset = (preset: { name: string; duration: number; price: string }) => {
+    if (services.some(s => s.name.toLowerCase() === preset.name.toLowerCase())) return;
+    setServices([...services, { ...preset, isBookable: true }]);
+  };
+
+  const handleCopyMondayHours = () => {
+    const monday = workingHours[1];
+    if (!monday) return;
+    setWorkingHours(
+      workingHours.map(wh => {
+        if (wh.dayOfWeek >= 1 && wh.dayOfWeek <= 5) {
+          return { ...wh, isOpen: monday.isOpen, openTime: monday.openTime, closeTime: monday.closeTime };
+        }
+        return wh;
+      })
+    );
+  };
+
+  const handleCopyWebhookUrl = () => {
+    const url = typeof window !== 'undefined' ? `${window.location.origin}/api/v1/webhooks/whatsapp` : 'https://your-domain.com/api/v1/webhooks/whatsapp';
+    navigator.clipboard?.writeText(url);
+    setCopiedWebhook(true);
+    setTimeout(() => setCopiedWebhook(false), 2500);
+  };
+
+  const handleCopyVpa = () => {
+    navigator.clipboard?.writeText(PLATFORM_UPI_VPA);
+    setCopiedVpa(true);
+    setTimeout(() => setCopiedVpa(false), 2500);
   };
 
   // Next step handler
@@ -108,21 +216,19 @@ export default function OnboardingPage() {
     setIsSubmitting(true);
 
     try {
-      // If at step 1, initiate organization if not exists
       if (currentStep === 1) {
         await fetch('/api/v1/onboarding', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            fullName: ownerName,
-            phone,
-            organizationName: clinicName,
-            timezone,
+            fullName: ownerName || 'Dr. Sarah Verma',
+            phone: phone || '+91 98765 43210',
+            organizationName: clinicName || 'Apex Dental & Orthodontics',
+            timezone: timezone || 'Asia/Kolkata',
           }),
         });
       }
 
-      // Persist step data
       await fetch('/api/v1/onboarding', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -152,57 +258,101 @@ export default function OnboardingPage() {
     }
   };
 
-  // Final Complete
   const handleCompleteActivation = async () => {
     setErrorMsg(null);
     setIsSubmitting(true);
 
     try {
-      // If UTR entered, create order & submit UTR
+      // 1. Ensure org and membership exist
+      await fetch('/api/v1/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: ownerName || 'Dr. Sarah Verma',
+          phone: phone || '+91 98765 43210',
+          organizationName: clinicName || 'Apex Dental & Orthodontics',
+          timezone: timezone || 'Asia/Kolkata',
+        }),
+      });
+
+      // 2. Mark onboarding completed
       await fetch('/api/v1/onboarding', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           step: 8,
           complete: true,
+          clinicInfo: { clinicName, phone, address, city, timezone },
+          agentConfig: { assistantName, tone, greetingMessage: greeting },
+          services,
+          workingHours,
         }),
       });
 
       router.push('/dashboard?activated=true');
     } catch (err) {
-      setErrorMsg('Could not complete activation. Please try again.');
+      console.error(err);
+      // Still navigate so user is never trapped
+      router.push('/dashboard');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'hsl(var(--color-background))', color: 'hsl(var(--color-text))', padding: '2rem 1rem' }}>
+    <div style={{ minHeight: '100vh', background: 'hsl(var(--color-bg))', color: 'hsl(var(--color-text-primary))', padding: '2rem 1rem 4rem 1rem' }}>
       <div className="animated-bg" />
 
-      <div style={{ maxWidth: 860, margin: '0 auto', position: 'relative', zIndex: 10 }}>
+      <div style={{ maxWidth: 880, margin: '0 auto', position: 'relative', zIndex: 10 }}>
+        {/* Top bar with quick Dashboard jump */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <Link href="/" style={{ color: 'hsl(var(--color-text-muted))', textDecoration: 'none', fontSize: '0.825rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            ← Home
+          </Link>
+          <Link
+            href="/dashboard"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              fontSize: '0.825rem',
+              fontWeight: 600,
+              color: '#93c5fd',
+              background: 'hsla(221, 83%, 58%, 0.12)',
+              border: '1px solid hsla(221, 83%, 58%, 0.3)',
+              padding: '0.4rem 0.9rem',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <span>🏠 Go to Clinic Dashboard</span>
+            <span>→</span>
+          </Link>
+        </div>
+
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '0.5rem',
-            padding: '0.35rem 1rem',
+            padding: '0.4rem 1.1rem',
             borderRadius: '9999px',
-            background: 'hsl(var(--color-surface))',
-            border: '1px solid hsl(var(--color-border))',
-            fontSize: '0.8rem',
+            background: 'hsl(221 83% 58% / 0.12)',
+            border: '1px solid hsl(221 83% 58% / 0.35)',
+            fontSize: '0.8125rem',
             fontWeight: 600,
-            color: 'hsl(var(--color-primary))',
+            color: 'hsl(221 83% 70%)',
             marginBottom: '1rem',
           }}>
-            ✨ AI Receptionist Setup Wizard
+            ✨ AI Front Desk Setup Wizard
           </div>
           <h1 style={{ fontSize: '2.25rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
-            Set Up Your 24/7 Dental Front Desk
+            Set Up Your 24/7 Dental AI Receptionist
           </h1>
-          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.95rem' }}>
-            Configure your AI receptionist in minutes. No coding or developer setup required.
+          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.95rem', maxWidth: 540, margin: '0 auto' }}>
+            Empower your practice with an automated WhatsApp receptionist that quotes treatments, checks calendar slots, and books appointments.
           </p>
         </div>
 
@@ -218,13 +368,14 @@ export default function OnboardingPage() {
           border: '1px solid hsl(var(--color-border))',
           overflowX: 'auto',
           gap: '0.5rem',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
         }}>
           {[
-            { step: 1, label: 'Clinic' },
+            { step: 1, label: 'Clinic Essentials' },
             { step: 2, label: 'AI Persona' },
-            { step: 3, label: 'Services' },
-            { step: 4, label: 'Hours' },
-            { step: 5, label: 'Policies' },
+            { step: 3, label: 'Services & Fees' },
+            { step: 4, label: 'Working Hours' },
+            { step: 5, label: 'Booking Rules' },
             { step: 6, label: 'WhatsApp' },
             { step: 7, label: 'Calendar' },
             { step: 8, label: 'Activate' },
@@ -232,7 +383,7 @@ export default function OnboardingPage() {
             const isDone = currentStep > step;
             const isCurrent = currentStep === step;
             return (
-              <div key={step} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: isCurrent ? 1 : isDone ? 0.8 : 0.4 }}>
+              <div key={step} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: isCurrent ? 1 : isDone ? 0.9 : 0.45 }}>
                 <div style={{
                   width: 28,
                   height: 28,
@@ -242,74 +393,135 @@ export default function OnboardingPage() {
                   justifyContent: 'center',
                   fontSize: '0.75rem',
                   fontWeight: 700,
-                  background: isCurrent ? 'var(--gradient-brand)' : isDone ? 'hsl(142 71% 45%)' : 'hsl(var(--color-surface-hover))',
+                  background: isCurrent ? 'var(--gradient-brand)' : isDone ? 'hsl(142 71% 45%)' : 'hsl(var(--color-surface-2))',
+                  border: isCurrent ? '2px solid hsl(var(--color-primary-glow))' : '1px solid hsl(var(--color-border))',
                   color: 'white',
                   flexShrink: 0,
+                  boxShadow: isCurrent ? '0 0 12px hsla(221, 83%, 58%, 0.4)' : 'none',
                 }}>
                   {isDone ? '✓' : step}
                 </div>
-                <span style={{ fontSize: '0.75rem', fontWeight: isCurrent ? 700 : 500, whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: isCurrent ? 700 : 500, whiteSpace: 'nowrap', color: isCurrent ? '#f8fafc' : undefined }}>
                   {label}
                 </span>
-                {step < 8 && <div style={{ width: 16, height: 1, background: 'hsl(var(--color-border))' }} />}
+                {step < 8 && <div style={{ width: 14, height: 1, background: 'hsl(var(--color-border))' }} />}
               </div>
             );
           })}
         </div>
 
         {/* Step Content Card */}
-        <div className="card" style={{ padding: '2rem', border: '1px solid hsl(var(--color-border))', borderRadius: '20px' }}>
+        <div className="card" style={{ padding: '2.25rem', border: '1px solid hsl(var(--color-border))', borderRadius: '20px', background: 'hsl(var(--color-surface))', boxShadow: '0 8px 32px rgba(0,0,0,0.36)' }}>
           {errorMsg && (
             <div style={{
-              padding: '0.75rem 1rem',
-              borderRadius: '8px',
-              background: 'hsl(0 84% 60% / 0.1)',
-              border: '1px solid hsl(0 84% 60% / 0.3)',
-              color: 'hsl(0 84% 60%)',
-              marginBottom: '1.5rem',
+              padding: '0.875rem 1.25rem',
+              borderRadius: '12px',
+              background: 'hsla(0, 84%, 60%, 0.12)',
+              border: '1px solid hsla(0, 84%, 60%, 0.35)',
+              color: 'hsl(0, 84%, 70%)',
+              marginBottom: '1.75rem',
               fontSize: '0.875rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
             }}>
-              {errorMsg}
+              <span>⚠️</span>
+              <span>{errorMsg}</span>
             </div>
           )}
 
           {/* STEP 1: Clinic Profile */}
           {currentStep === 1 && (
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Step 1: Clinic Essentials</h2>
-              <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                Tell us about your dental practice. The AI will use this info when answering patient inquiries.
-              </p>
+              <div style={{ marginBottom: '1.75rem' }}>
+                <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 1: Clinic Essentials</h2>
+                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
+                  Tell us about your dental practice. The AI receptionist will use this info when answering patient inquiries and routing calls.
+                </p>
+              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label className="label">Clinic Name</label>
-                  <input className="input" value={clinicName} onChange={e => setClinicName(e.target.value)} placeholder="e.g. Apex Dental Clinic" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                  <div className="form-field">
+                    <label className="label">
+                      <span>🏥</span> Clinic Name <span style={{ color: 'hsl(var(--color-error))' }}>*</span>
+                    </label>
+                    <input
+                      className="input"
+                      value={clinicName}
+                      onChange={e => setClinicName(e.target.value)}
+                      placeholder="e.g. Apex Dental & Orthodontics"
+                    />
+                    <span className="form-hint">Displayed to patients in WhatsApp greetings & notifications</span>
+                  </div>
+
+                  <div className="form-field">
+                    <label className="label">
+                      <span>👨‍⚕️</span> Doctor / Lead Clinician Full Name <span style={{ color: 'hsl(var(--color-error))' }}>*</span>
+                    </label>
+                    <input
+                      className="input"
+                      value={ownerName}
+                      onChange={e => setOwnerName(e.target.value)}
+                      placeholder="e.g. Dr. Sarah Verma, BDS, MDS"
+                    />
+                    <span className="form-hint">Principal dentist quoted when confirming doctor availability</span>
+                  </div>
                 </div>
-                <div>
-                  <label className="label">Doctor / Owner Full Name</label>
-                  <input className="input" value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="e.g. Dr. Sarah Verma" />
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                  <div className="form-field">
+                    <label className="label">
+                      <span>📞</span> Reception / Emergency Phone <span style={{ color: 'hsl(var(--color-error))' }}>*</span>
+                    </label>
+                    <input
+                      className="input"
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      placeholder="+91 98765 43210"
+                    />
+                    <span className="form-hint">Clinic line provided if patient asks to speak to staff</span>
+                  </div>
+
+                  <div className="form-field">
+                    <label className="label">
+                      <span>🏙️</span> City & Area <span style={{ color: 'hsl(var(--color-error))' }}>*</span>
+                    </label>
+                    <input
+                      className="input"
+                      value={city}
+                      onChange={e => setCity(e.target.value)}
+                      placeholder="e.g. Bengaluru, Koramangala"
+                    />
+                    <span className="form-hint">Enables AI to confirm clinic location and landmark questions</span>
+                  </div>
                 </div>
-                <div>
-                  <label className="label">Contact / Reception Phone</label>
-                  <input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91 98765 43210" />
+
+                <div className="form-field">
+                  <label className="label">
+                    <span>📍</span> Full Clinic Address
+                  </label>
+                  <input
+                    className="input"
+                    value={address}
+                    onChange={e => setAddress(e.target.value)}
+                    placeholder="e.g. 42 Park Avenue, 2nd Floor, Koramangala 4th Block"
+                  />
+                  <span className="form-hint">AI automatically sends this location to patients upon booking confirmation</span>
                 </div>
-                <div>
-                  <label className="label">City</label>
-                  <input className="input" value={city} onChange={e => setCity(e.target.value)} placeholder="Bengaluru" />
-                </div>
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label className="label">Clinic Address</label>
-                  <input className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder="Full street address" />
-                </div>
-                <div>
-                  <label className="label">Timezone</label>
+
+                <div style={{ maxWidth: 360 }} className="form-field">
+                  <label className="label">
+                    <span>🌐</span> Local Timezone
+                  </label>
                   <select className="input" value={timezone} onChange={e => setTimezone(e.target.value)}>
-                    <option value="Asia/Kolkata">Asia/Kolkata (IST - India)</option>
-                    <option value="Asia/Dubai">Asia/Dubai (GST - UAE)</option>
-                    <option value="America/New_York">America/New_York (EST)</option>
-                    <option value="Europe/London">Europe/London (GMT)</option>
+                    <option value="Asia/Kolkata">Asia/Kolkata (IST — UTC+5:30)</option>
+                    <option value="Asia/Dubai">Asia/Dubai (GST — UTC+4:00)</option>
+                    <option value="America/New_York">America/New_York (EST — UTC-5:00)</option>
+                    <option value="Europe/London">Europe/London (GMT/BST)</option>
+                    <option value="Asia/Singapore">Asia/Singapore (SGT — UTC+8:00)</option>
                   </select>
+                  <span className="form-hint">Aligns calendar availability slots accurately with clinic clocks</span>
                 </div>
               </div>
             </div>
@@ -318,93 +530,214 @@ export default function OnboardingPage() {
           {/* STEP 2: AI Persona */}
           {currentStep === 2 && (
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Step 2: AI Receptionist Persona</h2>
-              <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                Customize your AI assistant's name, conversational tone, and welcome greeting.
-              </p>
+              <div style={{ marginBottom: '1.75rem' }}>
+                <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 2: AI Receptionist Persona</h2>
+                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
+                  Define your virtual assistant's identity, conversational style, and welcoming greeting.
+                </p>
+              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                <div>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label className="label">AI Receptionist Name</label>
-                    <input className="input" value={assistantName} onChange={e => setAssistantName(e.target.value)} placeholder="Aria" />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.75rem', alignItems: 'start' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div className="form-field">
+                    <label className="label">
+                      <span>🤖</span> Virtual Receptionist Name
+                    </label>
+                    <input
+                      className="input"
+                      value={assistantName}
+                      onChange={e => setAssistantName(e.target.value)}
+                      placeholder="e.g. Aria, Maya, Dr. Frontdesk"
+                    />
+                    <span className="form-hint">The AI introduces itself with this name on WhatsApp</span>
                   </div>
 
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label className="label">Conversational Tone</label>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div className="form-field">
+                    <label className="label">
+                      <span>🎭</span> Conversational Tone
+                    </label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                       {[
-                        { id: 'friendly', label: 'Warm & Friendly' },
-                        { id: 'professional', label: 'Professional' },
-                        { id: 'concise', label: 'Concise & Fast' },
-                      ].map(t => (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => setTone(t.id as any)}
-                          style={{
-                            flex: 1,
-                            padding: '0.625rem 0.5rem',
-                            borderRadius: '8px',
-                            border: `1px solid ${tone === t.id ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))'}`,
-                            background: tone === t.id ? 'hsl(var(--color-primary) / 0.15)' : 'hsl(var(--color-surface))',
-                            color: tone === t.id ? 'hsl(var(--color-primary))' : 'hsl(var(--color-text-muted))',
-                            fontWeight: 600,
-                            fontSize: '0.75rem',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
+                        { id: 'friendly', title: '🌸 Warm & Friendly', desc: 'Gentle, polite & empathetic — ideal for nervous dental patients' },
+                        { id: 'professional', title: '👔 Professional & Formal', desc: 'Clinical precision, structured questions, respectful etiquette' },
+                        { id: 'concise', title: '⚡ Fast & Concise', desc: 'Quick quotes, direct slot booking, minimal chit-chat' },
+                      ].map(t => {
+                        const isSelected = tone === t.id;
+                        return (
+                          <div
+                            key={t.id}
+                            onClick={() => setTone(t.id as any)}
+                            style={{
+                              padding: '0.875rem 1rem',
+                              borderRadius: '12px',
+                              border: `1.5px solid ${isSelected ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))'}`,
+                              background: isSelected ? 'hsla(221, 83%, 58%, 0.12)' : 'hsl(var(--color-surface-2))',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              transition: 'all 0.15s ease',
+                              boxShadow: isSelected ? '0 0 16px hsla(221, 83%, 58%, 0.2)' : 'none',
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: '0.875rem', color: isSelected ? '#93c5fd' : '#f8fafc', marginBottom: '0.2rem' }}>
+                                {t.title}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
+                                {t.desc}
+                              </div>
+                            </div>
+                            <div style={{
+                              width: 18,
+                              height: 18,
+                              borderRadius: '50%',
+                              border: `2px solid ${isSelected ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))'}`,
+                              background: isSelected ? 'hsl(var(--color-primary))' : 'transparent',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                              {isSelected && <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'white' }} />}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="label">Greeting Message</label>
+                  <div className="form-field">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label className="label">
+                        <span>💬</span> Welcome Greeting Message
+                      </label>
+                      <span style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))' }}>Auto-sent when patient says "Hi"</span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                      {GREETING_TEMPLATES.map((tmpl, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setGreeting(tmpl.text)}
+                          className="preset-chip"
+                          style={{ fontSize: '0.7rem' }}
+                        >
+                          {tmpl.label}
+                        </button>
+                      ))}
+                    </div>
+
                     <textarea
                       className="input"
                       rows={3}
                       value={greeting}
                       onChange={e => setGreeting(e.target.value)}
-                      placeholder="Welcome message sent when patient says Hi"
+                      placeholder="Welcome message sent when a new patient messages..."
                     />
                   </div>
                 </div>
 
                 {/* WhatsApp Chat Preview Card */}
                 <div style={{
-                  background: 'hsl(142 30% 8%)',
-                  borderRadius: '16px',
-                  border: '1px solid hsl(142 30% 20%)',
-                  padding: '1.25rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
+                  background: '#0b141a',
+                  borderRadius: '18px',
+                  border: '1px solid #1f2c34',
+                  overflow: 'hidden',
+                  boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5)',
                 }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid hsl(142 20% 18%)', paddingBottom: '0.75rem' }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'hsl(142 71% 45%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>🤖</div>
-                      <div>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'white' }}>{assistantName} • {clinicName}</div>
-                        <div style={{ fontSize: '0.65rem', color: 'hsl(142 60% 70%)' }}>Verified WhatsApp Business Assistant</div>
+                  {/* WhatsApp App Header */}
+                  <div style={{
+                    background: '#202c33',
+                    padding: '0.875rem 1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    borderBottom: '1px solid #2a3942',
+                  }}>
+                    <div style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #00a884 0%, #008069 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.1rem',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                    }}>
+                      🦷
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#e9edef' }}>
+                          {assistantName || 'Aria'} • {clinicName || 'Clinic'}
+                        </span>
+                        <span style={{ color: '#00a884', fontSize: '0.75rem' }} title="Verified WhatsApp Business">✓</span>
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: '#8696a0' }}>
+                        Verified Dental Receptionist • online
                       </div>
                     </div>
+                  </div>
 
+                  {/* Chat Messages Canvas */}
+                  <div style={{
+                    padding: '1.25rem 1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.875rem',
+                    backgroundImage: 'radial-gradient(#1f2c34 1px, transparent 1px)',
+                    backgroundSize: '16px 16px',
+                    minHeight: '260px',
+                    justifyContent: 'flex-end',
+                  }}>
+                    {/* Patient Message */}
                     <div style={{
-                      background: 'hsl(142 40% 14%)',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '12px 12px 12px 0',
-                      fontSize: '0.825rem',
-                      color: 'hsl(142 10% 95%)',
-                      lineHeight: 1.5,
-                      marginBottom: '0.5rem',
+                      alignSelf: 'flex-end',
+                      background: '#005c4b',
+                      color: '#e9edef',
+                      padding: '0.625rem 0.875rem',
+                      borderRadius: '8px 8px 0 8px',
+                      fontSize: '0.8125rem',
+                      maxWidth: '80%',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
                     }}>
-                      {greeting}
+                      Hi! Do you have any slots available for teeth cleaning this Saturday?
+                      <div style={{ fontSize: '0.65rem', color: '#8696a0', textAlign: 'right', marginTop: '0.2rem' }}>10:42 AM ✓✓</div>
+                    </div>
+
+                    {/* AI Receptionist Response */}
+                    <div style={{
+                      alignSelf: 'flex-start',
+                      background: '#202c33',
+                      color: '#e9edef',
+                      padding: '0.75rem 1rem',
+                      borderRadius: '8px 8px 8px 0',
+                      fontSize: '0.8125rem',
+                      maxWidth: '92%',
+                      lineHeight: 1.45,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                    }}>
+                      <div style={{ marginBottom: '0.4rem' }}>{greeting}</div>
+                      <div style={{ color: '#00a884', fontWeight: 600, fontSize: '0.775rem' }}>
+                        ✨ Saturday Slots Available: 10:30 AM, 02:00 PM, 04:30 PM. Would you like me to reserve one?
+                      </div>
+                      <div style={{ fontSize: '0.65rem', color: '#8696a0', textAlign: 'right', marginTop: '0.35rem' }}>10:42 AM</div>
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.65rem', color: 'hsl(142 20% 60%)', textAlign: 'center' }}>
-                    Live Patient Preview (WhatsApp)
+
+                  <div style={{
+                    background: '#111b21',
+                    padding: '0.5rem',
+                    textAlign: 'center',
+                    fontSize: '0.7rem',
+                    color: '#00a884',
+                    borderTop: '1px solid #202c33',
+                    fontWeight: 600,
+                  }}>
+                    ⚡ Live WhatsApp Patient Preview
                   </div>
                 </div>
               </div>
@@ -414,76 +747,183 @@ export default function OnboardingPage() {
           {/* STEP 3: Dental Services & Fees */}
           {currentStep === 3 && (
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Step 3: Dental Services & Prices</h2>
-              <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                Your AI receptionist quotes these prices and computes booking duration accurately.
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 3: Dental Services & Pricing</h2>
+                  <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
+                    Configure the treatments your AI receptionist quotes to patients. <strong style={{ color: '#4ade80' }}>Prices and durations are editable inline directly in the table!</strong>
+                  </p>
+                </div>
+                <div style={{
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: '8px',
+                  background: 'hsla(142, 71%, 45%, 0.12)',
+                  border: '1px solid hsla(142, 71%, 45%, 0.3)',
+                  color: '#4ade80',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                }}>
+                  ✏️ Click any price to edit
+                </div>
+              </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <input
-                  className="input"
-                  style={{ flex: 3 }}
-                  value={newServiceName}
-                  onChange={e => setNewServiceName(e.target.value)}
-                  placeholder="New Service Name (e.g. Invisible Aligners Consultation)"
-                />
-                <input
-                  className="input"
-                  style={{ flex: 1 }}
-                  value={newServiceDuration}
-                  onChange={e => setNewServiceDuration(e.target.value)}
-                  placeholder="Mins (30)"
-                />
-                <input
-                  className="input"
-                  style={{ flex: 1 }}
-                  value={newServicePrice}
-                  onChange={e => setNewServicePrice(e.target.value)}
-                  placeholder="Price ₹"
-                />
+              {/* Popular Presets Bar */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'hsl(var(--color-text-muted))', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  + Quick Add Popular Dental Procedures:
+                </div>
+                <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
+                  {POPULAR_DENTAL_PRESETS.map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleAddPreset(preset)}
+                      className="preset-chip"
+                    >
+                      <span>+</span>
+                      <span>{preset.name}</span>
+                      <span style={{ color: '#4ade80', fontWeight: 700 }}>₹{preset.price}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Add Custom Service Bar */}
+              <div style={{
+                background: 'hsl(var(--color-surface-2))',
+                borderRadius: '14px',
+                border: '1px solid hsl(var(--color-border))',
+                padding: '0.875rem',
+                display: 'flex',
+                gap: '0.75rem',
+                alignItems: 'center',
+                marginBottom: '1.25rem',
+                flexWrap: 'wrap',
+              }}>
+                <div style={{ flex: '3 1 220px' }}>
+                  <input
+                    className="input"
+                    value={newServiceName}
+                    onChange={e => setNewServiceName(e.target.value)}
+                    placeholder="Procedure name (e.g. Invisible Aligners Consultation)"
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddService(); } }}
+                  />
+                </div>
+
+                <div style={{ flex: '1 1 120px' }} className="input-addon-group">
+                  <input
+                    type="number"
+                    min="5"
+                    step="5"
+                    value={newServiceDuration}
+                    onChange={e => setNewServiceDuration(e.target.value)}
+                    placeholder="30"
+                  />
+                  <div className="input-addon-suffix">mins</div>
+                </div>
+
+                <div style={{ flex: '1 1 130px' }} className="input-addon-group">
+                  <div className="input-addon-prefix">₹</div>
+                  <input
+                    type="number"
+                    min="0"
+                    step="100"
+                    value={newServicePrice}
+                    onChange={e => setNewServicePrice(e.target.value)}
+                    placeholder="Fee"
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddService(); } }}
+                  />
+                </div>
+
                 <button
                   type="button"
                   onClick={handleAddService}
                   className="btn btn-primary"
-                  style={{ whiteSpace: 'nowrap' }}
+                  style={{ flex: '0 0 auto', padding: '0.75rem 1.25rem' }}
                 >
-                  + Add
+                  <span>+ Add Service</span>
                 </button>
               </div>
 
-              <div style={{ maxHeight: 280, overflowY: 'auto', border: '1px solid hsl(var(--color-border))', borderRadius: '12px' }}>
-                <table className="data-table">
+              {/* Interactive Services Table */}
+              <div style={{
+                border: '1px solid hsl(var(--color-border))',
+                borderRadius: '14px',
+                overflow: 'hidden',
+                background: 'hsl(var(--color-surface))',
+              }}>
+                <table className="data-table" style={{ width: '100%' }}>
                   <thead>
                     <tr>
-                      <th>Service Name</th>
-                      <th>Duration</th>
-                      <th>Price</th>
-                      <th>Bookable</th>
-                      <th></th>
+                      <th style={{ width: '42%' }}>Service / Procedure Name</th>
+                      <th style={{ width: '20%' }}>Duration</th>
+                      <th style={{ width: '22%' }}>Price (₹) <span style={{ color: '#4ade80' }}>• Editable</span></th>
+                      <th style={{ width: '12%', textAlign: 'center' }}>Bookable</th>
+                      <th style={{ width: '4%' }}></th>
                     </tr>
                   </thead>
                   <tbody>
                     {services.map((svc, idx) => (
                       <tr key={idx}>
-                        <td style={{ fontWeight: 600 }}>{svc.name}</td>
-                        <td style={{ color: 'hsl(var(--color-text-muted))' }}>{svc.duration} mins</td>
-                        <td style={{ color: 'hsl(142 71% 45%)', fontWeight: 700 }}>₹{svc.price}</td>
                         <td>
                           <input
-                            type="checkbox"
-                            checked={svc.isBookable}
-                            onChange={e => {
-                              const updated = [...services];
-                              updated[idx].isBookable = e.target.checked;
-                              setServices(updated);
-                            }}
+                            className="service-name-input"
+                            value={svc.name}
+                            onChange={e => handleUpdateServiceName(idx, e.target.value)}
+                            title="Click to rename service"
                           />
                         </td>
                         <td>
+                          <div className="duration-editable-cell">
+                            <input
+                              type="number"
+                              min="5"
+                              step="5"
+                              value={svc.duration}
+                              onChange={e => handleUpdateServiceDuration(idx, parseInt(e.target.value, 10) || 15)}
+                            />
+                            <span className="unit-tag">mins</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="price-editable-cell" title="Click to edit price directly">
+                            <span className="currency-tag">₹</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="50"
+                              value={svc.price}
+                              onChange={e => handleUpdateServicePrice(idx, e.target.value)}
+                              placeholder="0"
+                            />
+                          </div>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleServiceBookable(idx)}
+                            className={`switch-pill ${svc.isBookable ? 'active' : 'inactive'}`}
+                            title={svc.isBookable ? 'Click to hide from patients' : 'Click to enable booking'}
+                          >
+                            <span>{svc.isBookable ? '✓ Active' : '✕ Paused'}</span>
+                          </button>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
                           <button
                             type="button"
                             onClick={() => handleRemoveService(idx)}
-                            style={{ background: 'none', border: 'none', color: 'hsl(0 84% 60%)', cursor: 'pointer', fontSize: '0.8rem' }}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#ef4444',
+                              cursor: 'pointer',
+                              padding: '0.35rem 0.5rem',
+                              borderRadius: '6px',
+                              fontSize: '0.85rem',
+                              transition: 'all 0.15s ease',
+                            }}
+                            title="Remove service"
                           >
                             ✕
                           </button>
@@ -493,16 +933,33 @@ export default function OnboardingPage() {
                   </tbody>
                 </table>
               </div>
+
+              <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
+                <span>Total catalog items: {services.length} active dental treatments</span>
+                <span>💡 Changes to prices update instantly for AI quotes</span>
+              </div>
             </div>
           )}
 
           {/* STEP 4: Working Hours */}
           {currentStep === 4 && (
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Step 4: Clinic Operating Hours</h2>
-              <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                AI Front Desk checks these opening and closing hours before offering appointment slots.
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.75rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 4: Clinic Operating Hours</h2>
+                  <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
+                    The AI Front Desk checks these operating windows before suggesting available appointment slots.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyMondayHours}
+                  className="btn btn-secondary btn-sm"
+                  title="Copy Monday hours to Tuesday through Friday"
+                >
+                  ⚡ Copy Mon Hours to Weekdays
+                </button>
+              </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {workingHours.map((wh, idx) => (
@@ -512,57 +969,78 @@ export default function OnboardingPage() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '0.75rem 1rem',
-                      background: wh.isOpen ? 'hsl(var(--color-surface))' : 'hsl(var(--color-surface-hover) / 0.5)',
-                      borderRadius: '10px',
-                      border: '1px solid hsl(var(--color-border))',
+                      padding: '0.875rem 1.25rem',
+                      background: wh.isOpen ? 'hsl(var(--color-surface-2))' : 'hsl(var(--color-surface) / 0.5)',
+                      borderRadius: '12px',
+                      border: `1px solid ${wh.isOpen ? 'hsl(var(--color-border))' : 'hsl(var(--color-border-subtle))'}`,
+                      transition: 'all 0.15s ease',
                     }}
                   >
-                    <div style={{ width: 120, fontWeight: 600, fontSize: '0.875rem' }}>{DAYS[wh.dayOfWeek]}</div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={wh.isOpen}
-                        onChange={e => {
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: 170 }}>
+                      <span style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: '8px',
+                        background: wh.isOpen ? 'hsla(142, 71%, 45%, 0.15)' : 'hsl(var(--color-surface-3))',
+                        color: wh.isOpen ? '#4ade80' : 'hsl(var(--color-text-muted))',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                      }}>
+                        {DAYS[wh.dayOfWeek].substring(0, 3)}
+                      </span>
+                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: wh.isOpen ? '#f8fafc' : 'hsl(var(--color-text-muted))' }}>
+                        {DAYS[wh.dayOfWeek]}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
                           const updated = [...workingHours];
-                          updated[idx].isOpen = e.target.checked;
+                          updated[idx].isOpen = !updated[idx].isOpen;
                           setWorkingHours(updated);
                         }}
-                      />
-                      <span style={{ fontSize: '0.8rem', color: wh.isOpen ? 'hsl(142 71% 45%)' : 'hsl(var(--color-text-muted))' }}>
-                        {wh.isOpen ? 'Open' : 'Closed'}
-                      </span>
-                    </label>
+                        className={`switch-pill ${wh.isOpen ? 'active' : 'inactive'}`}
+                      >
+                        <span>{wh.isOpen ? '● Open' : '○ Closed'}</span>
+                      </button>
 
-                    {wh.isOpen ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <input
-                          type="time"
-                          className="input"
-                          style={{ width: 120, padding: '0.35rem 0.5rem', fontSize: '0.8rem' }}
-                          value={wh.openTime}
-                          onChange={e => {
-                            const updated = [...workingHours];
-                            updated[idx].openTime = e.target.value;
-                            setWorkingHours(updated);
-                          }}
-                        />
-                        <span style={{ color: 'hsl(var(--color-text-muted))' }}>to</span>
-                        <input
-                          type="time"
-                          className="input"
-                          style={{ width: 120, padding: '0.35rem 0.5rem', fontSize: '0.8rem' }}
-                          value={wh.closeTime}
-                          onChange={e => {
-                            const updated = [...workingHours];
-                            updated[idx].closeTime = e.target.value;
-                            setWorkingHours(updated);
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>No appointments booked</div>
-                    )}
+                      {wh.isOpen ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <input
+                            type="time"
+                            className="input"
+                            style={{ width: 130, padding: '0.45rem 0.75rem', fontSize: '0.85rem' }}
+                            value={wh.openTime}
+                            onChange={e => {
+                              const updated = [...workingHours];
+                              updated[idx].openTime = e.target.value;
+                              setWorkingHours(updated);
+                            }}
+                          />
+                          <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>to</span>
+                          <input
+                            type="time"
+                            className="input"
+                            style={{ width: 130, padding: '0.45rem 0.75rem', fontSize: '0.85rem' }}
+                            value={wh.closeTime}
+                            onChange={e => {
+                              const updated = [...workingHours];
+                              updated[idx].closeTime = e.target.value;
+                              setWorkingHours(updated);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ width: 285, fontSize: '0.825rem', color: 'hsl(var(--color-text-muted))', fontStyle: 'italic', textAlign: 'center' }}>
+                          Closed for appointments
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -572,54 +1050,86 @@ export default function OnboardingPage() {
           {/* STEP 5: Booking Policies */}
           {currentStep === 5 && (
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Step 5: Booking Rules & Policies</h2>
-              <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                Set guardrails for how far in advance appointments can be booked, rescheduled, or cancelled.
-              </p>
+              <div style={{ marginBottom: '1.75rem' }}>
+                <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 5: Booking Rules & Policies</h2>
+                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
+                  Set intelligent guardrails for how far in advance patients can book, reschedule, or cancel appointments.
+                </p>
+              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                <div className="card" style={{ padding: '1rem', background: 'hsl(var(--color-surface))' }}>
-                  <label className="label">Minimum Advance Notice</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <input className="input" type="number" value={minAdvanceHours} onChange={e => setMinAdvanceHours(e.target.value)} />
-                    <span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>Hours</span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                <div className="card" style={{ padding: '1.25rem', background: 'hsl(var(--color-surface-2))' }}>
+                  <label className="label">
+                    <span>⏱️</span> Minimum Advance Notice
+                  </label>
+                  <div className="input-addon-group" style={{ marginBottom: '0.5rem' }}>
+                    <input
+                      type="number"
+                      min="1"
+                      value={minAdvanceHours}
+                      onChange={e => setMinAdvanceHours(e.target.value)}
+                    />
+                    <div className="input-addon-suffix">Hours</div>
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.35rem' }}>
-                    Prevents patients booking slots too close to current time.
-                  </div>
+                  <span className="form-hint">
+                    Prevents patients booking slots too close to current time so clinic staff isn't caught off guard.
+                  </span>
                 </div>
 
-                <div className="card" style={{ padding: '1rem', background: 'hsl(var(--color-surface))' }}>
-                  <label className="label">Maximum Booking Window</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <input className="input" type="number" value={maxAdvanceDays} onChange={e => setMaxAdvanceDays(e.target.value)} />
-                    <span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>Days</span>
+                <div className="card" style={{ padding: '1.25rem', background: 'hsl(var(--color-surface-2))' }}>
+                  <label className="label">
+                    <span>📅</span> Maximum Booking Window
+                  </label>
+                  <div className="input-addon-group" style={{ marginBottom: '0.5rem' }}>
+                    <input
+                      type="number"
+                      min="1"
+                      max="365"
+                      value={maxAdvanceDays}
+                      onChange={e => setMaxAdvanceDays(e.target.value)}
+                    />
+                    <div className="input-addon-suffix">Days</div>
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.35rem' }}>
-                    Maximum number of days in future patient can book.
-                  </div>
+                  <span className="form-hint">
+                    Furthest number of days in the future a patient is allowed to reserve a slot.
+                  </span>
                 </div>
 
-                <div className="card" style={{ padding: '1rem', background: 'hsl(var(--color-surface))' }}>
-                  <label className="label">Cancellation Cutoff</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <input className="input" type="number" value={cancellationHours} onChange={e => setCancellationHours(e.target.value)} />
-                    <span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>Hours</span>
+                <div className="card" style={{ padding: '1.25rem', background: 'hsl(var(--color-surface-2))' }}>
+                  <label className="label">
+                    <span>🚫</span> Cancellation Cutoff Window
+                  </label>
+                  <div className="input-addon-group" style={{ marginBottom: '0.5rem' }}>
+                    <input
+                      type="number"
+                      min="1"
+                      value={cancellationHours}
+                      onChange={e => setCancellationHours(e.target.value)}
+                    />
+                    <div className="input-addon-suffix">Hours</div>
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.35rem' }}>
-                    Notice required before cancelling an existing booking.
-                  </div>
+                  <span className="form-hint">
+                    Minimum notice required before a patient can cancel or reschedule an existing booking.
+                  </span>
                 </div>
 
-                <div className="card" style={{ padding: '1rem', background: 'hsl(var(--color-surface))' }}>
-                  <label className="label">Buffer Between Appointments</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <input className="input" type="number" value={bufferMinutes} onChange={e => setBufferMinutes(e.target.value)} />
-                    <span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>Mins</span>
+                <div className="card" style={{ padding: '1.25rem', background: 'hsl(var(--color-surface-2))' }}>
+                  <label className="label">
+                    <span>🧼</span> Buffer Between Appointments
+                  </label>
+                  <div className="input-addon-group" style={{ marginBottom: '0.5rem' }}>
+                    <input
+                      type="number"
+                      min="0"
+                      step="5"
+                      value={bufferMinutes}
+                      onChange={e => setBufferMinutes(e.target.value)}
+                    />
+                    <div className="input-addon-suffix">Mins</div>
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.35rem' }}>
-                    Sterilization and room turnaround buffer between patients.
-                  </div>
+                  <span className="form-hint">
+                    Operatory sterilization, instrument prep, and room turnaround buffer inserted between patients.
+                  </span>
                 </div>
               </div>
             </div>
@@ -628,57 +1138,99 @@ export default function OnboardingPage() {
           {/* STEP 6: WhatsApp Connection */}
           {currentStep === 6 && (
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Step 6: Connect WhatsApp Business</h2>
-              <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                Connect your Meta WhatsApp Cloud API credentials so the receptionist can send and receive real WhatsApp messages.
-              </p>
+              <div style={{ marginBottom: '1.75rem' }}>
+                <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 6: Connect WhatsApp Business</h2>
+                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
+                  Link your Meta WhatsApp Cloud API credentials so the receptionist can send and receive real WhatsApp messages.
+                </p>
+              </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <label className="label">WhatsApp Phone Number ID</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="form-field">
+                  <label className="label">
+                    <span>🆔</span> WhatsApp Phone Number ID
+                  </label>
                   <input
                     className="input"
                     value={phoneNumberId}
                     onChange={e => setPhoneNumberId(e.target.value)}
                     placeholder="e.g. 104829104810294"
                   />
+                  <span className="form-hint">Found in Meta App Dashboard &gt; WhatsApp &gt; API Setup &gt; Phone number ID</span>
                 </div>
-                <div>
-                  <label className="label">WhatsApp Business Account ID (WABA ID)</label>
+
+                <div className="form-field">
+                  <label className="label">
+                    <span>🏢</span> WhatsApp Business Account ID (WABA ID)
+                  </label>
                   <input
                     className="input"
                     value={wabaId}
                     onChange={e => setWabaId(e.target.value)}
                     placeholder="e.g. 10928392019283"
                   />
+                  <span className="form-hint">Found under your Meta Business Manager WhatsApp Accounts tab</span>
                 </div>
-                <div>
-                  <label className="label">Permanent System User Access Token</label>
+
+                <div className="form-field">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label className="label">
+                      <span>🔑</span> Permanent System User Access Token
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowWaToken(!showWaToken)}
+                      style={{ background: 'none', border: 'none', color: 'hsl(var(--color-primary))', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
+                    >
+                      {showWaToken ? 'Hide Token' : 'Show Token'}
+                    </button>
+                  </div>
                   <input
                     className="input"
-                    type="password"
+                    type={showWaToken ? 'text' : 'password'}
                     value={waAccessToken}
                     onChange={e => setWaAccessToken(e.target.value)}
                     placeholder="EAAB..."
                   />
+                  <span className="form-hint">System User Token with `whatsapp_business_messaging` and `whatsapp_business_management` permissions</span>
                 </div>
 
-                {/* Webhook details display for Meta */}
+                {/* Webhook Card */}
                 <div style={{
-                  padding: '1rem',
-                  borderRadius: '10px',
-                  background: 'hsl(var(--color-surface))',
+                  padding: '1.25rem',
+                  borderRadius: '14px',
+                  background: 'hsl(var(--color-surface-2))',
                   border: '1px solid hsl(var(--color-border))',
-                  fontSize: '0.8rem',
                 }}>
-                  <div style={{ fontWeight: 600, marginBottom: '0.35rem', color: 'hsl(var(--color-primary))' }}>
-                    📌 Meta Developer Portal Webhook Callback:
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <div style={{ fontWeight: 700, color: 'hsl(221, 83%, 70%)', fontSize: '0.875rem' }}>
+                      📌 Meta Developer Portal Webhook Callback:
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyWebhookUrl}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      {copiedWebhook ? '✓ Copied URL!' : '📋 Copy URL'}
+                    </button>
                   </div>
-                  <div style={{ fontFamily: 'monospace', color: 'hsl(var(--color-text-muted))', wordBreak: 'break-all' }}>
+
+                  <div style={{
+                    fontFamily: 'monospace',
+                    background: 'hsl(222 47% 4%)',
+                    padding: '0.625rem 0.875rem',
+                    borderRadius: '8px',
+                    border: '1px solid hsl(var(--color-border))',
+                    fontSize: '0.8rem',
+                    color: '#93c5fd',
+                    wordBreak: 'break-all',
+                    marginBottom: '0.5rem',
+                  }}>
                     {typeof window !== 'undefined' ? `${window.location.origin}/api/v1/webhooks/whatsapp` : 'https://your-domain.com/api/v1/webhooks/whatsapp'}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.25rem' }}>
-                    Verify Token: configured in your clinic's integration settings. You can also skip this step and configure later!
+
+                  <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', lineHeight: 1.4 }}>
+                    Subscribe to <strong style={{ color: '#f8fafc' }}>messages</strong> webhook field. You can also skip this step and configure anytime in Clinic Settings!
                   </div>
                 </div>
               </div>
@@ -688,52 +1240,84 @@ export default function OnboardingPage() {
           {/* STEP 7: Google Calendar Connection */}
           {currentStep === 7 && (
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Step 7: Connect Google Calendar</h2>
-              <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                Two-way sync: Appointments booked by AI are automatically added to your Google Calendar, and your existing events block AI booking.
-              </p>
+              <div style={{ marginBottom: '1.75rem' }}>
+                <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 7: Connect Google Doctor Calendar</h2>
+                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
+                  Two-way sync: Appointments booked by AI are automatically placed on your Google Calendar, and your existing personal events block AI booking.
+                </p>
+              </div>
 
               <div style={{
                 textAlign: 'center',
-                padding: '2.5rem 1rem',
-                borderRadius: '16px',
+                padding: '3rem 1.5rem',
+                borderRadius: '18px',
                 border: '1px dashed hsl(var(--color-border))',
-                background: 'hsl(var(--color-surface))',
+                background: 'hsl(var(--color-surface-2))',
               }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📅</div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                  {calendarConnected ? '✅ Google Calendar Connected' : 'Connect Your Google Doctor Calendar'}
+                <div style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '16px',
+                  background: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 1.25rem auto',
+                  fontSize: '2rem',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                }}>
+                  📅
+                </div>
+
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                  {calendarConnected ? '✅ Google Calendar Connected & Active' : 'Authorize Google Doctor Calendar'}
                 </h3>
-                <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem', maxWidth: 450, margin: '0 auto 1.5rem auto' }}>
+
+                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem', maxWidth: 480, margin: '0 auto 1.75rem auto' }}>
                   {calendarConnected
-                    ? 'Sync is active. Appointments will appear automatically in your calendar.'
-                    : 'Click below to authorize AI Front Desk with your clinic Google account.'}
+                    ? '2-Way Calendar Sync is online. Patient bookings will appear with patient contact info, procedure duration, and notes.'
+                    : 'Click below to connect your clinic’s Google Workspace or Gmail calendar.'}
                 </p>
 
                 {!calendarConnected ? (
-                  <a
-                    href="/api/v1/integrations/calendar/auth"
-                    className="btn btn-primary"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}
-                  >
-                    <span>Connect Google Calendar</span>
-                    <span>→</span>
-                  </a>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                    <a
+                      href="/api/v1/integrations/calendar/auth"
+                      className="btn btn-primary btn-lg"
+                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.75rem' }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                      </svg>
+                      <span>Connect Clinic Google Calendar</span>
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={() => setCalendarConnected(true)}
+                      style={{ background: 'none', border: 'none', color: 'hsl(var(--color-text-muted))', fontSize: '0.8rem', textDecoration: 'underline', cursor: 'pointer' }}
+                    >
+                      (Testing mode: Simulate Calendar Connection)
+                    </button>
+                  </div>
                 ) : (
-                  <div style={{ color: 'hsl(142 71% 45%)', fontWeight: 600, fontSize: '0.9rem' }}>
-                    Connected successfully!
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '9999px',
+                    background: 'hsla(142, 71%, 45%, 0.15)',
+                    color: '#4ade80',
+                    fontWeight: 700,
+                    fontSize: '0.875rem',
+                  }}>
+                    ✓ Google Calendar Two-Way Sync Ready
                   </div>
                 )}
-
-                <div style={{ marginTop: '1.5rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => setCalendarConnected(true)}
-                    style={{ background: 'none', border: 'none', color: 'hsl(var(--color-text-muted))', fontSize: '0.75rem', textDecoration: 'underline', cursor: 'pointer' }}
-                  >
-                    Simulate Calendar Connected for Testing
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -741,152 +1325,174 @@ export default function OnboardingPage() {
           {/* STEP 8: Plan Selection & UPI Activation */}
           {currentStep === 8 && (
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Step 8: Plan Selection & UPI Activation</h2>
-              <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                Select your monthly subscription plan. Pay instantly via UPI without Razorpay.
-              </p>
-
-              {/* Plan Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-                {[
-                  {
-                    id: 'starter',
-                    name: 'Starter',
-                    price: '₹2,499',
-                    chats: '500 AI chats/mo',
-                    features: ['WhatsApp Integration', 'Basic Working Hours', 'Gemini AI Model'],
-                  },
-                  {
-                    id: 'pro',
-                    name: 'Pro (Recommended)',
-                    price: '₹4,999',
-                    chats: '2,000 AI chats/mo',
-                    features: ['Google Calendar 2-Way Sync', 'OpenAI Fallback', 'Unlimited Bookings', 'Human Takeover Inbox'],
-                    badge: 'Popular',
-                  },
-                  {
-                    id: 'growth',
-                    name: 'Clinic Growth',
-                    price: '₹8,999',
-                    chats: '5,000 AI chats/mo',
-                    features: ['Multi-Doctor Support', 'Custom AI Voice & Knowledge', 'Priority WhatsApp Webhook'],
-                  },
-                ].map(p => (
-                  <div
-                    key={p.id}
-                    onClick={() => setSelectedPlan(p.id as any)}
-                    style={{
-                      padding: '1.25rem',
-                      borderRadius: '16px',
-                      border: `2px solid ${selectedPlan === p.id ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))'}`,
-                      background: selectedPlan === p.id ? 'hsl(var(--color-primary) / 0.08)' : 'hsl(var(--color-surface))',
-                      cursor: 'pointer',
-                      position: 'relative',
-                    }}
-                  >
-                    {p.badge && (
-                      <div style={{
-                        position: 'absolute',
-                        top: -10,
-                        right: 12,
-                        background: 'var(--gradient-brand)',
-                        color: 'white',
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        padding: '0.2rem 0.5rem',
-                        borderRadius: '9999px',
-                      }}>
-                        {p.badge}
-                      </div>
-                    )}
-                    <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.25rem' }}>{p.name}</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white', marginBottom: '0.5rem' }}>
-                      {p.price}<span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>/mo</span>
-                    </div>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'hsl(var(--color-primary))', marginBottom: '0.75rem' }}>
-                      {p.chats}
-                    </div>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))' }}>
-                      {p.features.map((f, i) => (
-                        <li key={i} style={{ marginBottom: '0.35rem' }}>✓ {f}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
+              <div style={{ marginBottom: '1.75rem' }}>
+                <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 8: Plan Selection & Instant UPI Activation</h2>
+                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
+                  Select your clinic’s subscription tier. Pay directly via UPI without Razorpay for instant activation.
+                </p>
               </div>
 
-              {/* UPI Payment Box */}
+              {/* Plan Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+                {PRICING_PLANS.map(p => {
+                  const isSelected = selectedPlan === p.id;
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => setSelectedPlan(p.id as any)}
+                      style={{
+                        padding: '1.75rem 1.5rem 1.5rem',
+                        borderRadius: '16px',
+                        border: `2px solid ${isSelected ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))'}`,
+                        background: isSelected ? 'hsla(221, 83%, 58%, 0.1)' : 'hsl(var(--color-surface-2))',
+                        cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'visible',
+                        marginTop: '0.75rem',
+                        transition: 'all 0.2s ease',
+                        boxShadow: isSelected ? '0 0 24px hsla(221, 83%, 58%, 0.25)' : 'none',
+                      }}
+                    >
+                      {p.badge && (
+                        <div style={{
+                          position: 'absolute',
+                          top: -11,
+                          right: 16,
+                          background: 'var(--gradient-brand)',
+                          color: 'white',
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '9999px',
+                          boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+                          zIndex: 10,
+                          letterSpacing: '0.02em',
+                        }}>
+                          {p.badge}
+                        </div>
+                      )}
+                      <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.35rem' }}>{p.name}</div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f8fafc', marginBottom: '0.35rem' }}>
+                        {p.price}<span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', fontWeight: 500 }}>/mo</span>
+                      </div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'hsl(221 83% 70%)', marginBottom: '1rem' }}>
+                        {p.chats}
+                      </div>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
+                        {p.features.map((f, i) => (
+                          <li key={i} style={{ marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <span style={{ color: '#4ade80' }}>✓</span> {f}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* UPI Instant Payment Card */}
               <div style={{
-                background: 'hsl(var(--color-surface))',
+                background: 'hsl(var(--color-surface-2))',
                 borderRadius: '16px',
                 border: '1px solid hsl(var(--color-border))',
-                padding: '1.5rem',
+                padding: '1.75rem',
                 display: 'grid',
-                gridTemplateColumns: '180px 1fr',
-                gap: '1.5rem',
+                gridTemplateColumns: 'minmax(180px, 200px) 1fr',
+                gap: '1.75rem',
                 alignItems: 'center',
               }}>
-                {/* QR Display */}
+                {/* Visual UPI QR Card */}
                 <div style={{
                   background: 'white',
-                  borderRadius: '12px',
-                  padding: '0.75rem',
+                  borderRadius: '14px',
+                  padding: '1rem',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   textAlign: 'center',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
                 }}>
-                  <div style={{
-                    width: 140,
-                    height: 140,
-                    background: 'radial-gradient(circle, #000 10%, #fff 11%, #fff 20%, #000 21%, #000 30%, #fff 31%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#000',
-                    fontWeight: 800,
-                    fontSize: '0.75rem',
-                  }}>
-                    UPI QR CODE
+                  {/* Crisp SVG QR Code Representation */}
+                  <div style={{ width: 140, height: 140, background: '#f8fafc', padding: 8, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg viewBox="0 0 100 100" width="124" height="124" fill="#0f172a">
+                      <rect x="0" y="0" width="30" height="30" rx="3" fill="#0f172a"/>
+                      <rect x="5" y="5" width="20" height="20" rx="2" fill="#ffffff"/>
+                      <rect x="9" y="9" width="12" height="12" rx="1" fill="#0f172a"/>
+                      <rect x="70" y="0" width="30" height="30" rx="3" fill="#0f172a"/>
+                      <rect x="75" y="5" width="20" height="20" rx="2" fill="#ffffff"/>
+                      <rect x="79" y="9" width="12" height="12" rx="1" fill="#0f172a"/>
+                      <rect x="0" y="70" width="30" height="30" rx="3" fill="#0f172a"/>
+                      <rect x="5" y="75" width="20" height="20" rx="2" fill="#ffffff"/>
+                      <rect x="9" y="79" width="12" height="12" rx="1" fill="#0f172a"/>
+                      <rect x="40" y="10" width="8" height="20" fill="#0f172a"/>
+                      <rect x="10" y="40" width="20" height="8" fill="#0f172a"/>
+                      <rect x="40" y="40" width="20" height="20" rx="2" fill="#0f172a"/>
+                      <rect x="65" y="45" width="25" height="8" fill="#0f172a"/>
+                      <rect x="45" y="70" width="10" height="25" fill="#0f172a"/>
+                      <rect x="70" y="70" width="25" height="25" rx="2" fill="#0f172a"/>
+                    </svg>
                   </div>
-                  <div style={{ color: '#333', fontSize: '0.7rem', fontWeight: 700, marginTop: '0.35rem' }}>
-                    Scan with GPay / PhonePe / Paytm
+                  <div style={{ color: '#0f172a', fontSize: '0.75rem', fontWeight: 700, marginTop: '0.5rem' }}>
+                    UPI Instant Payment
+                  </div>
+                  <div style={{ color: '#64748b', fontSize: '0.65rem' }}>
+                    GPay • PhonePe • Paytm • BHIM
                   </div>
                 </div>
 
-                {/* UPI Details & UTR Input */}
-                <div>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>Platform UPI VPA:</div>
-                    <div style={{ fontSize: '1rem', fontWeight: 700, color: 'hsl(var(--color-primary))', fontFamily: 'monospace' }}>
-                      frontdesk@icici (or clinicfront@upi)
+                {/* VPA Details & UTR Input */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{
+                    padding: '0.875rem 1rem',
+                    borderRadius: '10px',
+                    background: 'hsl(var(--color-surface))',
+                    border: '1px solid hsl(var(--color-border))',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Official Clinic UPI VPA:
+                      </div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#93c5fd', fontFamily: 'monospace' }}>
+                        {PLATFORM_UPI_VPA}
+                      </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyVpa}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      {copiedVpa ? '✓ Copied' : '📋 Copy VPA'}
+                    </button>
                   </div>
 
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label className="label">12-Digit Bank UTR / Transaction Reference</label>
+                  <div className="form-field">
+                    <label className="label">
+                      <span>🧾</span> 12-Digit Bank UTR / UPI Transaction Reference
+                    </label>
                     <input
                       className="input"
                       value={utrNumber}
                       onChange={e => setUtrNumber(e.target.value)}
                       placeholder="e.g. 429104928104 (from your UPI receipt)"
                     />
-                  </div>
-
-                  <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                    💡 Once submitted, our automated verification activates your AI receptionist instantly.
+                    <span className="form-hint">
+                      💡 Automated verification activates your AI receptionist within seconds of UTR submission.
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Navigation Buttons */}
+          {/* Wizard Footer Navigation */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginTop: '2rem',
+            marginTop: '2.5rem',
             paddingTop: '1.5rem',
             borderTop: '1px solid hsl(var(--color-border))',
           }}>
@@ -896,6 +1502,7 @@ export default function OnboardingPage() {
                 className="btn btn-secondary"
                 onClick={() => setCurrentStep(currentStep - 1)}
                 disabled={isSubmitting}
+                style={{ padding: '0.75rem 1.5rem' }}
               >
                 ← Back
               </button>
@@ -909,18 +1516,25 @@ export default function OnboardingPage() {
                 className="btn btn-primary"
                 onClick={handleNext}
                 disabled={isSubmitting}
+                style={{ padding: '0.75rem 1.75rem', fontSize: '0.95rem' }}
               >
-                {isSubmitting ? 'Saving...' : 'Next Step →'}
+                {isSubmitting ? 'Saving Progress...' : 'Next Step →'}
               </button>
             ) : (
               <button
                 type="button"
                 className="btn btn-primary"
-                style={{ background: 'linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(160 84% 39%) 100%)' }}
+                style={{
+                  background: 'linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(160 84% 39%) 100%)',
+                  padding: '0.875rem 2rem',
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  boxShadow: '0 4px 20px hsla(142, 71%, 45%, 0.4)',
+                }}
                 onClick={handleCompleteActivation}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Activating...' : '🚀 Activate AI Receptionist'}
+                {isSubmitting ? 'Activating...' : '🚀 Complete Activation & Launch'}
               </button>
             )}
           </div>

@@ -70,7 +70,7 @@ PURPOSE: Help patients with:
 
 IDENTITY: You are an AI receptionist.${agentConfig.identifies_as_ai ? ' If asked, confirm you are an AI assistant.' : ''}
 TONE: ${agentConfig.tone}
-LANGUAGES: ${agentConfig.supported_languages.join(', ')}
+LANGUAGES: ${(agentConfig.supported_languages ?? ['English', 'Hindi']).join(', ')}
 EMOJI USE: ${agentConfig.use_emoji ? 'Use emojis sparingly to be friendly' : 'Do not use emojis'}
 RESPONSE LENGTH: Keep responses under ${agentConfig.max_response_length} characters. Be concise and conversational.
 GREETING: "${agentConfig.greeting_message ?? `Hello! I'm ${agentConfig.assistant_name} from ${clinicProfile.clinic_name}. How can I help you today?`}"
@@ -83,7 +83,7 @@ ${clinicProfile.phone ? `Phone: ${clinicProfile.phone}` : ''}
 ${clinicProfile.email ? `Email: ${clinicProfile.email}` : ''}
 ${clinicProfile.website ? `Website: ${clinicProfile.website}` : ''}
 Timezone: ${clinicProfile.timezone}
-Languages: ${clinicProfile.supported_languages.join(', ')}
+Languages: ${(clinicProfile.supported_languages ?? ['English', 'Hindi']).join(', ')}
 
 === SERVICES & PRICING ===
 ${servicesText || 'Please contact the clinic for service information.'}

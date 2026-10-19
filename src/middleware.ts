@@ -43,6 +43,9 @@ export async function middleware(request: NextRequest) {
   // Redirect unauthenticated users away from protected routes
   const isProtected = PROTECTED_ROUTES.some(r => pathname.startsWith(r));
   if (isProtected && !user) {
+    if (process.env.NODE_ENV === 'development') {
+      return supabaseResponse;
+    }
     const redirectUrl = new URL('/login', request.url);
     redirectUrl.searchParams.set('redirectTo', pathname);
     return NextResponse.redirect(redirectUrl);

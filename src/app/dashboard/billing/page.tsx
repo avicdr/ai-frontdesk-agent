@@ -12,10 +12,12 @@ export default function BillingPage() {
   const [utrSuccess, setUtrSuccess] = useState(false);
   const [showUpiModal, setShowUpiModal] = useState(false);
 
+  const upiVpa = process.env.NEXT_PUBLIC_PLATFORM_UPI_ID || process.env.NEXT_PUBLIC_UPI_VPA || 'aviwasasleep@ptaxis';
+
   const plans = [
-    { id: 'starter', name: 'Starter', price: '₹2,499', chatsQuota: 500, priceVal: 2499 },
-    { id: 'pro', name: 'Pro (Recommended)', price: '₹4,999', chatsQuota: 2000, priceVal: 4999, popular: true },
-    { id: 'growth', name: 'Clinic Growth', price: '₹8,999', chatsQuota: 5000, priceVal: 8999 },
+    { id: 'starter', name: 'Starter Practice', price: '₹999', chatsQuota: 500, priceVal: 999 },
+    { id: 'pro', name: 'Pro Clinic (Recommended)', price: '₹1,599', chatsQuota: 2000, priceVal: 1599, popular: true },
+    { id: 'growth', name: 'Growth & Multi-Doctor', price: '₹2,999', chatsQuota: 5000, priceVal: 2999 },
   ];
 
   const handleUtrSubmit = async (e: React.FormEvent) => {
@@ -88,7 +90,7 @@ export default function BillingPage() {
               </span>
               <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Pro Clinic Plan</h2>
               <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>
-                ₹4,999 / month • Renews on 19th of every month
+                ₹1,599 / month • Renews on 19th of every month
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -138,22 +140,27 @@ export default function BillingPage() {
             key={p.id}
             className="card"
             style={{
-              padding: '1.5rem',
+              padding: '1.75rem 1.5rem 1.5rem',
               border: p.popular ? '2px solid hsl(var(--color-primary))' : '1px solid hsl(var(--color-border))',
               position: 'relative',
+              overflow: 'visible',
+              marginTop: '0.75rem',
             }}
           >
             {p.popular && (
               <span style={{
                 position: 'absolute',
                 top: -12,
-                right: 16,
+                right: 20,
                 background: 'var(--gradient-brand)',
                 color: 'white',
-                fontSize: '0.7rem',
+                fontSize: '0.72rem',
                 fontWeight: 700,
-                padding: '0.2rem 0.6rem',
+                padding: '0.25rem 0.75rem',
                 borderRadius: '9999px',
+                zIndex: 10,
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+                letterSpacing: '0.02em',
               }}>
                 Current Plan
               </span>
@@ -258,10 +265,10 @@ export default function BillingPage() {
                 UPI QR CODE
               </div>
               <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white' }}>
-                ₹4,999.00
+                ₹1,599.00
               </div>
               <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>
-                VPA: <span style={{ color: 'hsl(var(--color-primary))', fontWeight: 700 }}>frontdesk@icici</span>
+                VPA: <span style={{ color: 'hsl(var(--color-primary))', fontWeight: 700 }}>{upiVpa}</span>
               </div>
             </div>
 

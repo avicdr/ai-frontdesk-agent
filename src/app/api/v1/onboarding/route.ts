@@ -180,16 +180,52 @@ export async function PUT(request: NextRequest) {
     const user = await requireServerUser();
     const admin = createSupabaseAdminClient();
 
-    const { data: membership } = await admin
+    let { data: membership } = await admin
       .from('organization_memberships')
       .select('organization_id')
       .eq('user_id', user.id)
-      .single();
-
-    if (!membership) return Errors.forbidden();
+      .maybeSingle();
 
     const body = await request.json();
-    const orgId = membership.organization_id;
+    let orgId: string;
+
+    if (!membership) {
+      const orgName = body.clinicInfo?.clinicName || 'Apex Dental & Orthodontics';
+      const { data: newOrg } = await admin
+        .from('organizations')
+        .insert({
+          name: orgName,
+          slug: `clinic-${user.id.slice(0, 8)}`,
+          country: 'IN',
+          timezone: body.clinicInfo?.timezone || 'Asia/Kolkata',
+          status: 'active',
+        })
+        .select()
+        .single();
+
+      if (newOrg) {
+        await admin.from('organization_memberships').insert({
+          organization_id: newOrg.id,
+          user_id: user.id,
+          role: 'owner',
+          accepted_at: new Date().toISOString(),
+        });
+
+        await admin.from('clinic_profiles').insert({
+          organization_id: newOrg.id,
+          clinic_name: orgName,
+          country: 'IN',
+          timezone: body.clinicInfo?.timezone || 'Asia/Kolkata',
+          onboarding_step: body.step || 8,
+        });
+
+        orgId = newOrg.id;
+      } else {
+        return Errors.internalError();
+      }
+    } else {
+      orgId = membership.organization_id;
+    }
 
     // 1. Update clinic profile
     if (body.clinicInfo) {

@@ -92,18 +92,51 @@ export class GeminiProvider implements AIProvider {
       },
     });
 
-    // Convert messages to Gemini format
-    const history = request.messages.slice(0, -1).map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
-    const lastMessage = request.messages[request.messages.length - 1];
+    // Convert messages to Gemini format ensuring strict compliance:
+    // 1. History must start with role 'user' (never 'model')
+    // 2. Roles must strictly alternate: 'user' -> 'model' -> 'user' -> 'model'
+    // 3. Last message must be sent via sendMessage
+    const rawMessages = request.messages.filter(m => m.content && m.content.trim().length > 0);
+    const lastMsg = rawMessages.length > 0
+      ? rawMessages[rawMessages.length - 1]
+      : { role: 'user' as const, content: 'Hello' };
+    const prior = rawMessages.slice(0, -1);
+
+    const history: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+
+    // Skip any leading assistant/greeting messages so history begins with a user turn
+    const firstUserIndex = prior.findIndex(m => m.role === 'user');
+    if (firstUserIndex !== -1) {
+      const validPrior = prior.slice(firstUserIndex);
+      for (const m of validPrior) {
+        const geminiRole = m.role === 'assistant' ? 'model' : 'user';
+        if (history.length === 0) {
+          if (geminiRole === 'user') {
+            history.push({ role: 'user', parts: [{ text: m.content }] });
+          }
+        } else {
+          const lastRole = history[history.length - 1].role;
+          if (lastRole === geminiRole) {
+            history[history.length - 1].parts[0].text += '\n\n' + m.content;
+          } else {
+            history.push({ role: geminiRole, parts: [{ text: m.content }] });
+          }
+        }
+      }
+    }
+
+    // Ensure history does not end with 'user' right before sendMessage sends another user turn
+    let messageToSend = lastMsg.content;
+    if (history.length > 0 && history[history.length - 1].role === 'user') {
+      const popped = history.pop()!;
+      messageToSend = popped.parts[0].text + '\n\n' + messageToSend;
+    }
 
     const requestId = nanoid(12);
     const startTime = Date.now();
 
     const chat = model.startChat({ history });
-    const result = await chat.sendMessage(lastMessage.content);
+    const result = await chat.sendMessage(messageToSend);
     const latencyMs = Date.now() - startTime;
 
     const response = result.response;
@@ -125,7 +158,8 @@ export class GeminiProvider implements AIProvider {
   }
 
   async isAvailable(): Promise<boolean> {
-    return !!process.env.GEMINI_API_KEY;
+    const key = process.env.GEMINI_API_KEY;
+    return !!key && key.trim() !== '' && !key.includes('your-gemini-api-key');
   }
 }
 
@@ -178,7 +212,8 @@ export class OpenAIProvider implements AIProvider {
   }
 
   async isAvailable(): Promise<boolean> {
-    return !!process.env.OPENAI_API_KEY;
+    const key = process.env.OPENAI_API_KEY;
+    return !!key && key.trim() !== '' && !key.includes('your-openai-api-key');
   }
 }
 

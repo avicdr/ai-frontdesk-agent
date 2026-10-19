@@ -41,58 +41,55 @@ const features = [
 
 const plans = [
   {
-    name: 'Starter',
+    name: 'Starter Practice',
     price: '₹999',
     period: 'per month',
-    description: 'Perfect for small clinics',
+    description: 'Perfect for small clinics getting started with AI',
     features: [
       '500 inbound messages/month',
       '300 AI requests/month',
       'WhatsApp integration',
-      'Google Calendar sync',
-      '10 services',
-      '20 knowledge documents',
+      'Operating hours logic',
+      'Gemini 1.5 Flash AI',
+      '10 dental services',
       '3-day grace period',
     ],
     cta: 'Get Started',
     highlighted: false,
   },
   {
-    name: 'Growth',
-    price: '₹2,499',
+    name: 'Pro Clinic',
+    price: '₹1,599',
     period: 'per month',
-    description: 'For growing clinics',
+    description: 'Recommended for active dental practices',
     features: [
       '2,000 inbound messages/month',
       '1,200 AI requests/month',
-      'WhatsApp integration',
-      'Google Calendar sync',
-      '30 services',
-      '50 knowledge documents',
+      'Google Calendar 2-way sync',
+      'OpenAI auto-fallback',
+      'Unlimited bookings',
+      'Live human takeover inbox',
       'Appointment reminders',
-      'Advanced analytics',
       '7-day grace period',
     ],
-    cta: 'Get Started',
+    cta: 'Start Free Trial',
     highlighted: true,
   },
   {
-    name: 'Pro',
-    price: '₹4,999',
+    name: 'Growth & Multi-Doctor',
+    price: '₹2,999',
     period: 'per month',
-    description: 'For high-volume clinics',
+    description: 'For growing clinics with multi-doctor rosters',
     features: [
       '10,000 inbound messages/month',
       '5,000 AI requests/month',
-      'WhatsApp integration',
-      'Google Calendar sync',
-      'Unlimited services',
-      '200 knowledge documents',
-      'Priority support',
-      'Advanced workflows',
+      'Multi-doctor calendar sync',
+      'Custom clinical voice & knowledge',
+      'Priority WhatsApp webhooks',
+      'Dedicated account manager',
       '14-day grace period',
     ],
-    cta: 'Get Started',
+    cta: 'Contact Sales',
     highlighted: false,
   },
 ];
@@ -351,14 +348,30 @@ export default function LandingPage() {
               key={plan.name}
               className={plan.highlighted ? 'card glow-border' : 'card'}
               style={{
-                padding: '2rem',
+                padding: '2.25rem 2rem 2rem',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
+                overflow: 'visible',
+                marginTop: '0.75rem',
               }}
             >
               {plan.highlighted && (
-                <div className="badge badge-info" style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>
+                <div
+                  className="badge badge-info"
+                  style={{
+                    position: 'absolute',
+                    top: '-13px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    whiteSpace: 'nowrap',
+                    zIndex: 10,
+                    boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+                    padding: '0.3rem 0.9rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                  }}
+                >
                   ⭐ Most Popular
                 </div>
               )}

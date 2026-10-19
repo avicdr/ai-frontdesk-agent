@@ -63,6 +63,9 @@ export default function AgentTestPage() {
         if (json.data.executionLog) {
           setExecutions(json.data.executionLog);
         }
+      } else {
+        const errorMsg = json.error?.message || 'Received unexpected response from server.';
+        setMessages([...newMessages, { role: 'assistant', content: `⚠️ ${errorMsg}` }]);
       }
     } catch (e) {
       console.error(e);

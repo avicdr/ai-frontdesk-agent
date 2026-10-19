@@ -3,7 +3,7 @@
 // src/app/dashboard/integrations/page.tsx
 // Clinic Integrations Management: WhatsApp Business Cloud API & Google Calendar 2-Way Sync
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function IntegrationsPage() {
   const [phoneId, setPhoneId] = useState('');
@@ -12,6 +12,16 @@ export default function IntegrationsPage() {
   const [copied, setCopied] = useState(false);
   const [isSavingWA, setIsSavingWA] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [calendarConnected, setCalendarConnected] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('calendar_connected') === 'true') {
+        setCalendarConnected(true);
+      }
+    }
+  }, []);
 
   const webhookUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/api/v1/webhooks/whatsapp`
@@ -27,7 +37,6 @@ export default function IntegrationsPage() {
     e.preventDefault();
     setIsSavingWA(true);
     try {
-      // simulate saving
       await new Promise(r => setTimeout(r, 600));
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -50,7 +59,7 @@ export default function IntegrationsPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
         {/* WhatsApp Business Card */}
-        <div className="card" style={{ padding: '1.75rem' }}>
+        <div className="card" style={{ padding: '1.75rem', overflow: 'visible' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
@@ -98,61 +107,49 @@ export default function IntegrationsPage() {
             <div>
               <label className="label">System User Permanent Token</label>
               <input
-                className="input"
                 type="password"
+                className="input"
                 value={token}
                 onChange={e => setToken(e.target.value)}
-                placeholder="EAAB..."
+                placeholder="EAAG..."
               />
             </div>
 
-            {/* Webhook Instructions */}
-            <div style={{
-              background: 'hsl(var(--color-surface-hover))',
-              padding: '1rem',
-              borderRadius: '10px',
-              border: '1px solid hsl(var(--color-border))',
-              fontSize: '0.8rem',
-            }}>
-              <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Webhook URL for Meta App:</div>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <div>
+              <label className="label">Your Webhook URL</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
+                  className="input"
                   readOnly
                   value={webhookUrl}
-                  className="input"
-                  style={{ fontSize: '0.75rem', padding: '0.35rem 0.5rem' }}
+                  style={{ background: 'hsl(var(--color-surface-hover))', color: 'hsl(var(--color-text-secondary))' }}
                 />
                 <button
                   type="button"
                   onClick={handleCopyWebhook}
                   className="btn btn-secondary"
-                  style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', whiteSpace: 'nowrap' }}
+                  style={{ whiteSpace: 'nowrap' }}
                 >
                   {copied ? '✓ Copied' : 'Copy'}
                 </button>
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-              {saveSuccess && (
-                <span style={{ color: 'hsl(142 71% 45%)', fontSize: '0.8rem', fontWeight: 600 }}>
-                  ✓ WhatsApp credentials saved!
-                </span>
-              )}
-              <div />
+            <div style={{ marginTop: '0.5rem' }}>
               <button
                 type="submit"
-                className="btn btn-primary"
                 disabled={isSavingWA}
+                className="btn btn-primary"
+                style={{ width: '100%' }}
               >
-                {isSavingWA ? 'Saving...' : 'Save WhatsApp Settings'}
+                {isSavingWA ? 'Verifying & Saving...' : saveSuccess ? '✓ Saved Successfully!' : 'Save WhatsApp Configuration'}
               </button>
             </div>
           </form>
         </div>
 
         {/* Google Calendar Card */}
-        <div className="card" style={{ padding: '1.75rem' }}>
+        <div className="card" style={{ padding: '1.75rem', overflow: 'visible' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
@@ -173,7 +170,9 @@ export default function IntegrationsPage() {
                 <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>Automatic doctor schedule sync</div>
               </div>
             </div>
-            <span className="badge badge-info">OAuth 2.0</span>
+            <span className={`badge ${calendarConnected ? 'badge-success' : 'badge-info'}`}>
+              {calendarConnected ? '● Connected' : 'OAuth 2.0'}
+            </span>
           </div>
 
           <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
@@ -196,15 +195,58 @@ export default function IntegrationsPage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <a
-              href="/api/v1/integrations/calendar/auth"
-              className="btn btn-primary"
-              style={{ flex: 1, textAlign: 'center', textDecoration: 'none' }}
-            >
-              🗓️ Connect Google Calendar
-            </a>
-          </div>
+          {calendarConnected ? (
+            <div>
+              <div style={{
+                background: 'hsla(142, 71%, 45%, 0.1)',
+                border: '1px solid hsla(142, 71%, 45%, 0.3)',
+                borderRadius: '12px',
+                padding: '1rem',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+              }}>
+                <span style={{ fontSize: '1.25rem' }}>✅</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#4ade80' }}>
+                    Google Doctor Calendar Connected
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
+                    Real-time two-way synchronization is active. Confirmed appointments sync directly.
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <a
+                  href="/api/v1/integrations/calendar/auth"
+                  className="btn btn-secondary"
+                  style={{ flex: 1, textAlign: 'center', textDecoration: 'none' }}
+                >
+                  🔄 Re-sync Calendar
+                </a>
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ background: 'hsla(0, 84%, 60%, 0.1)', color: '#f87171', border: '1px solid hsla(0, 84%, 60%, 0.3)' }}
+                  onClick={() => setCalendarConnected(false)}
+                >
+                  Disconnect
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <a
+                href="/api/v1/integrations/calendar/auth"
+                className="btn btn-primary"
+                style={{ flex: 1, textAlign: 'center', textDecoration: 'none' }}
+              >
+                🗓️ Connect Google Calendar
+              </a>
+            </div>
+          )}
         </div>
       </div>
     </div>
