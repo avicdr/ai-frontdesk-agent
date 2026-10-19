@@ -1,19 +1,9 @@
-import { requireServerUser, createSupabaseAdminClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { requireSuperAdmin } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminUsagePage() {
-  const user = await requireServerUser();
-  const admin = createSupabaseAdminClient();
-
-  const { data: profile } = await admin
-    .from('user_profiles')
-    .select('is_super_admin')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile?.is_super_admin) redirect('/dashboard');
+  const { admin } = await requireSuperAdmin();
 
   const { data: records } = await admin
     .from('ai_usage_records')

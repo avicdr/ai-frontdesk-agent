@@ -29,19 +29,20 @@ export async function createPaymentOrder(
 }> {
   const admin = createSupabaseAdminClient();
 
-  // Get plan details
-  const { data: plan } = await admin
+  // Get plan details (support both UUID and slug)
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(planId);
+  const planQuery = admin
     .from('subscription_plans')
-    .select('price_inr, name')
-    .eq('id', planId)
-    .eq('is_active', true)
-    .single();
+    .select('id, price_inr, name')
+    .eq('is_active', true);
+
+  const { data: plan } = await (isUuid ? planQuery.eq('id', planId) : planQuery.eq('slug', planId)).maybeSingle();
 
   if (!plan) {
     return { success: false, error: 'Plan not found or not active.' };
   }
 
-  const idempotencyKey = `order:${organizationId}:${planId}:${Date.now()}`;
+  const idempotencyKey = `order:${organizationId}:${plan.id}:${Date.now()}`;
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
   // Create payment order record first
@@ -49,7 +50,7 @@ export async function createPaymentOrder(
     .from('payment_orders')
     .insert({
       organization_id: organizationId,
-      plan_id: planId,
+      plan_id: plan.id,
       provider: process.env.PAYMENT_PROVIDER ?? 'manual',
       amount_inr: plan.price_inr,
       currency: 'INR',
@@ -187,7 +188,7 @@ export async function activateSubscription(
   // Get the order
   const { data: order } = await admin
     .from('payment_orders')
-    .select('*, subscription_plans(grace_period_days, billing_cycle)')
+    .select('*, subscription_plans(name, grace_period_days, billing_cycle)')
     .eq('id', orderId)
     .single();
 
@@ -290,12 +291,13 @@ export async function activateSubscription(
 
   // 5. Generate receipt number
   const receiptNumber = `RCP-${Date.now()}-${nanoid(6).toUpperCase()}`;
+  const planName = (order.subscription_plans as any)?.name || 'Pro Practice';
   await admin.from('receipts').insert({
     organization_id: order.organization_id,
     payment_transaction_id: transaction.id,
     receipt_number: receiptNumber,
     amount_inr: order.amount_inr,
-    plan_name: '', // Will be populated via join
+    plan_name: planName,
     billing_period_start: now.toISOString().slice(0, 10),
     billing_period_end: expiresAt.toISOString().slice(0, 10),
   });

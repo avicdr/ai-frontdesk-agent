@@ -1,48 +1,178 @@
 'use client';
 
 // src/app/dashboard/integrations/page.tsx
-// Clinic Integrations Management: WhatsApp Business Cloud API & Google Calendar 2-Way Sync
+// Clinic Integrations Management: Baileys WhatsApp Multi-Device (QR & Pairing Code) & Google Calendar
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 export default function IntegrationsPage() {
-  const [phoneId, setPhoneId] = useState('');
-  const [wabaId, setWabaId] = useState('');
-  const [token, setToken] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [isSavingWA, setIsSavingWA] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  // WhatsApp Baileys State
+  const [waMode, setWaMode] = useState<'qr' | 'pairing_code'>('qr');
+  const [waStatus, setWaStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [connectedNumber, setConnectedNumber] = useState<string | null>(null);
+  const [isLoadingWA, setIsLoadingWA] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [waError, setWaError] = useState<string | null>(null);
+
+  // Google Calendar State
   const [calendarConnected, setCalendarConnected] = useState(false);
 
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initial load: Fetch current session status
   useEffect(() => {
+    fetchSessionStatus();
+
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('calendar_connected') === 'true') {
         setCalendarConnected(true);
       }
     }
+
+    return () => stopPolling();
   }, []);
 
-  const webhookUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/api/v1/webhooks/whatsapp`
-    : 'https://your-domain.com/api/v1/webhooks/whatsapp';
-
-  const handleCopyWebhook = () => {
-    navigator.clipboard.writeText(webhookUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const stopPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
   };
 
-  const handleSaveWhatsApp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSavingWA(true);
+  const startPolling = () => {
+    stopPolling();
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await fetch('/api/v1/integrations/whatsapp/session');
+        const json = await res.json();
+        if (json.success && json.data) {
+          const { status, qrCode: qr, pairingCode: pc, phoneNumber: pn, error } = json.data;
+          setWaStatus(status);
+          if (status === 'connected') {
+            setConnectedNumber(pn ? `+${pn}` : null);
+            setQrCode(null);
+            setPairingCode(null);
+            stopPolling();
+          } else if (status === 'connecting') {
+            if (qr) setQrCode(qr);
+            if (pc) setPairingCode(pc);
+          } else if (status === 'disconnected') {
+            setQrCode(null);
+            setPairingCode(null);
+            if (error) setWaError(error);
+          }
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    }, 2500);
+  };
+
+  const fetchSessionStatus = async () => {
     try {
-      await new Promise(r => setTimeout(r, 600));
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } finally {
-      setIsSavingWA(false);
+      const res = await fetch('/api/v1/integrations/whatsapp/session');
+      const json = await res.json();
+      if (json.success && json.data) {
+        const { status, qrCode: qr, pairingCode: pc, phoneNumber: pn } = json.data;
+        setWaStatus(status);
+        if (status === 'connected') {
+          setConnectedNumber(pn ? `+${pn}` : null);
+        } else if (status === 'connecting') {
+          if (qr) setQrCode(qr);
+          if (pc) setPairingCode(pc);
+          startPolling();
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching session:', err);
     }
+  };
+
+  const handleStartQR = async () => {
+    setIsLoadingWA(true);
+    setWaError(null);
+    setQrCode(null);
+    try {
+      const res = await fetch('/api/v1/integrations/whatsapp/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'qr' }),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setWaStatus(json.data.status);
+        if (json.data.qrCode) setQrCode(json.data.qrCode);
+        startPolling();
+      } else {
+        setWaError(json.error?.message || 'Could not initiate QR code.');
+      }
+    } catch {
+      setWaError('Network error starting WhatsApp session.');
+    } finally {
+      setIsLoadingWA(false);
+    }
+  };
+
+  const handleRequestPairingCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phoneNumber.trim()) {
+      setWaError('Please enter a valid phone number with country code.');
+      return;
+    }
+    setIsLoadingWA(true);
+    setWaError(null);
+    setPairingCode(null);
+    try {
+      const res = await fetch('/api/v1/integrations/whatsapp/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'pairing_code', phoneNumber }),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setWaStatus(json.data.status);
+        if (json.data.pairingCode) {
+          setPairingCode(json.data.pairingCode);
+        }
+        startPolling();
+      } else {
+        setWaError(json.error?.message || 'Could not generate pairing code.');
+      }
+    } catch {
+      setWaError('Network error requesting pairing code.');
+    } finally {
+      setIsLoadingWA(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!confirm('Are you sure you want to unlink WhatsApp? The AI Receptionist will stop answering patient chats until reconnected.')) {
+      return;
+    }
+    stopPolling();
+    setIsLoadingWA(true);
+    try {
+      await fetch('/api/v1/integrations/whatsapp/session', { method: 'DELETE' });
+      setWaStatus('disconnected');
+      setConnectedNumber(null);
+      setQrCode(null);
+      setPairingCode(null);
+    } catch (err) {
+      console.error('Disconnect error:', err);
+    } finally {
+      setIsLoadingWA(false);
+    }
+  };
+
+  const handleCopyCode = () => {
+    if (!pairingCode) return;
+    navigator.clipboard.writeText(pairingCode.replace('-', ''));
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
   };
 
   return (
@@ -53,13 +183,14 @@ export default function IntegrationsPage() {
           🔗 Channels & Integrations
         </h1>
         <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>
-          Connect your official WhatsApp Business number and clinic Google Calendar.
+          Connect your clinic WhatsApp number (via Linked Devices) and Google Calendar.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-        {/* WhatsApp Business Card */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '1.5rem', alignItems: 'start' }}>
+        {/* WhatsApp Card */}
         <div className="card" style={{ padding: '1.75rem', overflow: 'visible' }}>
+          {/* Card Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
@@ -76,76 +207,288 @@ export default function IntegrationsPage() {
                 💬
               </div>
               <div>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>WhatsApp Business Platform</h2>
-                <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>Meta Cloud API (Official)</div>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>WhatsApp Web & Multi-Device</h2>
+                <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
+                  No Meta Developer Account required
+                </div>
               </div>
             </div>
-            <span className="badge badge-success">Available</span>
+            <span className={`badge ${waStatus === 'connected' ? 'badge-success' : waStatus === 'connecting' ? 'badge-info' : 'badge-warning'}`}>
+              {waStatus === 'connected' ? '● Connected' : waStatus === 'connecting' ? '⌛ Connecting...' : 'Disconnected'}
+            </span>
           </div>
 
-          <form onSubmit={handleSaveWhatsApp} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Connected State */}
+          {waStatus === 'connected' ? (
             <div>
-              <label className="label">Phone Number ID</label>
-              <input
-                className="input"
-                value={phoneId}
-                onChange={e => setPhoneId(e.target.value)}
-                placeholder="e.g. 104829104810294"
-              />
-            </div>
-
-            <div>
-              <label className="label">WhatsApp Business Account ID (WABA ID)</label>
-              <input
-                className="input"
-                value={wabaId}
-                onChange={e => setWabaId(e.target.value)}
-                placeholder="e.g. 10928392019283"
-              />
-            </div>
-
-            <div>
-              <label className="label">System User Permanent Token</label>
-              <input
-                type="password"
-                className="input"
-                value={token}
-                onChange={e => setToken(e.target.value)}
-                placeholder="EAAG..."
-              />
-            </div>
-
-            <div>
-              <label className="label">Your Webhook URL</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  className="input"
-                  readOnly
-                  value={webhookUrl}
-                  style={{ background: 'hsl(var(--color-surface-hover))', color: 'hsl(var(--color-text-secondary))' }}
-                />
-                <button
-                  type="button"
-                  onClick={handleCopyWebhook}
-                  className="btn btn-secondary"
-                  style={{ whiteSpace: 'nowrap' }}
-                >
-                  {copied ? '✓ Copied' : 'Copy'}
-                </button>
+              <div style={{
+                background: 'hsla(142, 71%, 45%, 0.1)',
+                border: '1px solid hsla(142, 71%, 45%, 0.3)',
+                borderRadius: '12px',
+                padding: '1.25rem',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+              }}>
+                <div style={{ fontSize: '2rem' }}>📱</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: '1rem', color: '#4ade80' }}>
+                    Connected as {connectedNumber || 'Clinic Device'}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))', marginTop: '0.2rem' }}>
+                    Your 24/7 AI Receptionist is active. Messages sent to this number are handled automatically.
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div style={{ marginTop: '0.5rem' }}>
+              <div style={{
+                background: 'hsl(var(--color-surface-hover))',
+                borderRadius: '10px',
+                padding: '0.85rem 1rem',
+                border: '1px solid hsl(var(--color-border))',
+                marginBottom: '1.25rem',
+                fontSize: '0.75rem',
+                color: 'hsl(var(--color-text-muted))',
+                lineHeight: 1.5,
+              }}>
+                💡 <strong>Persistent Multi-Device Session:</strong> Your session credentials are encrypted and stored in your database. You will remain connected across reboots as long as your phone connects to the internet once every 14 days.
+              </div>
+
               <button
-                type="submit"
-                disabled={isSavingWA}
-                className="btn btn-primary"
-                style={{ width: '100%' }}
+                type="button"
+                onClick={handleDisconnect}
+                disabled={isLoadingWA}
+                className="btn"
+                style={{
+                  width: '100%',
+                  background: 'hsla(0, 84%, 60%, 0.1)',
+                  color: '#f87171',
+                  border: '1px solid hsla(0, 84%, 60%, 0.3)',
+                  fontWeight: 600,
+                }}
               >
-                {isSavingWA ? 'Verifying & Saving...' : saveSuccess ? '✓ Saved Successfully!' : 'Save WhatsApp Configuration'}
+                {isLoadingWA ? 'Unlinking...' : 'Disconnect WhatsApp Number'}
               </button>
             </div>
-          </form>
+          ) : (
+            /* Disconnected / Connecting Setup */
+            <div>
+              <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                Link your phone directly just like WhatsApp Web. Choose to scan a QR code or enter an 8-character connection code on your mobile app.
+              </p>
+
+              {/* Mode Toggle Tabs */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '0.5rem',
+                background: 'hsl(var(--color-surface-hover))',
+                padding: '0.25rem',
+                borderRadius: '10px',
+                marginBottom: '1.25rem',
+              }}>
+                <button
+                  type="button"
+                  onClick={() => { setWaMode('qr'); setWaError(null); }}
+                  style={{
+                    padding: '0.6rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontWeight: 600,
+                    fontSize: '0.825rem',
+                    cursor: 'pointer',
+                    background: waMode === 'qr' ? 'hsl(var(--color-surface))' : 'transparent',
+                    color: waMode === 'qr' ? 'hsl(var(--color-text-primary))' : 'hsl(var(--color-text-muted))',
+                    boxShadow: waMode === 'qr' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  }}
+                >
+                  📷 Scan QR Code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setWaMode('pairing_code'); setWaError(null); }}
+                  style={{
+                    padding: '0.6rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontWeight: 600,
+                    fontSize: '0.825rem',
+                    cursor: 'pointer',
+                    background: waMode === 'pairing_code' ? 'hsl(var(--color-surface))' : 'transparent',
+                    color: waMode === 'pairing_code' ? 'hsl(var(--color-text-primary))' : 'hsl(var(--color-text-muted))',
+                    boxShadow: waMode === 'pairing_code' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  }}
+                >
+                  🔢 Link with Phone Code
+                </button>
+              </div>
+
+              {waError && (
+                <div style={{
+                  padding: '0.75rem',
+                  borderRadius: '8px',
+                  background: 'hsla(0, 84%, 60%, 0.1)',
+                  color: '#f87171',
+                  border: '1px solid hsla(0, 84%, 60%, 0.3)',
+                  fontSize: '0.8rem',
+                  marginBottom: '1rem',
+                }}>
+                  ⚠️ {waError}
+                </div>
+              )}
+
+              {/* Tab 1: QR Code */}
+              {waMode === 'qr' && (
+                <div style={{ textAlign: 'center' }}>
+                  {qrCode ? (
+                    <div>
+                      <div style={{
+                        display: 'inline-block',
+                        padding: '12px',
+                        background: '#ffffff',
+                        borderRadius: '16px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                        marginBottom: '1rem',
+                      }}>
+                        <img
+                          src={qrCode}
+                          alt="WhatsApp QR Code"
+                          style={{ width: 220, height: 220, display: 'block', borderRadius: '8px' }}
+                        />
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', marginBottom: '1rem' }}>
+                        Waiting for you to scan... (Auto-refreshing)
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{
+                      padding: '2rem 1rem',
+                      border: '2px dashed hsl(var(--color-border))',
+                      borderRadius: '12px',
+                      marginBottom: '1rem',
+                    }}>
+                      <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📷</div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem' }}>
+                        Generate Linked Device QR Code
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginBottom: '1rem' }}>
+                        Click below to generate a real-time QR code.
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleStartQR}
+                        disabled={isLoadingWA}
+                        className="btn btn-primary"
+                        style={{ padding: '0.6rem 1.5rem' }}
+                      >
+                        {isLoadingWA ? 'Connecting to WhatsApp...' : 'Generate QR Code'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Instructions */}
+                  <div style={{
+                    textAlign: 'left',
+                    background: 'hsl(var(--color-surface-hover))',
+                    borderRadius: '10px',
+                    padding: '1rem',
+                    fontSize: '0.8rem',
+                    color: 'hsl(var(--color-text-secondary))',
+                    lineHeight: 1.6,
+                  }}>
+                    <strong style={{ color: 'hsl(var(--color-text-primary))' }}>How to scan:</strong>
+                    <ol style={{ paddingLeft: '1.25rem', marginTop: '0.4rem', marginBlockEnd: 0 }}>
+                      <li>Open WhatsApp on the clinic phone</li>
+                      <li>Go to <strong>Settings</strong> (or tap ⋮ on Android) → <strong>Linked Devices</strong></li>
+                      <li>Tap <strong>Link a Device</strong> and point your camera at this QR code</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2: Pairing Code */}
+              {waMode === 'pairing_code' && (
+                <div>
+                  <form onSubmit={handleRequestPairingCode} style={{ marginBottom: '1rem' }}>
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <label className="label">Clinic WhatsApp Phone Number</label>
+                      <input
+                        className="input"
+                        value={phoneNumber}
+                        onChange={e => setPhoneNumber(e.target.value)}
+                        placeholder="e.g. +91 98765 43210 or 919876543210"
+                        style={{ fontFamily: 'monospace' }}
+                      />
+                      <div style={{ fontSize: '0.725rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.25rem' }}>
+                        Include country code (e.g. 91 for India, 1 for US). No spaces required.
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isLoadingWA}
+                      className="btn btn-primary"
+                      style={{ width: '100%' }}
+                    >
+                      {isLoadingWA ? 'Requesting Code...' : 'Generate 8-Digit Pairing Code'}
+                    </button>
+                  </form>
+
+                  {pairingCode && (
+                    <div style={{
+                      background: 'hsla(142, 71%, 45%, 0.1)',
+                      border: '1px solid hsla(142, 71%, 45%, 0.3)',
+                      borderRadius: '12px',
+                      padding: '1.25rem',
+                      textAlign: 'center',
+                      marginBottom: '1rem',
+                    }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'hsl(var(--color-text-muted))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Your Pairing Code
+                      </div>
+                      <div style={{
+                        fontSize: '2rem',
+                        fontWeight: 900,
+                        fontFamily: 'monospace',
+                        color: '#4ade80',
+                        letterSpacing: '0.15em',
+                        margin: '0.5rem 0',
+                      }}>
+                        {pairingCode}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyCode}
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem' }}
+                      >
+                        {codeCopied ? '✓ Copied' : 'Copy Code'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Instructions */}
+                  <div style={{
+                    background: 'hsl(var(--color-surface-hover))',
+                    borderRadius: '10px',
+                    padding: '1rem',
+                    fontSize: '0.8rem',
+                    color: 'hsl(var(--color-text-secondary))',
+                    lineHeight: 1.6,
+                  }}>
+                    <strong style={{ color: 'hsl(var(--color-text-primary))' }}>How to enter code:</strong>
+                    <ol style={{ paddingLeft: '1.25rem', marginTop: '0.4rem', marginBlockEnd: 0 }}>
+                      <li>Open WhatsApp on the clinic phone</li>
+                      <li>Go to <strong>Settings</strong> → <strong>Linked Devices</strong> → <strong>Link a Device</strong></li>
+                      <li>At the bottom of the camera screen, tap <strong>"Link with phone number instead"</strong></li>
+                      <li>Enter the 8-digit code shown above</li>
+                    </ol>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Google Calendar Card */}

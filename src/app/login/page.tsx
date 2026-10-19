@@ -19,7 +19,7 @@ export default function LoginPage() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -29,7 +29,30 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/dashboard');
+      // Check if logging in as super-admin
+      const isAdminEmail = email.toLowerCase().trim() === 'admin@aifrontdesk.com';
+      let isSuperAdmin = isAdminEmail;
+
+      if (!isSuperAdmin && authData?.user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('is_super_admin')
+          .eq('id', authData.user.id)
+          .maybeSingle();
+
+        if (profile?.is_super_admin) {
+          isSuperAdmin = true;
+        }
+      }
+
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const paramTarget = params?.get('returnUrl') || params?.get('redirectTo');
+      let targetUrl = isSuperAdmin ? '/admin' : '/dashboard';
+      if (paramTarget && paramTarget !== '/dashboard' && paramTarget !== '/login') {
+        targetUrl = paramTarget;
+      }
+
+      router.push(targetUrl);
       router.refresh();
     } catch {
       setError('An unexpected error occurred. Please try again.');

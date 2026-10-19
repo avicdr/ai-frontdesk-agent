@@ -2,6 +2,7 @@ import { requireServerUser } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { isSuperAdminEmail } from '@/lib/security/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -159,7 +160,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
             </Link>
           ))}
 
-          {profile?.is_super_admin && (
+          {(profile?.is_super_admin || isSuperAdminEmail(user.email)) && (
             <>
               <div className="divider" />
               <Link href="/admin" className="sidebar-nav-item" style={{ color: 'hsl(265, 83%, 70%)' }}>

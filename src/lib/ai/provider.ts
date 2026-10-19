@@ -70,7 +70,7 @@ export class GeminiProvider implements AIProvider {
   model: string;
 
   constructor() {
-    this.model = process.env.GEMINI_MODEL ?? 'gemini-1.5-flash';
+    this.model = process.env.GEMINI_MODEL ?? 'gemini-3.5-flash-lite';
   }
 
   async generateResponse(request: AgentRequest): Promise<AgentResponse> {
@@ -89,6 +89,7 @@ export class GeminiProvider implements AIProvider {
       generationConfig: {
         maxOutputTokens: request.maxOutputTokens ?? 700,
         temperature: 0.3,
+        responseMimeType: 'application/json',
       },
     });
 

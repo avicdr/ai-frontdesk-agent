@@ -1,5 +1,4 @@
-import { requireServerUser, createSupabaseAdminClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { requireSuperAdmin, createSupabaseAdminClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 
 export const metadata = { title: 'Super Admin Dashboard' };
@@ -73,19 +72,7 @@ function StatCard({ value, label, color, prefix = '' }: { value: string | number
 }
 
 export default async function AdminDashboard() {
-  const user = await requireServerUser();
-  const admin = createSupabaseAdminClient();
-
-  // Verify super admin
-  const { data: profile } = await admin
-    .from('user_profiles')
-    .select('is_super_admin')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile?.is_super_admin) {
-    redirect('/dashboard');
-  }
+  await requireSuperAdmin();
 
   const data = await getAdminData();
   const { stats, orgs, subs, payments } = data;

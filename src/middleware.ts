@@ -54,7 +54,14 @@ export async function middleware(request: NextRequest) {
   // Redirect authenticated users away from auth routes
   const isAuthRoute = AUTH_ROUTES.some(r => pathname.startsWith(r));
   if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    const isSuperAdminEmail = user.email?.toLowerCase().trim() === 'admin@aifrontdesk.com';
+    const redirectParam = request.nextUrl.searchParams.get('returnUrl') || request.nextUrl.searchParams.get('redirectTo');
+    
+    if (redirectParam && redirectParam !== '/login' && redirectParam !== '/dashboard') {
+      return NextResponse.redirect(new URL(redirectParam, request.url));
+    }
+    
+    return NextResponse.redirect(new URL(isSuperAdminEmail ? '/admin' : '/dashboard', request.url));
   }
 
   // Admin route protection (additional check via API)

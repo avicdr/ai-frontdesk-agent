@@ -20,39 +20,50 @@ export default function BillingPage() {
     { id: 'growth', name: 'Growth & Multi-Doctor', price: '₹2,999', chatsQuota: 5000, priceVal: 2999 },
   ];
 
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const handleUtrSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!utrNumber.trim()) return;
     setIsSubmittingUtr(true);
+    setSubmitError(null);
 
     try {
-      // 1. Create order
+      // 1. Create order for the selected plan
       const orderRes = await fetch('/api/v1/billing/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          planId: 'pro', // fallback or lookup
+          planId: selectedPlan,
         }),
       });
       const orderJson = await orderRes.json();
-      const orderId = orderJson.data?.orderId;
+      if (!orderRes.ok || !orderJson.data?.orderId) {
+        throw new Error(orderJson.error?.message || 'Failed to initiate payment order.');
+      }
 
-      if (orderId) {
-        await fetch('/api/v1/billing/manual-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId,
-            utrNumber: utrNumber.trim(),
-          }),
-        });
+      const orderId = orderJson.data.orderId;
+
+      // 2. Submit UTR reference for manual verification
+      const payRes = await fetch('/api/v1/billing/manual-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          utrNumber: utrNumber.trim(),
+        }),
+      });
+      const payJson = await payRes.json();
+      if (!payRes.ok) {
+        throw new Error(payJson.error?.message || 'Failed to submit UTR reference.');
       }
 
       setUtrSuccess(true);
       setShowUpiModal(false);
       setUtrNumber('');
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setSubmitError(e?.message || 'Failed to submit payment. Please verify UTR and try again.');
     } finally {
       setIsSubmittingUtr(false);
     }
@@ -79,6 +90,25 @@ export default function BillingPage() {
           ⚡ Renew / Upgrade Subscription (UPI)
         </button>
       </div>
+
+      {utrSuccess && (
+        <div style={{
+          marginBottom: '1.5rem',
+          padding: '1rem 1.25rem',
+          background: 'hsl(142 71% 45% / 0.15)',
+          border: '1px solid hsl(142 71% 45% / 0.3)',
+          borderRadius: '8px',
+          color: 'hsl(142 71% 65%)',
+          fontSize: '0.875rem',
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+        }}>
+          <span>✅</span>
+          <span>Payment reference (UTR) submitted successfully! Pending admin verification and activation.</span>
+        </div>
+      )}
 
       {/* Subscription Status Card */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '1.5rem', marginBottom: '2rem' }}>
@@ -265,12 +295,29 @@ export default function BillingPage() {
                 UPI QR CODE
               </div>
               <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white' }}>
-                ₹1,599.00
+                {plans.find(p => p.id === selectedPlan)?.price || '₹1,599'}
               </div>
-              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'hsl(var(--color-primary))', marginTop: '0.25rem' }}>
+                {plans.find(p => p.id === selectedPlan)?.name || 'Pro Clinic'}
+              </div>
+              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.25rem' }}>
                 VPA: <span style={{ color: 'hsl(var(--color-primary))', fontWeight: 700 }}>{upiVpa}</span>
               </div>
             </div>
+
+            {submitError && (
+              <div style={{
+                marginBottom: '1rem',
+                padding: '0.75rem',
+                background: 'hsl(0 84% 60% / 0.15)',
+                border: '1px solid hsl(0 84% 60% / 0.3)',
+                borderRadius: '6px',
+                color: 'hsl(0 84% 75%)',
+                fontSize: '0.8rem',
+              }}>
+                ⚠️ {submitError}
+              </div>
+            )}
 
             <form onSubmit={handleUtrSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>

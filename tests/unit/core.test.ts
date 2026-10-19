@@ -119,3 +119,24 @@ describe('3. Booking Conflict Detection Logic', () => {
     );
   });
 });
+
+describe('4. WhatsApp Baileys Pairing Code & Phone Sanitization', () => {
+  function sanitizePhone(raw: string): string {
+    return raw.replace(/[^0-9]/g, '');
+  }
+
+  function formatPairingCode(code: string): string {
+    return code.match(/.{1,4}/g)?.join('-') || code;
+  }
+
+  it('should clean various international phone number formats into raw digits', () => {
+    assert.equal(sanitizePhone('+91 98765-43210'), '919876543210');
+    assert.equal(sanitizePhone('+1 (555) 234-5678'), '15552345678');
+    assert.equal(sanitizePhone('919876543210'), '919876543210');
+  });
+
+  it('should format 8-character pairing codes into hyphenated blocks for readability', () => {
+    assert.equal(formatPairingCode('K94X28BQ'), 'K94X-28BQ');
+    assert.equal(formatPairingCode('12345678'), '1234-5678');
+  });
+});

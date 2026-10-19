@@ -1,19 +1,10 @@
-import { requireServerUser, createSupabaseAdminClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { requireSuperAdmin } from '@/lib/supabase/server';
+import ExpirationRowActions from './expiration-actions';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminExpirationsPage() {
-  const user = await requireServerUser();
-  const admin = createSupabaseAdminClient();
-
-  const { data: profile } = await admin
-    .from('user_profiles')
-    .select('is_super_admin')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile?.is_super_admin) redirect('/dashboard');
+  const { admin } = await requireSuperAdmin();
 
   const { data: subs } = await admin
     .from('subscriptions')
@@ -62,15 +53,10 @@ export default async function AdminExpirationsPage() {
                     {sub.expires_at ? new Date(sub.expires_at).toLocaleDateString('en-IN') : '—'}
                   </td>
                   <td style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>
-                    {sub.grace_period_end ? new Date(sub.grace_period_end).toLocaleDateString('en-IN') : '—'}
+                    {sub.grace_expires_at ? new Date(sub.grace_expires_at).toLocaleDateString('en-IN') : '—'}
                   </td>
                   <td>
-                    <button
-                      type="button"
-                      style={{ background: 'none', border: 'none', color: 'hsl(var(--color-primary))', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
-                    >
-                      + Extend 7 Days
-                    </button>
+                    <ExpirationRowActions organizationId={sub.organization_id} />
                   </td>
                 </tr>
               ))

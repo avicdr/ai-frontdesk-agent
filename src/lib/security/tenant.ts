@@ -17,6 +17,8 @@ export interface TenantContext {
  * Verifies the user is actually a member of the org.
  * Throws descriptive errors — callers must handle them.
  */
+import { isSuperAdminEmail } from '@/lib/security/admin';
+
 export async function resolveTenantContext(organizationId: string): Promise<TenantContext> {
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -30,9 +32,9 @@ export async function resolveTenantContext(organizationId: string): Promise<Tena
     .from('user_profiles')
     .select('is_super_admin')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
-  const isSuperAdmin = profile?.is_super_admin ?? false;
+  const isSuperAdmin = (profile?.is_super_admin ?? false) || isSuperAdminEmail(user.email);
 
   // Get organization
   const { data: org, error: orgError } = await supabase

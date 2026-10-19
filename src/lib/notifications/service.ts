@@ -18,22 +18,45 @@ interface NotificationPayload {
   title: string;
   message: string;
   recipientPhone?: string;
+  recipientEmail?: string;
   metadata?: Record<string, unknown>;
+  relatedEntityType?: string;
+  relatedEntityId?: string;
 }
 
 export async function createNotification(payload: NotificationPayload) {
   const admin = createSupabaseAdminClient();
+
+  const channel = payload.recipientPhone ? 'whatsapp' : (payload.recipientEmail ? 'email' : 'email');
+  const recipient = payload.recipientPhone || payload.recipientEmail || 'clinic-admin';
+  const idempotencyKey = `notif:${payload.organizationId}:${payload.type}:${Date.now()}:${Math.random().toString(36).slice(2, 7)}`;
+
+  let relatedEntityType = payload.relatedEntityType;
+  let relatedEntityId = payload.relatedEntityId;
+  if (!relatedEntityType && payload.metadata) {
+    if (typeof payload.metadata.appointmentId === 'string') {
+      relatedEntityType = 'appointment';
+      relatedEntityId = payload.metadata.appointmentId;
+    } else if (typeof payload.metadata.conversationId === 'string') {
+      relatedEntityType = 'conversation';
+      relatedEntityId = payload.metadata.conversationId;
+    }
+  }
 
   // 1. Record notification in database
   const { data: record, error } = await admin
     .from('notifications')
     .insert({
       organization_id: payload.organizationId,
-      type: payload.type,
-      title: payload.title,
-      message: payload.message,
-      metadata: payload.metadata || {},
-      status: 'unread',
+      notification_type: payload.type,
+      channel: channel as 'email' | 'whatsapp' | 'sms',
+      recipient: recipient,
+      subject: payload.title,
+      body: payload.message,
+      status: 'pending',
+      idempotency_key: idempotencyKey,
+      related_entity_type: relatedEntityType || null,
+      related_entity_id: relatedEntityId || null,
     })
     .select()
     .single();
@@ -50,8 +73,24 @@ export async function createNotification(payload: NotificationPayload) {
         payload.recipientPhone,
         payload.message
       );
+      if (record?.id) {
+        await admin
+          .from('notifications')
+          .update({ status: 'sent', sent_at: new Date().toISOString() })
+          .eq('id', record.id);
+      }
     } catch (err) {
       console.warn(`Could not dispatch WhatsApp alert to ${payload.recipientPhone}:`, err);
+      if (record?.id) {
+        await admin
+          .from('notifications')
+          .update({
+            status: 'failed',
+            failed_at: new Date().toISOString(),
+            failure_reason: err instanceof Error ? err.message : String(err),
+          })
+          .eq('id', record.id);
+      }
     }
   }
 

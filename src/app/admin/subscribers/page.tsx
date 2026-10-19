@@ -1,22 +1,10 @@
-import { requireServerUser, createSupabaseAdminClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { requireSuperAdmin } from '@/lib/supabase/server';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminSubscribersPage() {
-  const user = await requireServerUser();
-  const admin = createSupabaseAdminClient();
-
-  const { data: profile } = await admin
-    .from('user_profiles')
-    .select('is_super_admin')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile?.is_super_admin) {
-    redirect('/dashboard');
-  }
+  const { admin } = await requireSuperAdmin();
 
   // Load all organizations with their subscriptions
   const { data: orgs } = await admin
@@ -90,20 +78,18 @@ export default async function AdminSubscribersPage() {
                     {sub?.ai_requests_used ?? 0} requests
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        type="button"
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                      <Link
+                        href={`/admin/subscribers/${org.id}`}
                         style={{
-                          background: 'none',
-                          border: 'none',
-                          color: org.status === 'active' ? 'hsl(0 84% 60%)' : 'hsl(142 71% 45%)',
                           fontSize: '0.75rem',
                           fontWeight: 600,
-                          cursor: 'pointer',
+                          color: 'hsl(221, 83%, 70%)',
+                          textDecoration: 'none',
                         }}
                       >
-                        {org.status === 'active' ? 'Suspend' : 'Activate'}
-                      </button>
+                        View Details →
+                      </Link>
                     </div>
                   </td>
                 </tr>

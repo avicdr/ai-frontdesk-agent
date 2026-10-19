@@ -1,0 +1,547 @@
+// src/lib/whatsapp/baileys-service.ts
+// Baileys WhatsApp Multi-Device client manager
+// Supports both dynamic QR code scanning and 8-digit Pairing Code linking
+
+import fs from 'fs';
+import path from 'path';
+import makeWASocket, {
+  DisconnectReason,
+  fetchLatestBaileysVersion,
+  Browsers,
+  WASocket,
+} from '@whiskeysockets/baileys';
+import pino from 'pino';
+import QRCode from 'qrcode';
+import { Boom } from '@hapi/boom';
+import { getPersistentAuthState } from './session-storage';
+import { processTenantIncomingMessage } from './message-processor';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
+
+export interface BaileysSessionState {
+  status: 'disconnected' | 'connecting' | 'connected' | 'error';
+  qrCode?: string;         // Base64 PNG data URL
+  pairingCode?: string;    // e.g. "K94X-28BQ"
+  phoneNumber?: string;
+  jid?: string;
+  error?: string;
+}
+
+interface ActiveSessionEntry {
+  socket: WASocket;
+  state: BaileysSessionState;
+  clearSession: () => Promise<void>;
+}
+
+// Preserve active sessions and reconnect timers across Next.js dev reloads using globalThis
+const globalStore = globalThis as unknown as {
+  __baileysSessions?: Map<string, ActiveSessionEntry>;
+  __baileysReconnectTimers?: Map<string, NodeJS.Timeout>;
+  __baileysConnectingPromises?: Map<string, Promise<BaileysSessionState>>;
+  __baileysAutoResumeStarted?: boolean;
+};
+
+if (!globalStore.__baileysSessions) {
+  globalStore.__baileysSessions = new Map<string, ActiveSessionEntry>();
+}
+if (!globalStore.__baileysReconnectTimers) {
+  globalStore.__baileysReconnectTimers = new Map<string, NodeJS.Timeout>();
+}
+if (!globalStore.__baileysConnectingPromises) {
+  globalStore.__baileysConnectingPromises = new Map<string, Promise<BaileysSessionState>>();
+}
+
+const sessions = globalStore.__baileysSessions;
+const reconnectTimers = globalStore.__baileysReconnectTimers;
+const connectingPromises = globalStore.__baileysConnectingPromises;
+
+function clearReconnectTimer(organizationId: string) {
+  const t = reconnectTimers.get(organizationId);
+  if (t) {
+    clearTimeout(t);
+    reconnectTimers.delete(organizationId);
+  }
+}
+
+const logger = pino({ level: 'silent' });
+
+/**
+ * Initializes or starts a Baileys WhatsApp connection for a specific organization.
+ */
+export async function startBaileysSession(
+  organizationId: string,
+  options?: {
+    mode?: 'qr' | 'pairing_code';
+    phoneNumber?: string;
+  }
+): Promise<BaileysSessionState> {
+  const existing = sessions.get(organizationId);
+
+  // If already connected, return connected state immediately
+  if (existing && existing.state.status === 'connected') {
+    return existing.state;
+  }
+
+  // If already connecting and user didn't request a new pairing code, return existing connecting state
+  if (
+    existing &&
+    existing.state.status === 'connecting' &&
+    (!options?.mode || (options.mode === 'qr' && existing.state.qrCode))
+  ) {
+    return existing.state;
+  }
+
+  // If a connection handshake is already in-flight for this organization, reuse that same promise
+  const inFlight = connectingPromises.get(organizationId);
+  if (inFlight && !options?.mode) {
+    return inFlight;
+  }
+
+  const connectTask = (async () => {
+    // Clean up previous socket if any (detach listeners so end() does NOT trigger recursive close events)
+    if (existing) {
+      clearReconnectTimer(organizationId);
+      try {
+        existing.socket.ev.removeAllListeners('connection.update');
+        existing.socket.ev.removeAllListeners('messages.upsert');
+        existing.socket.ev.removeAllListeners('creds.update');
+        existing.socket.end(undefined);
+      } catch {
+        // ignore
+      }
+    }
+
+    clearReconnectTimer(organizationId);
+
+    let { state: authState, saveCreds, clearSession } = await getPersistentAuthState(organizationId);
+
+    // If a new linking request is initiated and not yet registered AND no account signatures exist yet,
+    // wipe stale keys to guarantee a fresh handshake. (NEVER wipe if creds.account exists, as device signatures were already exchanged!)
+    if (options?.mode && !authState.creds.registered && !authState.creds.account) {
+      await clearSession();
+      const fresh = await getPersistentAuthState(organizationId);
+      authState = fresh.state;
+      saveCreds = fresh.saveCreds;
+      clearSession = fresh.clearSession;
+    }
+
+    const { version } = await fetchLatestBaileysVersion();
+
+    const sessionState: BaileysSessionState = {
+      status: 'connecting',
+    };
+
+    const sock = makeWASocket({
+      version,
+      auth: authState,
+      logger,
+      browser: Browsers.ubuntu('Chrome'),
+      printQRInTerminal: false,
+      syncFullHistory: false,
+      generateHighQualityLinkPreview: true,
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 60000,
+      keepAliveIntervalMs: 25000,
+    });
+
+    const entry: ActiveSessionEntry = {
+      socket: sock,
+      state: sessionState,
+      clearSession,
+    };
+    sessions.set(organizationId, entry);
+
+  // 1. Handle credentials update
+  sock.ev.on('creds.update', saveCreds);
+
+  // 2. Handle connection updates (QR, pairing, connect, disconnect)
+  sock.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update;
+
+    // A. QR Code received
+    if (qr && options?.mode !== 'pairing_code') {
+      try {
+        const qrDataUrl = await QRCode.toDataURL(qr, {
+          width: 300,
+          margin: 2,
+          color: { dark: '#000000', light: '#ffffff' },
+        });
+        sessionState.qrCode = qrDataUrl;
+        sessionState.status = 'connecting';
+      } catch (err) {
+        console.error('Failed to generate QR data URL:', err);
+      }
+    }
+
+    // B. Connected successfully
+    if (connection === 'open') {
+      const jid = sock.user?.id;
+      const cleanPhone = jid?.split('@')[0]?.split(':')[0] ?? '';
+
+      sessionState.status = 'connected';
+      sessionState.jid = jid;
+      sessionState.phoneNumber = cleanPhone;
+      sessionState.qrCode = undefined;
+      sessionState.pairingCode = undefined;
+      sessionState.error = undefined;
+
+      console.log(`[Baileys] Clinic ${organizationId} connected as ${cleanPhone}`);
+
+      // Update Supabase integration status
+      try {
+        const admin = createSupabaseAdminClient();
+        const { error: upsertErr } = await admin.from('whatsapp_integrations').upsert(
+          {
+            organization_id: organizationId,
+            display_phone_number: `+${cleanPhone}`,
+            jid,
+            status: 'connected',
+            connection_type: 'baileys',
+            connected_at: new Date().toISOString(),
+            last_error: null,
+            last_error_at: null,
+          },
+          { onConflict: 'organization_id' }
+        );
+
+        if (upsertErr) {
+          // Fallback if migration 002 has not been applied to Supabase yet
+          await admin.from('whatsapp_integrations').upsert(
+            {
+              organization_id: organizationId,
+              display_phone_number: `+${cleanPhone}`,
+              status: 'connected',
+              connected_at: new Date().toISOString(),
+            },
+            { onConflict: 'organization_id' }
+          );
+        }
+      } catch (err) {
+        console.warn('Failed to update integration status in DB:', err);
+      }
+    }
+
+    // C. Connection closed
+    if (connection === 'close') {
+      const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+      const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+      const isReplaced = statusCode === DisconnectReason.connectionReplaced || statusCode === 440;
+      const isRestartRequired = statusCode === DisconnectReason.restartRequired || statusCode === 515;
+
+      console.log(
+        `[Baileys] Socket closed for ${organizationId}. Status code: ${statusCode}, LoggedOut: ${isLoggedOut}, Replaced: ${isReplaced}, RestartRequired: ${isRestartRequired}`
+      );
+
+      clearReconnectTimer(organizationId);
+
+      if (isLoggedOut) {
+        sessions.delete(organizationId);
+        sessionState.status = 'disconnected';
+        sessionState.error = 'WhatsApp session unlinked or logged out.';
+        await clearSession();
+
+        try {
+          const admin = createSupabaseAdminClient();
+          await admin
+            .from('whatsapp_integrations')
+            .update({
+              status: 'disconnected',
+              disconnected_at: new Date().toISOString(),
+              last_error: 'Logged out from mobile device',
+            })
+            .eq('organization_id', organizationId);
+        } catch {
+          // ignore
+        }
+      } else if (isReplaced) {
+        console.warn(`[Baileys] Socket for ${organizationId} was replaced by another connection (440). Halting auto-reconnect.`);
+        sessions.delete(organizationId);
+        sessionState.status = 'disconnected';
+        sessionState.error = 'Session was replaced by another active connection.';
+      } else {
+        // Keep in sessions map as 'connecting' to prevent concurrent re-initialization from status polling
+        sessionState.status = 'connecting';
+        const delay = isRestartRequired ? 500 : 3000;
+        console.log(`[Baileys] Reconnecting socket for org ${organizationId} in ${delay}ms...`);
+        const timer = setTimeout(() => {
+          reconnectTimers.delete(organizationId);
+          startBaileysSession(organizationId).catch(err => {
+            console.error('Auto-reconnect error:', err);
+          });
+        }, delay);
+        reconnectTimers.set(organizationId, timer);
+      }
+    }
+  });
+
+  // 3. Handle Pairing Code mode (only if not registered and no account signatures received yet)
+  if (options?.mode === 'pairing_code' && options.phoneNumber && !sock.authState.creds.registered && !sock.authState.creds.account) {
+    let rawNumber = options.phoneNumber.replace(/[^0-9]/g, '');
+    // If user entered a 10-digit number (e.g. 8948006900 starting with 6,7,8,9), automatically prepend India country code 91
+    if (rawNumber.length === 10 && /^[6-9]/.test(rawNumber)) {
+      rawNumber = `91${rawNumber}`;
+    }
+
+    if (rawNumber.length >= 10) {
+      try {
+        // Allow socket sufficient handshake time before requesting pairing code
+        await new Promise(r => setTimeout(r, 2500));
+        const rawCode = await sock.requestPairingCode(rawNumber);
+        const formatted = rawCode?.match(/.{1,4}/g)?.join('-') || rawCode;
+        sessionState.pairingCode = formatted;
+        sessionState.phoneNumber = rawNumber;
+        sessionState.qrCode = undefined;
+      } catch (err: any) {
+        console.error('Failed to request pairing code:', err);
+        sessionState.error = err?.message || 'Could not request pairing code.';
+      }
+    }
+  }
+
+  // 4. Handle incoming patient messages & route to AI receptionist
+  sock.ev.on('messages.upsert', async ({ messages, type }) => {
+    if (type !== 'notify') return;
+
+    for (const msg of messages) {
+      if (!msg.message || msg.key.fromMe) continue;
+
+      const remoteJid = msg.key.remoteJid;
+      if (!remoteJid || remoteJid.includes('@g.us') || remoteJid === 'status@broadcast') {
+        continue; // Skip group chats and broadcast status updates
+      }
+
+      const text =
+        msg.message.conversation ||
+        msg.message.extendedTextMessage?.text ||
+        msg.message.imageMessage?.caption ||
+        '';
+
+      if (!text.trim()) continue;
+
+      const senderPhone = remoteJid.split('@')[0].split(':')[0];
+      const messageId = msg.key.id || `baileys-${Date.now()}`;
+      const senderName = msg.pushName || undefined;
+
+      // Dispatch to AI Agent Pipeline
+      processTenantIncomingMessage({
+        organizationId,
+        fromPhone: senderPhone,
+        senderName,
+        text: text.trim(),
+        messageId,
+        sendReply: async (replyText: string) => {
+          try {
+            const currentEntry = sessions.get(organizationId);
+            const activeSock = currentEntry?.socket ?? sock;
+            const sent = await activeSock.sendMessage(remoteJid, { text: replyText });
+            return { success: true, messageId: sent?.key.id ?? undefined };
+          } catch (err: any) {
+            console.error(`Failed to send WhatsApp reply to ${remoteJid}:`, err);
+            return { success: false, error: err?.message || 'Send failed' };
+          }
+        },
+      }).catch(err => {
+        console.error(`Error processing Baileys message for ${organizationId}:`, err);
+      });
+    }
+  });
+
+    // Wait up to 3.5 seconds for QR code if requested in this turn
+    if (options?.mode === 'qr' && !sessionState.qrCode) {
+      let waited = 0;
+      while (!sessionState.qrCode && waited < 3500 && sessionState.status === 'connecting') {
+        await new Promise(r => setTimeout(r, 200));
+        waited += 200;
+      }
+    }
+
+    return sessionState;
+  })();
+
+  connectingPromises.set(organizationId, connectTask);
+  try {
+    return await connectTask;
+  } finally {
+    connectingPromises.delete(organizationId);
+  }
+}
+
+/**
+ * Gets the current Baileys session status for an organization.
+ */
+export async function getBaileysSessionStatus(organizationId: string): Promise<BaileysSessionState> {
+  const active = sessions.get(organizationId);
+  if (active) {
+    return active.state;
+  }
+
+  // If auto-reconnect is already scheduled or an in-flight connection is running, don't spawn a second duplicate socket
+  if (reconnectTimers.has(organizationId) || connectingPromises.has(organizationId)) {
+    return { status: 'connecting' };
+  }
+
+  // 1. Check if registered credentials already exist in local session storage
+  const sessionDir = path.resolve(process.cwd(), '.whatsapp-sessions', organizationId);
+  const credsFile = path.join(sessionDir, 'creds.json');
+  if (fs.existsSync(credsFile)) {
+    try {
+      const creds = JSON.parse(fs.readFileSync(credsFile, 'utf-8'));
+      if ((creds.registered || creds.account) && creds.me?.id) {
+        const cleanPhone = creds.me.id.split('@')[0].split(':')[0];
+        console.log(`[Baileys] Found registered credentials for org ${organizationId}. Resuming socket...`);
+        // Resume socket connection to keep WhatsApp active
+        startBaileysSession(organizationId).catch(err => {
+          console.warn('[Baileys] Socket resume error:', err);
+        });
+
+        return {
+          status: 'connected',
+          phoneNumber: cleanPhone,
+          jid: creds.me.id,
+        };
+      }
+    } catch (err) {
+      console.warn('[Baileys] Error parsing local creds.json:', err);
+    }
+  }
+
+  // 2. Fallback check database if previously marked connected
+  try {
+    const admin = createSupabaseAdminClient();
+    const { data } = await admin
+      .from('whatsapp_integrations')
+      .select('status, display_phone_number')
+      .eq('organization_id', organizationId)
+      .maybeSingle();
+
+    if (data && data.status === 'connected') {
+      startBaileysSession(organizationId).catch(err => {
+        console.warn('Rehydration error:', err);
+      });
+
+      return {
+        status: 'connected',
+        phoneNumber: data.display_phone_number?.replace('+', '') || undefined,
+      };
+    }
+  } catch (err) {
+    console.warn('Error querying whatsapp_integrations status:', err);
+  }
+
+  return { status: 'disconnected' };
+}
+
+/**
+ * Disconnects and unlinks the WhatsApp session.
+ */
+export async function disconnectBaileysSession(organizationId: string): Promise<void> {
+  clearReconnectTimer(organizationId);
+  const active = sessions.get(organizationId);
+  if (active) {
+    try {
+      active.socket.ev.removeAllListeners('connection.update');
+      active.socket.ev.removeAllListeners('messages.upsert');
+      active.socket.ev.removeAllListeners('creds.update');
+      await active.socket.logout();
+    } catch {
+      // ignore
+    }
+    await active.clearSession();
+    sessions.delete(organizationId);
+  }
+
+  try {
+    const admin = createSupabaseAdminClient();
+    await admin
+      .from('whatsapp_integrations')
+      .update({
+        status: 'disconnected',
+        disconnected_at: new Date().toISOString(),
+        jid: null,
+      })
+      .eq('organization_id', organizationId);
+  } catch (err) {
+    console.error('Error recording disconnect in DB:', err);
+  }
+}
+
+/**
+ * Automatically resumes all registered WhatsApp sessions across organizations on server boot.
+ */
+export async function autoResumeAllActiveBaileysSessions(): Promise<void> {
+  if (globalStore.__baileysAutoResumeStarted) {
+    return;
+  }
+  globalStore.__baileysAutoResumeStarted = true;
+
+  console.log('[Baileys] Scanning for registered WhatsApp sessions to auto-resume...');
+  const orgsToResume = new Set<string>();
+
+  // 1. Scan filesystem .whatsapp-sessions directory
+  try {
+    const sessionsBaseDir = path.resolve(process.cwd(), '.whatsapp-sessions');
+    if (fs.existsSync(sessionsBaseDir)) {
+      const entries = fs.readdirSync(sessionsBaseDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const orgId = entry.name;
+          const credsFile = path.join(sessionsBaseDir, orgId, 'creds.json');
+          if (fs.existsSync(credsFile)) {
+            try {
+              const creds = JSON.parse(fs.readFileSync(credsFile, 'utf-8'));
+              if ((creds.registered || creds.account) && creds.me?.id) {
+                orgsToResume.add(orgId);
+              }
+            } catch {
+              // ignore unparseable creds
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Baileys] Error scanning local sessions directory:', err);
+  }
+
+  // 2. Scan DB for organizations marked as connected
+  try {
+    const admin = createSupabaseAdminClient();
+    const { data } = await admin
+      .from('whatsapp_integrations')
+      .select('organization_id')
+      .eq('status', 'connected');
+
+    if (data) {
+      for (const row of data) {
+        if (row.organization_id) {
+          orgsToResume.add(row.organization_id);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Baileys] Error querying DB for connected integrations:', err);
+  }
+
+  if (orgsToResume.size === 0) {
+    console.log('[Baileys] No active WhatsApp sessions found to auto-resume.');
+    return;
+  }
+
+  console.log(`[Baileys] Auto-resuming ${orgsToResume.size} active WhatsApp session(s)...`);
+  for (const orgId of orgsToResume) {
+    const existing = sessions.get(orgId);
+    if (!existing || existing.state.status !== 'connected') {
+      startBaileysSession(orgId).catch(err => {
+        console.error(`[Baileys] Failed to auto-resume session for org ${orgId}:`, err);
+      });
+    }
+  }
+}
+
+// Automatically trigger on server module initialization
+if (typeof window === 'undefined' && process.env.NEXT_RUNTIME !== 'edge') {
+  setImmediate(() => {
+    autoResumeAllActiveBaileysSessions().catch(err => {
+      console.warn('[Baileys] Background auto-resume trigger error:', err);
+    });
+  });
+}

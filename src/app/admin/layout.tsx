@@ -1,5 +1,4 @@
-import { requireServerUser, createSupabaseAdminClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { requireSuperAdmin } from '@/lib/supabase/server';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -16,18 +15,8 @@ const adminNavItems = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireServerUser();
-  const admin = createSupabaseAdminClient();
-
-  const { data: profile } = await admin
-    .from('user_profiles')
-    .select('is_super_admin, full_name')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile?.is_super_admin) {
-    redirect('/dashboard');
-  }
+  const { user, profile } = await requireSuperAdmin();
+  const displayName = profile?.full_name || user.email || 'Platform Super Admin';
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
@@ -80,9 +69,50 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
         </nav>
 
-        <div style={{ padding: '0.875rem', borderTop: '1px solid hsl(265 25% 20%)' }}>
-          <div style={{ fontSize: '0.75rem', color: 'hsl(265, 50%, 60%)', textAlign: 'center' }}>
-            Signed in as {profile.full_name ?? user.email}
+        <div style={{
+          padding: '1rem',
+          borderTop: '1px solid hsl(265 25% 20%)',
+          background: 'hsla(265, 40%, 6%, 0.8)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+            <div style={{
+              width: 34,
+              height: 34,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, hsl(265 83% 65%) 0%, hsl(221 83% 58%) 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              flexShrink: 0,
+              boxShadow: '0 2px 8px hsla(265, 83%, 65%, 0.3)',
+            }}>
+              👑
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                color: 'hsl(var(--color-text-primary))',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
+                {displayName}
+              </div>
+              <div style={{
+                fontSize: '0.65rem',
+                color: 'hsl(265, 83%, 70%)',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'hsl(142, 71%, 55%)' }} />
+                Super Admin
+              </div>
+            </div>
           </div>
         </div>
       </aside>

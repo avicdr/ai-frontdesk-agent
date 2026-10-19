@@ -101,12 +101,33 @@ ${ctx.knowledge || 'Use only the information provided in this prompt. Do not inv
 ${ctx.conversationSummary ?? 'This is the beginning of the conversation.'}
 
 === AVAILABLE TOOLS ===
-You have access to tools to check availability and manage appointments.
-IMPORTANT:
-- Always use check_availability before offering time slots
-- Always get patient confirmation before booking or cancelling
-- Never claim success until the tool returns a confirmed result
-- Use request_human_handoff when you cannot help or when requested
+You have access to backend tools to check slots and schedule appointments. To call a tool, include it in the "tool_calls" array.
+
+1. check_availability:
+   Use when patient asks about available time slots.
+   Arguments: {
+     "date": "tomorrow" | "YYYY-MM-DD",
+     "serviceName"?: "<Exact or matching name of requested service from SERVICES list, or omit if general check>"
+   }
+
+2. create_appointment:
+   Use IMMEDIATELY when the patient provides their chosen time slot along with their name or phone number!
+   Arguments: {
+     "patientName": "Patient's Full Name",
+     "patientPhone": "Patient's Phone number",
+     "serviceName": "<Name of chosen service from SERVICES list (e.g. Consultation, Teeth Cleaning, Root Canal, etc.)>",
+     "startTime": "YYYY-MM-DDTHH:mm:ss (or ISO date-time of the selected slot)"
+   }
+
+3. cancel_appointment:
+   Arguments: { "appointmentId": "uuid", "reason": "reason text" }
+
+4. request_human_handoff:
+   Arguments: { "reason": "reason text" }
+
+BOOKING WORKFLOW:
+- When a patient specifies a slot and provides their name/contact (e.g. "Deepanshi, preferred time 10am"), you MUST invoke "create_appointment" in tool_calls with the matching service from the clinic's service list!
+- In "user_message", warmly confirm the booking details with the patient (date, time, service, clinic name).
 
 === EMERGENCY ESCALATION ===
 ${clinicProfile.emergency_instructions ?? `
@@ -124,9 +145,9 @@ Trigger handoff when: patient requests human, you cannot answer, medical emergen
 === OUTPUT FORMAT ===
 Always respond in valid JSON with this structure:
 {
-  "user_message": "Your response to the patient",
+  "user_message": "Friendly response to the patient. ALWAYS provide a polite reply acknowledging their request or confirming their booking. Never leave null or empty.",
   "intent": "greeting|faq|availability_check|booking|cancellation|reschedule|handoff|out_of_scope|emergency",
-  "required_follow_up": true|false,
+  "required_follow_up": true,
   "proposed_action": null|"check_availability"|"create_appointment"|"cancel_appointment"|"reschedule"|"handoff",
   "tool_calls": [],
   "handoff_required": false,
@@ -145,3 +166,121 @@ CRITICAL: Backend validates all tool calls and responses. Never bypass backend a
 export function buildTestPrompt(ctx: ClinicContext): string {
   return buildSystemPrompt(ctx) + '\n\n[TEST MODE: This is a test conversation. No real appointments will be created.]';
 }
+
+export interface ParsedAgentResponse {
+  user_message: string;
+  intent?: string;
+  required_follow_up?: boolean;
+  proposed_action?: string | null;
+  tool_calls?: Array<{ name: string; arguments: Record<string, unknown> }>;
+  handoff_required?: boolean;
+  safety_flags?: string[];
+  response_status?: string;
+}
+
+/**
+ * Safely parses the assistant's JSON response, stripping markdown code blocks,
+ * leading tags, or conversational artifacts, and ensuring patients never receive raw JSON.
+ */
+export function parseAssistantResponse(rawContent: string): ParsedAgentResponse {
+  if (!rawContent || typeof rawContent !== 'string') {
+    return { user_message: '' };
+  }
+
+  const trimmed = rawContent.trim();
+
+  // Helper to normalize an object into ParsedAgentResponse
+  const sanitize = (obj: any): ParsedAgentResponse | null => {
+    if (!obj || typeof obj !== 'object') return null;
+
+    let user_message = '';
+    if (typeof obj.user_message === 'string' && obj.user_message.trim().length > 0) {
+      user_message = obj.user_message.trim();
+    } else if (typeof obj.message === 'string' && obj.message.trim().length > 0) {
+      user_message = obj.message.trim();
+    } else if (typeof obj.reply === 'string' && obj.reply.trim().length > 0) {
+      user_message = obj.reply.trim();
+    }
+
+    const tool_calls = Array.isArray(obj.tool_calls)
+      ? obj.tool_calls.map((tc: any) => ({
+          name: tc.name,
+          arguments: tc.arguments ?? tc.args ?? {},
+        }))
+      : undefined;
+
+    return {
+      user_message,
+      intent: obj.intent,
+      required_follow_up: obj.required_follow_up,
+      proposed_action: obj.proposed_action,
+      tool_calls,
+      handoff_required: !!obj.handoff_required,
+      safety_flags: Array.isArray(obj.safety_flags) ? obj.safety_flags : [],
+      response_status: obj.response_status ?? 'ok',
+    };
+  };
+
+  // 1. Direct JSON parse
+  try {
+    const direct = JSON.parse(trimmed);
+    const sanitized = sanitize(direct);
+    if (sanitized && (sanitized.user_message || (sanitized.tool_calls && sanitized.tool_calls.length > 0))) {
+      return sanitized;
+    }
+  } catch {}
+
+  // 2. Strip Markdown code blocks: ```json ... ``` or ``` ... ```
+  let cleaned = trimmed
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+
+  // Strip leading "json\n" if emitted without backticks
+  if (cleaned.startsWith('json\n') || cleaned.startsWith('json\r\n')) {
+    cleaned = cleaned.replace(/^json\s*/i, '').trim();
+  }
+
+  try {
+    const fromCleaned = JSON.parse(cleaned);
+    const sanitized = sanitize(fromCleaned);
+    if (sanitized && (sanitized.user_message || (sanitized.tool_calls && sanitized.tool_calls.length > 0))) {
+      return sanitized;
+    }
+  } catch {}
+
+  // 3. Extract JSON between the first { and the last }
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      const extracted = JSON.parse(cleaned.substring(firstBrace, lastBrace + 1));
+      const sanitized = sanitize(extracted);
+      if (sanitized && (sanitized.user_message || (sanitized.tool_calls && sanitized.tool_calls.length > 0))) {
+        return sanitized;
+      }
+    } catch {}
+  }
+
+  // 4. Regex extraction for user_message
+  const match = cleaned.match(/"user_message"\s*:\s*"((?:[^"\\]|\\.|[\r\n])*)"/);
+  if (match?.[1]) {
+    try {
+      const extractedMsg = JSON.parse(`"${match[1]}"`);
+      return { user_message: extractedMsg };
+    } catch {
+      return { user_message: match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n') };
+    }
+  }
+
+  // 5. If it is plain text, return it directly
+  if (!cleaned.startsWith('{')) {
+    return { user_message: cleaned };
+  }
+
+  // 6. Context-aware fallback if JSON arrived with no user_message or tool_calls
+  return {
+    user_message: "I'd be happy to assist you with that! Could you please share your preferred appointment time and full name?"
+  };
+}
+

@@ -5,7 +5,7 @@ import { NextRequest } from 'next/server';
 import { successResponse, Errors } from '@/lib/api/response';
 import { getServerUser, createSupabaseAdminClient } from '@/lib/supabase/server';
 import { loadClinicContext } from '@/lib/security/tenant';
-import { buildSystemPrompt } from '@/lib/ai/prompts';
+import { buildSystemPrompt, parseAssistantResponse } from '@/lib/ai/prompts';
 import { AIProviderFactory } from '@/lib/ai/provider';
 import { executeTool } from '@/lib/ai/tools';
 import { z } from 'zod';
@@ -223,18 +223,18 @@ We accept UPI (GPay, PhonePe, Paytm), Credit/Debit cards, Net Banking, and cash.
           name: 'Pro Clinic',
           included_ai_requests: 2000,
           included_inbound_messages: 5000,
-        },
+        } as any,
         timezone: 'Asia/Kolkata',
-      };
+      } as any;
     }
 
-    const systemPrompt = buildSystemPrompt(clinicContext);
+    const systemPrompt = buildSystemPrompt(clinicContext as any);
 
     // Call AI Provider with fallback and graceful mock simulation
     const start = Date.now();
     let reply = '';
     let provider = 'gemini';
-    let model = 'gemini-1.5-flash';
+    let model = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
     let inputTokens = 150;
     let outputTokens = 75;
     let latencyMs = 0;
@@ -254,12 +254,15 @@ We accept UPI (GPay, PhonePe, Paytm), Credit/Debit cards, Net Banking, and cash.
         maxOutputTokens: 700,
       });
 
-      reply = aiResponse.response.content;
+      const parsed = parseAssistantResponse(aiResponse.response.content);
+      reply = parsed.user_message || aiResponse.response.content;
       provider = aiResponse.response.provider;
       model = aiResponse.response.model;
       inputTokens = aiResponse.response.inputTokens;
       outputTokens = aiResponse.response.outputTokens;
-      toolCalls = aiResponse.response.toolCalls ?? [];
+      toolCalls = (parsed.tool_calls && parsed.tool_calls.length > 0)
+        ? parsed.tool_calls
+        : (aiResponse.response.toolCalls ?? []);
       latencyMs = Date.now() - start;
 
       // Execute tools safely if called
@@ -271,7 +274,7 @@ We accept UPI (GPay, PhonePe, Paytm), Credit/Debit cards, Net Banking, and cash.
                 organizationId: orgId,
                 conversationId: 'test-sandbox',
                 patientPhone: simulatePhone,
-                timezone: clinicContext.timezone || 'Asia/Kolkata',
+                timezone: (clinicContext as any)?.timezone || 'Asia/Kolkata',
               },
               call.name,
               call.arguments

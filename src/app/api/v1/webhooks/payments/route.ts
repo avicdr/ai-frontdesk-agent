@@ -39,11 +39,14 @@ export async function POST(request: NextRequest) {
     return new NextResponse('OK', { status: 200 });
   }
 
-  await admin.from('webhook_events').insert({
-    provider: 'cashfree',
-    external_event_id: eventId,
-    payload,
-  }).onConflict('provider, external_event_id').ignore();
+  await admin.from('webhook_events').upsert(
+    {
+      provider: 'cashfree',
+      external_event_id: eventId,
+      payload,
+    },
+    { onConflict: 'provider,external_event_id', ignoreDuplicates: true }
+  );
 
   // 4. Handle payment success
   const eventType = payload.type as string;

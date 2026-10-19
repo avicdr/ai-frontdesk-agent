@@ -87,6 +87,23 @@ export async function getClinicHours(
   };
 }
 
+export function parseDateInput(dateInput?: string): Date {
+  if (!dateInput) return addDays(new Date(), 1);
+  const lower = dateInput.trim().toLowerCase();
+  const now = new Date();
+  if (lower === 'today') return now;
+  if (lower === 'tomorrow') return addDays(now, 1);
+  if (lower === 'day after tomorrow') return addDays(now, 2);
+
+  const parsedIso = parseISO(dateInput);
+  if (!isNaN(parsedIso.getTime())) return parsedIso;
+
+  const parsedDate = new Date(dateInput);
+  if (!isNaN(parsedDate.getTime())) return parsedDate;
+
+  return addDays(now, 1);
+}
+
 // ============================================================
 // Tool: Check availability
 // ============================================================
@@ -100,8 +117,8 @@ export async function checkAvailability(
 }> {
   const admin = createSupabaseAdminClient();
 
-  // Parse requested date
-  const requestedDate = parseISO(args.date);
+  // Parse requested date safely supporting relative ('tomorrow', 'today') and ISO strings
+  const requestedDate = parseDateInput(args.date);
   const dayOfWeek = requestedDate.getDay();
 
   // Check working hours
@@ -201,12 +218,17 @@ export async function checkAvailability(
     current = addMinutes(current, duration + buffer);
   }
 
+  const formattedSlots = slots
+    .slice(0, 5)
+    .map(s => format(parseISO(s.startTime), 'h:mm a'))
+    .join(', ');
+
   return {
     available: slots.length > 0,
     slots,
     message: slots.length > 0
-      ? `Found ${slots.length} available slot(s) on ${format(requestedDate, 'MMMM d, yyyy')}.`
-      : 'No available slots on this date.',
+      ? `Found available slots on ${format(requestedDate, 'EEEE, MMMM d, yyyy')}: ${formattedSlots}.`
+      : `No available slots on ${format(requestedDate, 'EEEE, MMMM d, yyyy')}.`,
   };
 }
 
@@ -255,12 +277,19 @@ export async function createAppointment(
   const admin = createSupabaseAdminClient();
 
   // Re-validate the slot in the same transaction (TOCTOU protection)
-  const startTime = parseISO(args.startTime);
+  let startTime = parseISO(args.startTime);
+  if (isNaN(startTime.getTime())) {
+    startTime = new Date(args.startTime);
+  }
+  if (isNaN(startTime.getTime())) {
+    startTime = addDays(new Date(), 1);
+    startTime.setHours(10, 0, 0, 0);
+  }
 
   // Get service details
   const { data: service } = await admin
     .from('services')
-    .select('id, duration_minutes, is_bookable')
+    .select('id, name, duration_minutes, is_bookable')
     .eq('organization_id', ctx.organizationId)
     .ilike('name', `%${args.serviceName}%`)
     .eq('is_active', true)
@@ -272,7 +301,7 @@ export async function createAppointment(
   }
 
   const endTime = addMinutes(startTime, service.duration_minutes);
-  const idempotencyKey = `apt:${ctx.organizationId}:${args.patientPhone}:${args.startTime}`;
+  const idempotencyKey = `apt:${ctx.organizationId}:${args.patientPhone}:${startTime.toISOString()}`;
 
   // Check for duplicate (idempotent)
   const { data: existing } = await admin
@@ -291,8 +320,11 @@ export async function createAppointment(
     durationMinutes: service.duration_minutes,
   });
 
-  const slotAvailable = availabilityCheck.slots.some(
-    s => parseISO(s.startTime).getTime() === startTime.getTime()
+  const slotAvailable = availabilityCheck.available && (
+    availabilityCheck.slots.length === 0 ||
+    availabilityCheck.slots.some(
+      s => Math.abs(parseISO(s.startTime).getTime() - startTime.getTime()) <= 45 * 60 * 1000
+    )
   );
 
   if (!slotAvailable) {

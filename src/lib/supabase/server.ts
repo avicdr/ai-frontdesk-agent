@@ -64,6 +64,8 @@ export async function getServerUser() {
   return user;
 }
 
+import { redirect } from 'next/navigation';
+
 /**
  * Gets the current user with their profile.
  * Throws if not authenticated.
@@ -74,4 +76,58 @@ export async function requireServerUser() {
     throw new Error('UNAUTHENTICATED');
   }
   return user;
+}
+
+import { isSuperAdminEmail } from '@/lib/security/admin';
+
+/**
+ * Ensures user is authenticated and is a platform super-admin.
+ * Auto-provisions and maintains admin profile, redirects gracefully if unauthorized.
+ */
+export async function requireSuperAdmin() {
+  const user = await getServerUser();
+  if (!user) {
+    redirect('/login?returnUrl=/admin');
+  }
+
+  const admin = createSupabaseAdminClient();
+  const isSuperAdminByEmail = isSuperAdminEmail(user.email);
+
+  const { data: profile } = await admin
+    .from('user_profiles')
+    .select('id, full_name, phone, avatar_url, is_super_admin')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (!profile?.is_super_admin && !isSuperAdminByEmail) {
+    redirect('/dashboard');
+  }
+
+  let finalProfile = profile;
+  if (!finalProfile || !finalProfile.is_super_admin) {
+    const { data: upserted } = await admin
+      .from('user_profiles')
+      .upsert({
+        id: user.id,
+        full_name: profile?.full_name || user.user_metadata?.full_name || 'Platform Super Admin',
+        phone: profile?.phone || user.user_metadata?.phone || '+91 99999 99999',
+        avatar_url: profile?.avatar_url || 'https://api.dicebear.com/7.x/bottts/svg?seed=admin',
+        is_super_admin: true,
+        updated_at: new Date().toISOString(),
+      })
+      .select('*')
+      .maybeSingle();
+
+    finalProfile = upserted ?? {
+      id: user.id,
+      full_name: profile?.full_name || user.user_metadata?.full_name || 'Platform Super Admin',
+      phone: profile?.phone || '+91 99999 99999',
+      avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=admin',
+      is_super_admin: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  return { user, profile: finalProfile, admin };
 }

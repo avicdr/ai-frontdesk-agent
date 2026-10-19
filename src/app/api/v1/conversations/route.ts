@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
       .select(`
         id,
         patient_phone,
+        patient_name,
         status,
         owner,
         last_message_at,

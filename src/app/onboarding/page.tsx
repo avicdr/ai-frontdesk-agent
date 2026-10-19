@@ -119,12 +119,16 @@ export default function OnboardingPage() {
   const [cancellationHours, setCancellationHours] = useState('12');
   const [bufferMinutes, setBufferMinutes] = useState('10');
 
-  // Step 6: WhatsApp Integration
-  const [phoneNumberId, setPhoneNumberId] = useState('');
-  const [wabaId, setWabaId] = useState('');
-  const [waAccessToken, setWaAccessToken] = useState('');
-  const [showWaToken, setShowWaToken] = useState(false);
-  const [copiedWebhook, setCopiedWebhook] = useState(false);
+  // Step 6: WhatsApp Baileys Integration
+  const [waMode, setWaMode] = useState<'qr' | 'pairing_code'>('qr');
+  const [waStatus, setWaStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
+  const [waPhoneInput, setWaPhoneInput] = useState('');
+  const [connectedNumber, setConnectedNumber] = useState<string | null>(null);
+  const [isLoadingWA, setIsLoadingWA] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [waError, setWaError] = useState<string | null>(null);
 
   // Step 7: Calendar
   const [calendarConnected, setCalendarConnected] = useState(false);
@@ -197,11 +201,83 @@ export default function OnboardingPage() {
     );
   };
 
-  const handleCopyWebhookUrl = () => {
-    const url = typeof window !== 'undefined' ? `${window.location.origin}/api/v1/webhooks/whatsapp` : 'https://your-domain.com/api/v1/webhooks/whatsapp';
-    navigator.clipboard?.writeText(url);
-    setCopiedWebhook(true);
-    setTimeout(() => setCopiedWebhook(false), 2500);
+  const handleStartOnboardingQR = async () => {
+    setIsLoadingWA(true);
+    setWaError(null);
+    setQrCode(null);
+    try {
+      const res = await fetch('/api/v1/integrations/whatsapp/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'qr' }),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setWaStatus(json.data.status);
+        if (json.data.qrCode) setQrCode(json.data.qrCode);
+        pollOnboardingStatus();
+      } else {
+        setWaError(json.error?.message || 'Could not initiate QR code.');
+      }
+    } catch {
+      setWaError('Network error starting WhatsApp session.');
+    } finally {
+      setIsLoadingWA(false);
+    }
+  };
+
+  const handleRequestOnboardingPairingCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!waPhoneInput.trim()) {
+      setWaError('Please enter a valid phone number with country code.');
+      return;
+    }
+    setIsLoadingWA(true);
+    setWaError(null);
+    setPairingCode(null);
+    try {
+      const res = await fetch('/api/v1/integrations/whatsapp/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'pairing_code', phoneNumber: waPhoneInput }),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setWaStatus(json.data.status);
+        if (json.data.pairingCode) setPairingCode(json.data.pairingCode);
+        pollOnboardingStatus();
+      } else {
+        setWaError(json.error?.message || 'Could not generate pairing code.');
+      }
+    } catch {
+      setWaError('Network error requesting pairing code.');
+    } finally {
+      setIsLoadingWA(false);
+    }
+  };
+
+  const pollOnboardingStatus = () => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/v1/integrations/whatsapp/session');
+        const json = await res.json();
+        if (json.success && json.data) {
+          const { status, qrCode: qr, pairingCode: pc, phoneNumber: pn } = json.data;
+          setWaStatus(status);
+          if (status === 'connected') {
+            setConnectedNumber(pn ? `+${pn}` : null);
+            setQrCode(null);
+            setPairingCode(null);
+            clearInterval(interval);
+          } else if (status === 'connecting') {
+            if (qr) setQrCode(qr);
+            if (pc) setPairingCode(pc);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }, 2500);
   };
 
   const handleCopyVpa = () => {
@@ -1139,101 +1215,188 @@ export default function OnboardingPage() {
           {currentStep === 6 && (
             <div>
               <div style={{ marginBottom: '1.75rem' }}>
-                <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 6: Connect WhatsApp Business</h2>
+                <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 6: Connect Clinic WhatsApp</h2>
                 <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
-                  Link your Meta WhatsApp Cloud API credentials so the receptionist can send and receive real WhatsApp messages.
+                  Link your number just like WhatsApp Web. Scan a QR code or enter an 8-digit pairing code on your mobile app.
                 </p>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div className="form-field">
-                  <label className="label">
-                    <span>🆔</span> WhatsApp Phone Number ID
-                  </label>
-                  <input
-                    className="input"
-                    value={phoneNumberId}
-                    onChange={e => setPhoneNumberId(e.target.value)}
-                    placeholder="e.g. 104829104810294"
-                  />
-                  <span className="form-hint">Found in Meta App Dashboard &gt; WhatsApp &gt; API Setup &gt; Phone number ID</span>
-                </div>
-
-                <div className="form-field">
-                  <label className="label">
-                    <span>🏢</span> WhatsApp Business Account ID (WABA ID)
-                  </label>
-                  <input
-                    className="input"
-                    value={wabaId}
-                    onChange={e => setWabaId(e.target.value)}
-                    placeholder="e.g. 10928392019283"
-                  />
-                  <span className="form-hint">Found under your Meta Business Manager WhatsApp Accounts tab</span>
-                </div>
-
-                <div className="form-field">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label className="label">
-                      <span>🔑</span> Permanent System User Access Token
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowWaToken(!showWaToken)}
-                      style={{ background: 'none', border: 'none', color: 'hsl(var(--color-primary))', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
-                    >
-                      {showWaToken ? 'Hide Token' : 'Show Token'}
-                    </button>
-                  </div>
-                  <input
-                    className="input"
-                    type={showWaToken ? 'text' : 'password'}
-                    value={waAccessToken}
-                    onChange={e => setWaAccessToken(e.target.value)}
-                    placeholder="EAAB..."
-                  />
-                  <span className="form-hint">System User Token with `whatsapp_business_messaging` and `whatsapp_business_management` permissions</span>
-                </div>
-
-                {/* Webhook Card */}
+              {waStatus === 'connected' ? (
                 <div style={{
-                  padding: '1.25rem',
+                  background: 'hsla(142, 71%, 45%, 0.1)',
+                  border: '1px solid hsla(142, 71%, 45%, 0.3)',
                   borderRadius: '14px',
-                  background: 'hsl(var(--color-surface-2))',
-                  border: '1px solid hsl(var(--color-border))',
+                  padding: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  marginBottom: '1.25rem',
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <div style={{ fontWeight: 700, color: 'hsl(221, 83%, 70%)', fontSize: '0.875rem' }}>
-                      📌 Meta Developer Portal Webhook Callback:
+                  <div style={{ fontSize: '2.5rem' }}>✅</div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#4ade80' }}>
+                      WhatsApp Connected as {connectedNumber || 'Clinic Phone'}
                     </div>
+                    <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))', marginTop: '0.25rem' }}>
+                      Your AI receptionist is active and ready to handle incoming patient queries!
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  {/* Mode Selector */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '0.5rem',
+                    background: 'hsl(var(--color-surface-2))',
+                    padding: '0.25rem',
+                    borderRadius: '10px',
+                    marginBottom: '1.25rem',
+                  }}>
                     <button
                       type="button"
-                      onClick={handleCopyWebhookUrl}
-                      className="btn btn-secondary btn-sm"
+                      onClick={() => setWaMode('qr')}
+                      style={{
+                        padding: '0.6rem',
+                        borderRadius: '8px',
+                        border: 'none',
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        background: waMode === 'qr' ? 'hsl(var(--color-surface))' : 'transparent',
+                        color: waMode === 'qr' ? 'hsl(var(--color-text-primary))' : 'hsl(var(--color-text-muted))',
+                      }}
                     >
-                      {copiedWebhook ? '✓ Copied URL!' : '📋 Copy URL'}
+                      📷 Scan QR Code
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setWaMode('pairing_code')}
+                      style={{
+                        padding: '0.6rem',
+                        borderRadius: '8px',
+                        border: 'none',
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        background: waMode === 'pairing_code' ? 'hsl(var(--color-surface))' : 'transparent',
+                        color: waMode === 'pairing_code' ? 'hsl(var(--color-text-primary))' : 'hsl(var(--color-text-muted))',
+                      }}
+                    >
+                      🔢 Link with Phone Code
                     </button>
                   </div>
 
-                  <div style={{
-                    fontFamily: 'monospace',
-                    background: 'hsl(222 47% 4%)',
-                    padding: '0.625rem 0.875rem',
-                    borderRadius: '8px',
-                    border: '1px solid hsl(var(--color-border))',
-                    fontSize: '0.8rem',
-                    color: '#93c5fd',
-                    wordBreak: 'break-all',
-                    marginBottom: '0.5rem',
-                  }}>
-                    {typeof window !== 'undefined' ? `${window.location.origin}/api/v1/webhooks/whatsapp` : 'https://your-domain.com/api/v1/webhooks/whatsapp'}
-                  </div>
+                  {waError && (
+                    <div style={{
+                      padding: '0.75rem',
+                      borderRadius: '8px',
+                      background: 'hsla(0, 84%, 60%, 0.1)',
+                      color: '#f87171',
+                      border: '1px solid hsla(0, 84%, 60%, 0.3)',
+                      fontSize: '0.8rem',
+                      marginBottom: '1rem',
+                    }}>
+                      ⚠️ {waError}
+                    </div>
+                  )}
 
-                  <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', lineHeight: 1.4 }}>
-                    Subscribe to <strong style={{ color: '#f8fafc' }}>messages</strong> webhook field. You can also skip this step and configure anytime in Clinic Settings!
+                  {waMode === 'qr' ? (
+                    <div style={{ textAlign: 'center', padding: '1.5rem', background: 'hsl(var(--color-surface-2))', borderRadius: '14px' }}>
+                      {qrCode ? (
+                        <div>
+                          <div style={{
+                            display: 'inline-block',
+                            padding: '12px',
+                            background: '#ffffff',
+                            borderRadius: '16px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                            marginBottom: '1rem',
+                          }}>
+                            <img src={qrCode} alt="WhatsApp QR Code" style={{ width: 200, height: 200, display: 'block', borderRadius: '8px' }} />
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', marginBottom: '0.5rem' }}>
+                            Point camera from WhatsApp &gt; Settings &gt; Linked Devices &gt; Link a Device
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📷</div>
+                          <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '0.5rem' }}>
+                            Instant Linked Device QR Code
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleStartOnboardingQR}
+                            disabled={isLoadingWA}
+                            className="btn btn-primary"
+                            style={{ padding: '0.6rem 1.5rem' }}
+                          >
+                            {isLoadingWA ? 'Generating QR...' : 'Show QR Code'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ padding: '1.5rem', background: 'hsl(var(--color-surface-2))', borderRadius: '14px' }}>
+                      <form onSubmit={handleRequestOnboardingPairingCode} style={{ marginBottom: '1rem' }}>
+                        <label className="label" style={{ marginBottom: '0.35rem', display: 'block' }}>
+                          Clinic WhatsApp Phone Number (with country code)
+                        </label>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <input
+                            className="input"
+                            value={waPhoneInput}
+                            onChange={e => setWaPhoneInput(e.target.value)}
+                            placeholder="e.g. +91 98765 43210"
+                            style={{ flex: 1 }}
+                          />
+                          <button type="submit" disabled={isLoadingWA} className="btn btn-primary">
+                            {isLoadingWA ? 'Requesting...' : 'Get Code'}
+                          </button>
+                        </div>
+                      </form>
+
+                      {pairingCode && (
+                        <div style={{
+                          background: 'hsla(142, 71%, 45%, 0.1)',
+                          border: '1px solid hsla(142, 71%, 45%, 0.3)',
+                          borderRadius: '10px',
+                          padding: '1rem',
+                          textAlign: 'center',
+                          marginBottom: '0.75rem',
+                        }}>
+                          <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>YOUR 8-DIGIT PAIRING CODE</div>
+                          <div style={{ fontSize: '1.75rem', fontWeight: 900, fontFamily: 'monospace', color: '#4ade80', letterSpacing: '0.15em', margin: '0.35rem 0' }}>
+                            {pairingCode}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard?.writeText(pairingCode.replace('-', ''));
+                              setCodeCopied(true);
+                              setTimeout(() => setCodeCopied(false), 2000);
+                            }}
+                            className="btn btn-secondary btn-sm"
+                          >
+                            {codeCopied ? '✓ Copied' : 'Copy Code'}
+                          </button>
+                          <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.5rem' }}>
+                            In WhatsApp: Settings &gt; Linked Devices &gt; Link a Device &gt; Tap &quot;Link with phone number instead&quot;
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                    <span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>
+                      (You can also skip this and connect anytime later from Clinic Integrations)
+                    </span>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 

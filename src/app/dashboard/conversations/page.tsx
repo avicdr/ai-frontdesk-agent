@@ -1,13 +1,14 @@
 'use client';
 
 // src/app/dashboard/conversations/page.tsx
-// Clinic Conversation Inbox with real-time timeline, human takeover, and WhatsApp reply composer
+// Clinic Conversation Inbox with real-time timeline, human takeover, scrollable feed, and contact info
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface Conversation {
   id: string;
   patient_phone: string;
+  patient_name?: string | null;
   status: string;
   owner: string;
   last_message_at: string;
@@ -16,10 +17,63 @@ interface Conversation {
 
 interface Message {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'patient';
   content: string;
   created_at: string;
   metadata?: any;
+}
+
+/**
+ * Formats a phone number or WhatsApp LID identifier into a friendly display format.
+ */
+function formatContactNumber(phone: string): string {
+  if (!phone) return 'Unknown Contact';
+  const clean = phone.replace(/[^0-9]/g, '');
+
+  // If 15-digit WhatsApp Linked Identity ID (LID)
+  if (clean.length >= 14 && !clean.startsWith('91')) {
+    return `WA ID: ${clean.slice(0, 4)}••••${clean.slice(-4)}`;
+  }
+
+  // If Indian country code 91 + 10 digits
+  if (clean.startsWith('91') && clean.length === 12) {
+    return `+91 ${clean.slice(2, 7)}-${clean.slice(7)}`;
+  }
+
+  // If 10 digit mobile
+  if (clean.length === 10) {
+    return `+91 ${clean.slice(0, 5)}-${clean.slice(5)}`;
+  }
+
+  return `+${clean}`;
+}
+
+/**
+ * Sanitizes message text so older messages with raw JSON formatting
+ * or markdown code fences are rendered cleanly as normal conversation text.
+ */
+function formatMessageContent(content: string): string {
+  if (!content) return '';
+  const trimmed = content.trim();
+
+  if (trimmed.startsWith('{') || trimmed.startsWith('```') || trimmed.startsWith('json\n')) {
+    try {
+      const cleaned = trimmed
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .replace(/^json\s*/i, '')
+        .trim();
+      const parsed = JSON.parse(cleaned);
+      if (parsed && typeof parsed.user_message === 'string' && parsed.user_message.trim().length > 0) {
+        return parsed.user_message;
+      }
+      if (parsed && typeof parsed.message === 'string' && parsed.message.trim().length > 0) {
+        return parsed.message;
+      }
+    } catch {}
+  }
+
+  return content;
 }
 
 export default function ConversationsPage() {
@@ -29,7 +83,15 @@ export default function ConversationsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [actionInProgress, setActionInProgress] = useState(false);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom of chat on new messages or tab switch
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loadingMessages]);
 
   // Load conversations list
   useEffect(() => {
@@ -44,7 +106,7 @@ export default function ConversationsPage() {
           }
         }
       } catch (e) {
-        console.error(e);
+        console.error('Failed to load conversations:', e);
       } finally {
         setLoading(false);
       }
@@ -65,7 +127,7 @@ export default function ConversationsPage() {
           setMessages(json.data.messages);
         }
       } catch (e) {
-        console.error(e);
+        console.error('Failed to load messages:', e);
       } finally {
         setLoadingMessages(false);
       }
@@ -118,7 +180,7 @@ export default function ConversationsPage() {
       });
       const json = await res.json();
       if (json.data?.message) {
-        setMessages([...messages, json.data.message]);
+        setMessages(prev => [...prev, json.data.message]);
         setReplyText('');
       }
     } catch (e) {
@@ -128,16 +190,25 @@ export default function ConversationsPage() {
     }
   };
 
+  // Filter conversations by search term (name or phone)
+  const filteredConversations = conversations.filter(c => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    const phone = (c.patient_phone || '').toLowerCase();
+    const name = (c.patient_name || '').toLowerCase();
+    return phone.includes(q) || name.includes(q);
+  });
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 6rem)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 5.5rem)', overflow: 'hidden' }}>
       {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexShrink: 0 }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
             💬 Patient Conversations & Live Inbox
           </h1>
-          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>
-            Monitor real-time WhatsApp dialogues, take over chats, or let AI handle reception automatically.
+          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.825rem', margin: '0.2rem 0 0 0' }}>
+            Monitor real-time WhatsApp dialogues, view contact names, take over chats, or let AI handle reception automatically.
           </p>
         </div>
       </div>
@@ -145,10 +216,11 @@ export default function ConversationsPage() {
       {/* Main Container */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '340px 1fr',
-        gap: '1rem',
+        gridTemplateColumns: '360px 1fr',
+        gap: '0',
         flex: 1,
         minHeight: 0,
+        height: '100%',
         background: 'hsl(var(--color-surface))',
         border: '1px solid hsl(var(--color-border))',
         borderRadius: '16px',
@@ -159,45 +231,71 @@ export default function ConversationsPage() {
           borderRight: '1px solid hsl(var(--color-border))',
           display: 'flex',
           flexDirection: 'column',
+          height: '100%',
+          minHeight: 0,
           background: 'hsl(var(--color-background) / 0.5)',
         }}>
-          <div style={{ padding: '1rem', borderBottom: '1px solid hsl(var(--color-border))' }}>
+          {/* Search bar */}
+          <div style={{ padding: '0.875rem 1rem', borderBottom: '1px solid hsl(var(--color-border))', flexShrink: 0 }}>
             <input
               className="input"
-              style={{ fontSize: '0.8rem', padding: '0.5rem 0.75rem' }}
-              placeholder="Search by phone number..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{ fontSize: '0.8rem', padding: '0.5rem 0.75rem', width: '100%' }}
+              placeholder="Search by name or number..."
             />
           </div>
 
-          <div style={{ overflowY: 'auto', flex: 1 }}>
+          {/* Conversation List Scroll Area */}
+          <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
             {loading ? (
               <div style={{ padding: '2rem', textAlign: 'center', color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>
                 Loading conversations...
               </div>
-            ) : conversations.length === 0 ? (
+            ) : filteredConversations.length === 0 ? (
               <div style={{ padding: '2rem', textAlign: 'center', color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>
-                No active conversations yet. Messages sent by patients to your WhatsApp number will appear here!
+                {searchQuery ? 'No matching contacts found.' : 'No active conversations yet. Messages sent to your WhatsApp number will appear here!'}
               </div>
             ) : (
-              conversations.map(conv => {
+              filteredConversations.map(conv => {
                 const isSelected = conv.id === selectedConvId;
                 const isHandoff = conv.owner === 'human' || conv.status === 'handed_off';
+                const formattedNum = formatContactNumber(conv.patient_phone);
+                const title = conv.patient_name || formattedNum;
+
                 return (
                   <div
                     key={conv.id}
                     onClick={() => setSelectedConvId(conv.id)}
                     style={{
-                      padding: '1rem',
+                      padding: '0.875rem 1rem',
                       borderBottom: '1px solid hsl(var(--color-border))',
-                      background: isSelected ? 'hsl(var(--color-primary) / 0.1)' : 'transparent',
+                      background: isSelected ? 'hsl(var(--color-primary) / 0.12)' : 'transparent',
                       cursor: 'pointer',
                       borderLeft: isSelected ? '3px solid hsl(var(--color-primary))' : '3px solid transparent',
                       transition: 'background 0.15s ease',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                      <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>{conv.patient_phone}</span>
-                      <span style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ minWidth: 0, flex: 1, marginRight: '0.5rem' }}>
+                        <div style={{
+                          fontWeight: 700,
+                          fontSize: '0.875rem',
+                          color: 'white',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {title}
+                        </div>
+                        {conv.patient_name && (
+                          <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.1rem' }}>
+                            {formattedNum}
+                          </div>
+                        )}
+                      </div>
+
+                      <span style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', whiteSpace: 'nowrap' }}>
                         {new Date(conv.last_message_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -221,20 +319,39 @@ export default function ConversationsPage() {
 
         {/* Right Column: Active Conversation Timeline */}
         {selectedConv ? (
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            minHeight: 0,
+            overflow: 'hidden',
+          }}>
             {/* Thread Header */}
             <div style={{
-              padding: '1rem 1.5rem',
+              padding: '0.875rem 1.5rem',
               borderBottom: '1px solid hsl(var(--color-border))',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               background: 'hsl(var(--color-surface))',
+              flexShrink: 0,
             }}>
               <div>
-                <div style={{ fontWeight: 800, fontSize: '1rem' }}>{selectedConv.patient_phone}</div>
-                <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                  Channel: WhatsApp Cloud API • Mode:{' '}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>👤</span>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'white' }}>
+                      {selectedConv.patient_name || formatContactNumber(selectedConv.patient_phone)}
+                    </div>
+                    {selectedConv.patient_name && (
+                      <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
+                        {formatContactNumber(selectedConv.patient_phone)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.2rem' }}>
+                  Channel: WhatsApp • Mode:{' '}
                   <span style={{ color: selectedConv.owner === 'human' ? 'hsl(38 92% 50%)' : 'hsl(142 71% 45%)', fontWeight: 600 }}>
                     {selectedConv.owner === 'human' ? 'Manual Staff Intervention' : 'Autonomous AI Receptionist'}
                   </span>
@@ -253,8 +370,16 @@ export default function ConversationsPage() {
               </button>
             </div>
 
-            {/* Message History Bubble Feed */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Message History Bubble Feed (Scrollable) */}
+            <div style={{
+              flex: 1,
+              minHeight: 0,
+              overflowY: 'auto',
+              padding: '1.5rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+            }}>
               {loadingMessages ? (
                 <div style={{ textAlign: 'center', color: 'hsl(var(--color-text-muted))', padding: '2rem' }}>
                   Loading message history...
@@ -265,44 +390,52 @@ export default function ConversationsPage() {
                 </div>
               ) : (
                 messages.map(msg => {
-                  const isUser = msg.role === 'user';
+                  const isPatient = msg.role === 'user' || msg.role === 'patient';
+                  const displayContent = formatMessageContent(msg.content);
+
                   return (
                     <div
                       key={msg.id}
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        alignItems: isUser ? 'flex-start' : 'flex-end',
+                        alignItems: isPatient ? 'flex-end' : 'flex-start',
                       }}
                     >
                       <div style={{
                         maxWidth: '75%',
                         padding: '0.875rem 1.125rem',
-                        borderRadius: isUser ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
-                        background: isUser ? 'hsl(var(--color-surface-hover))' : 'linear-gradient(135deg, hsl(221 83% 58%) 0%, hsl(265 83% 65%) 100%)',
+                        borderRadius: isPatient ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                        background: isPatient
+                          ? 'linear-gradient(135deg, hsl(221 83% 58%) 0%, hsl(265 83% 65%) 100%)'
+                          : 'hsl(var(--color-surface-hover))',
                         color: 'white',
                         fontSize: '0.875rem',
                         lineHeight: 1.5,
                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        wordBreak: 'break-word',
                       }}>
-                        {msg.content}
+                        {displayContent}
                       </div>
                       <div style={{ fontSize: '0.65rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.25rem', padding: '0 0.25rem' }}>
-                        {isUser ? 'Patient' : 'AI Receptionist'} • {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {isPatient ? (selectedConv.patient_name || 'Patient') : 'AI Receptionist'} • {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                   );
                 })
               )}
+              {/* Ref to anchor scroll to bottom */}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Reply Composer */}
             <div style={{
-              padding: '1rem 1.5rem',
+              padding: '0.875rem 1.5rem',
               borderTop: '1px solid hsl(var(--color-border))',
               background: 'hsl(var(--color-surface))',
               display: 'flex',
               gap: '0.75rem',
+              flexShrink: 0,
             }}>
               <input
                 className="input"

@@ -79,14 +79,17 @@ export async function recordAiUsage(
 
   if (!insertError && usage.success) {
     // Append-only usage ledger entry
-    await admin.from('usage_ledger').insert({
-      organization_id: usage.organizationId,
-      entry_type: 'ai_request',
-      quantity: 1,
-      cost_inr: estimatedCostInr,
-      reference_id: usage.requestId,
-      idempotency_key: `ai:${usage.requestId}`,
-    }).onConflict('idempotency_key').ignore();
+    await admin.from('usage_ledger').upsert(
+      {
+        organization_id: usage.organizationId,
+        entry_type: 'ai_request',
+        quantity: 1,
+        cost_inr: estimatedCostInr,
+        reference_id: usage.requestId,
+        idempotency_key: `ai:${usage.requestId}`,
+      },
+      { onConflict: 'idempotency_key', ignoreDuplicates: true }
+    );
 
     // Update subscription counters (atomic increment)
     await admin.rpc('increment_usage', {
