@@ -92,6 +92,7 @@ export async function POST(request: NextRequest) {
     await admin.from('clinic_profiles').insert({
       organization_id: org.id,
       clinic_name: organizationName,
+      business_type: body.businessType || 'dental_clinic',
       country,
       timezone,
       onboarding_step: 1,
@@ -221,6 +222,7 @@ export async function PUT(request: NextRequest) {
         await admin.from('clinic_profiles').insert({
           organization_id: newOrg.id,
           clinic_name: orgName,
+          business_type: body.clinicInfo?.businessType || 'dental_clinic',
           country: 'IN',
           timezone: body.clinicInfo?.timezone || 'Asia/Kolkata',
           onboarding_step: body.step || 8,
@@ -236,14 +238,18 @@ export async function PUT(request: NextRequest) {
 
     // 1. Update clinic profile
     if (body.clinicInfo) {
-      await admin.from('clinic_profiles').update({
+      const profileUpdates: Record<string, unknown> = {
         clinic_name: body.clinicInfo.clinicName,
         phone: body.clinicInfo.phone,
         address_line1: body.clinicInfo.address,
         city: body.clinicInfo.city,
         timezone: body.clinicInfo.timezone || 'Asia/Kolkata',
         updated_at: new Date().toISOString(),
-      }).eq('organization_id', orgId);
+      };
+      if (body.clinicInfo.businessType) {
+        profileUpdates.business_type = body.clinicInfo.businessType;
+      }
+      await admin.from('clinic_profiles').update(profileUpdates).eq('organization_id', orgId);
 
       if (body.clinicInfo.clinicName) {
         await admin.from('organizations').update({

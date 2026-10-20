@@ -19,12 +19,38 @@ export default function IntegrationsPage() {
 
   // Google Calendar State
   const [calendarConnected, setCalendarConnected] = useState(false);
+  const [calendarEmail, setCalendarEmail] = useState<string | null>(null);
+  const [calendarName, setCalendarName] = useState<string | null>(null);
+  const [isLiveGoogleConfigured, setIsLiveGoogleConfigured] = useState(false);
 
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const fetchCalendarStatus = async () => {
+    try {
+      const res = await fetch('/api/v1/integrations/calendar');
+      const json = await res.json();
+      if (json.success && json.data) {
+        setCalendarConnected(json.data.status === 'connected');
+        setCalendarEmail(json.data.email);
+        setCalendarName(json.data.calendarName);
+        setIsLiveGoogleConfigured(json.data.isLiveConfigured);
+      }
+    } catch {}
+  };
+
+  const handleDisconnectCalendar = async () => {
+    try {
+      await fetch('/api/v1/integrations/calendar', { method: 'DELETE' });
+    } catch {}
+    setCalendarConnected(false);
+    setCalendarEmail(null);
+    setCalendarName(null);
+  };
 
   // Initial load: Fetch current session status
   useEffect(() => {
     fetchSessionStatus();
+    fetchCalendarStatus();
 
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -522,6 +548,19 @@ export default function IntegrationsPage() {
             Connect your primary Google Calendar. The AI receptionist will check your free/busy times in real time to avoid double-bookings, and instantly write confirmed patient slots to your calendar.
           </p>
 
+          {/* OAuth status badge */}
+          <div style={{ marginBottom: '1rem' }}>
+            {isLiveGoogleConfigured ? (
+              <span style={{ fontSize: '0.75rem', color: '#4ade80', background: 'hsla(142, 71%, 45%, 0.12)', border: '1px solid hsla(142, 71%, 45%, 0.3)', padding: '0.3rem 0.75rem', borderRadius: '9999px', fontWeight: 600 }}>
+                🟢 Live Google Account OAuth Active
+              </span>
+            ) : (
+              <span style={{ fontSize: '0.75rem', color: '#fbbf24', background: 'hsla(38, 92%, 50%, 0.12)', border: '1px solid hsla(38, 92%, 50%, 0.3)', padding: '0.3rem 0.75rem', borderRadius: '9999px', fontWeight: 600 }} title="Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env for production Google OAuth">
+                ⚡ Sandbox Simulation Mode (Set GOOGLE_CLIENT_ID & SECRET in .env for Live Account)
+              </span>
+            )}
+          </div>
+
           <div style={{
             background: 'hsl(var(--color-surface-hover))',
             borderRadius: '12px',
@@ -556,7 +595,8 @@ export default function IntegrationsPage() {
                     Google Doctor Calendar Connected
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
-                    Real-time two-way synchronization is active. Confirmed appointments sync directly.
+                    {calendarEmail ? `Account: ${calendarEmail}` : 'Two-way synchronization is active.'}
+                    {calendarName ? ` • Calendar: ${calendarName}` : ''}
                   </div>
                 </div>
               </div>
@@ -573,7 +613,7 @@ export default function IntegrationsPage() {
                   type="button"
                   className="btn"
                   style={{ background: 'hsla(0, 84%, 60%, 0.1)', color: '#f87171', border: '1px solid hsla(0, 84%, 60%, 0.3)' }}
-                  onClick={() => setCalendarConnected(false)}
+                  onClick={handleDisconnectCalendar}
                 >
                   Disconnect
                 </button>

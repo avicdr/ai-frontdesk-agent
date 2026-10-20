@@ -19,12 +19,13 @@ export const CALENDAR_SCOPES = [
 /**
  * Generate Google OAuth Authorization URL for a clinic organization
  */
-export function getCalendarAuthUrl(organizationId: string): string {
+export function getCalendarAuthUrl(organizationId: string, returnTo?: string): string {
+  const statePayload = Buffer.from(JSON.stringify({ orgId: organizationId, returnTo: returnTo || '/dashboard/integrations' })).toString('base64url');
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
     scope: CALENDAR_SCOPES,
-    state: organizationId,
+    state: statePayload,
   });
 }
 
@@ -53,15 +54,17 @@ export async function exchangeCodeAndSave(code: string, organizationId: string) 
     .from('calendar_integrations')
     .upsert({
       organization_id: organizationId,
-      provider: 'google',
       access_token_encrypted: encryptedAccessToken,
       refresh_token_encrypted: encryptedRefreshToken,
       token_expires_at: expiresAt,
-      calendar_id: primaryCal?.data.id || 'primary',
-      calendar_name: primaryCal?.data.summary || 'Primary Calendar',
-      is_active: true,
-      last_synced_at: new Date().toISOString(),
-    }, { onConflict: 'organization_id, provider' })
+      selected_calendar_id: primaryCal?.data.id || 'primary',
+      selected_calendar_name: primaryCal?.data.summary || 'Primary Calendar',
+      google_account_email: primaryCal?.data.id?.includes('@') ? primaryCal.data.id : null,
+      scopes: CALENDAR_SCOPES,
+      status: 'connected',
+      connected_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'organization_id' })
     .select()
     .single();
 
@@ -81,9 +84,8 @@ export async function getAuthenticatedCalendar(organizationId: string) {
     .from('calendar_integrations')
     .select('*')
     .eq('organization_id', organizationId)
-    .eq('provider', 'google')
-    .eq('is_active', true)
-    .single();
+    .eq('status', 'connected')
+    .maybeSingle();
 
   if (error || !integration) {
     return null;
@@ -124,7 +126,7 @@ export async function getAuthenticatedCalendar(organizationId: string) {
 
   return {
     calendar: google.calendar({ version: 'v3', auth }),
-    calendarId: integration.calendar_id || 'primary',
+    calendarId: integration.selected_calendar_id || 'primary',
     integrationId: integration.id,
   };
 }

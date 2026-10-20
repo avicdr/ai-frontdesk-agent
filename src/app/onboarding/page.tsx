@@ -3,25 +3,24 @@
 // src/app/onboarding/page.tsx
 // 8-step onboarding wizard for dental clinic owners to activate their AI front desk
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { CLINIC_TYPES, ClinicTypeId, getClinicTypeConfig } from '@/lib/constants/clinic-types';
 
-interface DentalService {
+interface ClinicServiceItem {
   name: string;
   duration: number;
   price: string;
   isBookable: boolean;
 }
 
-const DEFAULT_SERVICES: DentalService[] = [
-  { name: 'Routine Dental Consultation & Checkup', duration: 30, price: '500', isBookable: true },
-  { name: 'Professional Teeth Cleaning (Scaling & Polishing)', duration: 45, price: '1200', isBookable: true },
-  { name: 'Root Canal Treatment (RCT)', duration: 60, price: '4500', isBookable: true },
-  { name: 'Teeth Whitening (Laser Bleaching)', duration: 45, price: '3000', isBookable: true },
-  { name: 'Dental Extraction (Simple)', duration: 30, price: '1500', isBookable: true },
-  { name: 'Emergency Dental Pain Relief', duration: 30, price: '800', isBookable: true },
-];
+const DEFAULT_SERVICES: ClinicServiceItem[] = getClinicTypeConfig('dental_clinic').defaultServices.map(s => ({
+  name: s.name,
+  duration: s.duration,
+  price: s.price,
+  isBookable: s.isBookable !== false,
+}));
 
 const PLATFORM_UPI_VPA = process.env.NEXT_PUBLIC_PLATFORM_UPI_ID || process.env.NEXT_PUBLIC_UPI_VPA || 'aviwasasleep@ptaxis';
 
@@ -82,7 +81,10 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Step 1: Clinic Info
+  // Step 1: Clinic Info & Specialty
+  const [businessType, setBusinessType] = useState<ClinicTypeId>('dental_clinic');
+  const currentClinicConfig = getClinicTypeConfig(businessType);
+
   const [clinicName, setClinicName] = useState('Apex Dental & Orthodontics');
   const [ownerName, setOwnerName] = useState('Dr. Sarah Verma');
   const [phone, setPhone] = useState('+91 98765 43210');
@@ -98,7 +100,7 @@ export default function OnboardingPage() {
   );
 
   // Step 3: Services & Fees
-  const [services, setServices] = useState<DentalService[]>(DEFAULT_SERVICES);
+  const [services, setServices] = useState<ClinicServiceItem[]>(DEFAULT_SERVICES);
   const [newServiceName, setNewServiceName] = useState('');
   const [newServicePrice, setNewServicePrice] = useState('');
   const [newServiceDuration, setNewServiceDuration] = useState('30');
@@ -132,11 +134,100 @@ export default function OnboardingPage() {
 
   // Step 7: Calendar
   const [calendarConnected, setCalendarConnected] = useState(false);
+  const [calendarEmail, setCalendarEmail] = useState<string | null>(null);
+  const [calendarName, setCalendarName] = useState<string | null>(null);
+  const [isLiveGoogleConfigured, setIsLiveGoogleConfigured] = useState(false);
 
   // Step 8: Plan & UPI
   const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'growth'>('pro');
   const [utrNumber, setUtrNumber] = useState('');
   const [copiedVpa, setCopiedVpa] = useState(false);
+
+  // Initial load: Fetch existing onboarding state & calendar status
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('calendar_connected') === 'true') {
+        setCalendarConnected(true);
+      }
+      const stepParam = params.get('step');
+      if (stepParam) {
+        const parsed = parseInt(stepParam, 10);
+        if (parsed >= 1 && parsed <= 8) setCurrentStep(parsed);
+      }
+    }
+
+    // Fetch calendar integration status
+    fetch('/api/v1/integrations/calendar')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && json.data) {
+          setCalendarConnected(json.data.status === 'connected');
+          setCalendarEmail(json.data.email);
+          setCalendarName(json.data.calendarName);
+          setIsLiveGoogleConfigured(json.data.isLiveConfigured);
+        }
+      })
+      .catch(() => {});
+
+    // Fetch onboarding progress
+    fetch('/api/v1/onboarding')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && json.data) {
+          const { clinicProfile, agentConfig, services: loadedServices, currentStep: dbStep } = json.data;
+          if (clinicProfile) {
+            if (clinicProfile.clinic_name) setClinicName(clinicProfile.clinic_name);
+            if (clinicProfile.business_type) {
+              setBusinessType(clinicProfile.business_type as ClinicTypeId);
+            }
+            if (clinicProfile.phone) setPhone(clinicProfile.phone);
+            if (clinicProfile.address_line1) setAddress(clinicProfile.address_line1);
+            if (clinicProfile.city) setCity(clinicProfile.city);
+            if (clinicProfile.timezone) setTimezone(clinicProfile.timezone);
+          }
+          if (agentConfig) {
+            if (agentConfig.assistant_name) setAssistantName(agentConfig.assistant_name);
+            if (agentConfig.tone) setTone(agentConfig.tone);
+            if (agentConfig.greeting_message) setGreeting(agentConfig.greeting_message);
+          }
+          if (Array.isArray(loadedServices) && loadedServices.length > 0) {
+            setServices(loadedServices.map((s: any) => ({
+              name: s.name,
+              duration: s.duration_minutes ?? 30,
+              price: s.price_display ? String(s.price_display).replace(/[^0-9.]/g, '') : (s.price_min ? String(s.price_min) : '0'),
+              isBookable: s.is_bookable !== false && s.is_active !== false,
+            })));
+          }
+          if (dbStep && dbStep > 1 && dbStep <= 8) {
+            setCurrentStep(dbStep);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSelectClinicType = (typeId: ClinicTypeId) => {
+    setBusinessType(typeId);
+    const config = getClinicTypeConfig(typeId);
+
+    // If clinic name is blank or matches a default clinic name from presets, auto-update it
+    const isDefaultName = CLINIC_TYPES.some(c => c.defaultClinicName === clinicName) || !clinicName;
+    if (isDefaultName) {
+      setClinicName(config.defaultClinicName);
+    }
+
+    // Auto-update greeting message to match the selected clinic specialty
+    setGreeting(config.defaultGreeting);
+
+    // Auto-update services with realistic procedure presets for the specialty
+    setServices(config.defaultServices.map(s => ({
+      name: s.name,
+      duration: s.duration,
+      price: s.price,
+      isBookable: s.isBookable !== false,
+    })));
+  };
 
   // Add a service
   const handleAddService = () => {
@@ -299,7 +390,8 @@ export default function OnboardingPage() {
           body: JSON.stringify({
             fullName: ownerName || 'Dr. Sarah Verma',
             phone: phone || '+91 98765 43210',
-            organizationName: clinicName || 'Apex Dental & Orthodontics',
+            organizationName: clinicName || currentClinicConfig.defaultClinicName,
+            businessType,
             timezone: timezone || 'Asia/Kolkata',
           }),
         });
@@ -310,7 +402,7 @@ export default function OnboardingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           step: currentStep + 1,
-          clinicInfo: { clinicName, phone, address, city, timezone },
+          clinicInfo: { clinicName, businessType, phone, address, city, timezone },
           agentConfig: { assistantName, tone, greetingMessage: greeting },
           services,
           workingHours,
@@ -346,7 +438,8 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           fullName: ownerName || 'Dr. Sarah Verma',
           phone: phone || '+91 98765 43210',
-          organizationName: clinicName || 'Apex Dental & Orthodontics',
+          organizationName: clinicName || currentClinicConfig.defaultClinicName,
+          businessType,
           timezone: timezone || 'Asia/Kolkata',
         }),
       });
@@ -358,7 +451,7 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           step: 8,
           complete: true,
-          clinicInfo: { clinicName, phone, address, city, timezone },
+          clinicInfo: { clinicName, businessType, phone, address, city, timezone },
           agentConfig: { assistantName, tone, greetingMessage: greeting },
           services,
           workingHours,
@@ -512,21 +605,70 @@ export default function OnboardingPage() {
               <div style={{ marginBottom: '1.75rem' }}>
                 <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 1: Clinic Essentials</h2>
                 <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
-                  Tell us about your dental practice. The AI receptionist will use this info when answering patient inquiries and routing calls.
+                  Tell us about your clinic practice. The AI receptionist will use this info when answering patient inquiries and scheduling appointments.
                 </p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {/* Healthcare Specialty / Clinic Type Selector */}
+                <div className="form-field" style={{
+                  background: 'hsla(221, 83%, 58%, 0.08)',
+                  padding: '1.25rem',
+                  borderRadius: '14px',
+                  border: '1px solid hsla(221, 83%, 58%, 0.25)',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <label className="label" style={{ fontWeight: 700, fontSize: '0.95rem', margin: 0 }}>
+                      <span>🏥</span> Clinic Type / Healthcare Specialty <span style={{ color: 'hsl(var(--color-error))' }}>*</span>
+                    </label>
+                    <span style={{ fontSize: '0.75rem', color: '#93c5fd', fontWeight: 600 }}>
+                      {currentClinicConfig.icon} {currentClinicConfig.label}
+                    </span>
+                  </div>
+
+                  <select
+                    className="input"
+                    value={businessType}
+                    onChange={e => handleSelectClinicType(e.target.value as ClinicTypeId)}
+                    style={{
+                      cursor: 'pointer',
+                      fontSize: '0.95rem',
+                      fontWeight: 600,
+                      background: 'hsl(var(--color-surface))',
+                      color: 'hsl(var(--color-text-primary))',
+                      border: '1px solid hsla(221, 83%, 58%, 0.4)',
+                      padding: '0.75rem 1rem',
+                      borderRadius: '10px',
+                    }}
+                  >
+                    {CLINIC_TYPES.map(type => (
+                      <option key={type.id} value={type.id} style={{ background: '#0f172a', color: '#ffffff' }}>
+                        {type.icon} {type.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem', fontSize: '0.775rem', color: '#93c5fd' }}>
+                    <span>✨</span>
+                    <span>
+                      <strong>{currentClinicConfig.label}:</strong> {currentClinicConfig.specialtyDescription}
+                    </span>
+                  </div>
+                  <span className="form-hint" style={{ marginTop: '0.35rem' }}>
+                    Switching specialty automatically adapts your catalog, procedure presets, and AI clinical responses.
+                  </span>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
                   <div className="form-field">
                     <label className="label">
-                      <span>🏥</span> Clinic Name <span style={{ color: 'hsl(var(--color-error))' }}>*</span>
+                      <span>🏷️</span> Clinic Name <span style={{ color: 'hsl(var(--color-error))' }}>*</span>
                     </label>
                     <input
                       className="input"
                       value={clinicName}
                       onChange={e => setClinicName(e.target.value)}
-                      placeholder="e.g. Apex Dental & Orthodontics"
+                      placeholder={`e.g. ${currentClinicConfig.defaultClinicName}`}
                     />
                     <span className="form-hint">Displayed to patients in WhatsApp greetings & notifications</span>
                   </div>
@@ -692,17 +834,30 @@ export default function OnboardingPage() {
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-                      {GREETING_TEMPLATES.map((tmpl, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setGreeting(tmpl.text)}
-                          className="preset-chip"
-                          style={{ fontSize: '0.7rem' }}
-                        >
-                          {tmpl.label}
-                        </button>
-                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setGreeting(`Hello! Welcome to ${clinicName || currentClinicConfig.defaultClinicName}. I'm ${assistantName || 'Aria'}, your AI receptionist. How can I assist you with your ${currentClinicConfig.label.split('&')[0].trim().toLowerCase()} care today?`)}
+                        className="preset-chip"
+                        style={{ fontSize: '0.7rem' }}
+                      >
+                        🌸 Warm & Welcoming
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGreeting(`Hi there! Welcome to ${clinicName || currentClinicConfig.defaultClinicName}. I can help you check open slots, schedule an appointment, or quote procedure fees. How can I assist you today?`)}
+                        className="preset-chip"
+                        style={{ fontSize: '0.7rem' }}
+                      >
+                        ⚡ Swift Booking Focus
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGreeting(`Hello! You have reached ${clinicName || currentClinicConfig.defaultClinicName}. If you need an urgent consultation or immediate appointment, please let me know right away so I can assist.`)}
+                        className="preset-chip"
+                        style={{ fontSize: '0.7rem' }}
+                      >
+                        🚨 Urgent Friendly
+                      </button>
                     </div>
 
                     <textarea
@@ -743,7 +898,7 @@ export default function OnboardingPage() {
                       fontSize: '1.1rem',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                     }}>
-                      🦷
+                      {currentClinicConfig.icon}
                     </div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -753,7 +908,7 @@ export default function OnboardingPage() {
                         <span style={{ color: '#00a884', fontSize: '0.75rem' }} title="Verified WhatsApp Business">✓</span>
                       </div>
                       <div style={{ fontSize: '0.7rem', color: '#8696a0' }}>
-                        Verified Dental Receptionist • online
+                        Verified {currentClinicConfig.label.split('&')[0].trim()} Receptionist • online
                       </div>
                     </div>
                   </div>
@@ -820,14 +975,16 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* STEP 3: Dental Services & Fees */}
+          {/* STEP 3: Services & Fees */}
           {currentStep === 3 && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                 <div>
-                  <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 3: Dental Services & Pricing</h2>
+                  <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>
+                    Step 3: {currentClinicConfig.label.split('&')[0].trim()} Services & Pricing
+                  </h2>
                   <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
-                    Configure the treatments your AI receptionist quotes to patients. <strong style={{ color: '#4ade80' }}>Prices and durations are editable inline directly in the table!</strong>
+                    Configure the treatments and consultations your AI receptionist quotes to patients. <strong style={{ color: '#4ade80' }}>Prices and durations are editable inline directly in the table!</strong>
                   </p>
                 </div>
                 <div style={{
@@ -847,10 +1004,10 @@ export default function OnboardingPage() {
               {/* Popular Presets Bar */}
               <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'hsl(var(--color-text-muted))', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  + Quick Add Popular Dental Procedures:
+                  + Quick Add Popular {currentClinicConfig.label.split('&')[0].trim()} Procedures:
                 </div>
                 <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
-                  {POPULAR_DENTAL_PRESETS.map((preset, idx) => (
+                  {currentClinicConfig.popularPresets.map((preset, idx) => (
                     <button
                       key={idx}
                       type="button"
@@ -1011,7 +1168,7 @@ export default function OnboardingPage() {
               </div>
 
               <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                <span>Total catalog items: {services.length} active dental treatments</span>
+                <span>Total catalog items: {services.length} active treatments / procedures</span>
                 <span>💡 Changes to prices update instantly for AI quotes</span>
               </div>
             </div>
@@ -1436,11 +1593,24 @@ export default function OnboardingPage() {
                   {calendarConnected ? '✅ Google Calendar Connected & Active' : 'Authorize Google Doctor Calendar'}
                 </h3>
 
-                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem', maxWidth: 480, margin: '0 auto 1.75rem auto' }}>
+                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem', maxWidth: 480, margin: '0 auto 1.25rem auto' }}>
                   {calendarConnected
                     ? '2-Way Calendar Sync is online. Patient bookings will appear with patient contact info, procedure duration, and notes.'
                     : 'Click below to connect your clinic’s Google Workspace or Gmail calendar.'}
                 </p>
+
+                {/* OAuth status badge */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                  {isLiveGoogleConfigured ? (
+                    <span style={{ fontSize: '0.75rem', color: '#4ade80', background: 'hsla(142, 71%, 45%, 0.12)', border: '1px solid hsla(142, 71%, 45%, 0.3)', padding: '0.3rem 0.75rem', borderRadius: '9999px', fontWeight: 600 }}>
+                      🟢 Live Google Account OAuth Active
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: '0.75rem', color: '#fbbf24', background: 'hsla(38, 92%, 50%, 0.12)', border: '1px solid hsla(38, 92%, 50%, 0.3)', padding: '0.3rem 0.75rem', borderRadius: '9999px', fontWeight: 600 }} title="Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env for production Google OAuth">
+                      ⚡ Sandbox Simulation Mode (Set GOOGLE_CLIENT_ID & SECRET in .env for Live Account)
+                    </span>
+                  )}
+                </div>
 
                 {!calendarConnected ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
@@ -1458,27 +1628,50 @@ export default function OnboardingPage() {
                       <span>Connect Clinic Google Calendar</span>
                     </a>
 
-                    <button
-                      type="button"
-                      onClick={() => setCalendarConnected(true)}
-                      style={{ background: 'none', border: 'none', color: 'hsl(var(--color-text-muted))', fontSize: '0.8rem', textDecoration: 'underline', cursor: 'pointer' }}
-                    >
-                      (Testing mode: Simulate Calendar Connection)
-                    </button>
+                    <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
+                      Redirects to Google Cloud OAuth consent screen.
+                    </span>
                   </div>
                 ) : (
-                  <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '9999px',
-                    background: 'hsla(142, 71%, 45%, 0.15)',
-                    color: '#4ade80',
-                    fontWeight: 700,
-                    fontSize: '0.875rem',
-                  }}>
-                    ✓ Google Calendar Two-Way Sync Ready
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.6rem 1.25rem',
+                      borderRadius: '12px',
+                      background: 'hsla(142, 71%, 45%, 0.15)',
+                      border: '1px solid hsla(142, 71%, 45%, 0.3)',
+                      color: '#4ade80',
+                      fontWeight: 700,
+                      fontSize: '0.875rem',
+                    }}>
+                      ✓ {calendarEmail ? `Connected: ${calendarEmail}` : 'Google Calendar 2-Way Sync Active'}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                      <a
+                        href="/api/v1/integrations/calendar/auth"
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.8rem', textDecoration: 'none' }}
+                      >
+                        🔄 Re-authenticate
+                      </a>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await fetch('/api/v1/integrations/calendar', { method: 'DELETE' });
+                          } catch {}
+                          setCalendarConnected(false);
+                          setCalendarEmail(null);
+                        }}
+                        className="btn"
+                        style={{ fontSize: '0.8rem', background: 'hsla(0, 84%, 60%, 0.1)', color: '#f87171', border: '1px solid hsla(0, 84%, 60%, 0.3)' }}
+                      >
+                        Disconnect
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

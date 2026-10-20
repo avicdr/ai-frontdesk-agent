@@ -7,21 +7,39 @@ import { exchangeCodeAndSave } from '@/lib/calendar/client';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
-  const organizationId = searchParams.get('state');
   const error = searchParams.get('error');
+  const rawState = searchParams.get('state') || '';
+  let organizationId = rawState;
+  let returnTo = '/dashboard/integrations';
+
+  try {
+    const decoded = JSON.parse(Buffer.from(rawState, 'base64url').toString('utf8'));
+    if (decoded?.orgId) {
+      organizationId = decoded.orgId;
+      returnTo = decoded.returnTo || returnTo;
+    }
+  } catch {
+    // rawState was a plain organization ID
+  }
 
   const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   if (error || !code || !organizationId) {
     console.error('Calendar OAuth Callback error:', error);
-    return NextResponse.redirect(`${appBaseUrl}/dashboard/integrations?error=calendar_auth_denied`);
+    const redirectUrl = new URL(returnTo, appBaseUrl);
+    redirectUrl.searchParams.set('error', 'calendar_auth_denied');
+    return NextResponse.redirect(redirectUrl.toString());
   }
 
   try {
     await exchangeCodeAndSave(code, organizationId);
-    return NextResponse.redirect(`${appBaseUrl}/dashboard/integrations?calendar=connected`);
+    const redirectUrl = new URL(returnTo, appBaseUrl);
+    redirectUrl.searchParams.set('calendar_connected', 'true');
+    return NextResponse.redirect(redirectUrl.toString());
   } catch (err) {
     console.error('Calendar Token Exchange Error:', err);
-    return NextResponse.redirect(`${appBaseUrl}/dashboard/integrations?error=token_exchange_failed`);
+    const redirectUrl = new URL(returnTo, appBaseUrl);
+    redirectUrl.searchParams.set('error', 'token_exchange_failed');
+    return NextResponse.redirect(redirectUrl.toString());
   }
 }

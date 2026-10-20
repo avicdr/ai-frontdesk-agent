@@ -46,9 +46,12 @@ export async function GET(request: NextRequest) {
     if (isMockClient) {
       await admin.from('calendar_integrations').upsert({
         organization_id: orgId,
-        provider: 'google',
-        calendar_id: 'primary',
+        selected_calendar_id: 'primary',
+        selected_calendar_name: 'Primary Calendar (Sandbox)',
+        google_account_email: 'doctor@clinic.com',
+        scopes: ['https://www.googleapis.com/auth/calendar', 'https://www.googleapis.com/auth/calendar.events'],
         status: 'connected',
+        connected_at: new Date().toISOString(),
         token_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         updated_at: new Date().toISOString(),
       }, { onConflict: 'organization_id' });
@@ -56,7 +59,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL(returnTo, request.url));
     }
 
-    const authUrl = getCalendarAuthUrl(orgId);
+    const authUrl = getCalendarAuthUrl(orgId, returnTo);
     return NextResponse.redirect(authUrl);
   } catch (err) {
     console.error('Google Calendar Auth Init Error:', err);

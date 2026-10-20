@@ -4,6 +4,7 @@
 // Clinic Configuration Page: Clinic Details, AI Persona, Services, Hours & Policies
 
 import React, { useState, useEffect } from 'react';
+import { CLINIC_TYPES, ClinicTypeId, getClinicTypeConfig } from '@/lib/constants/clinic-types';
 
 interface Service {
   name: string;
@@ -12,14 +13,6 @@ interface Service {
   isBookable: boolean;
 }
 
-const POPULAR_DENTAL_PRESETS = [
-  { name: 'Invisible Aligners Consultation', duration: 30, price: '1500' },
-  { name: 'Dental Implant Consultation', duration: 45, price: '2000' },
-  { name: 'Composite Dental Veneers', duration: 60, price: '4000' },
-  { name: 'Wisdom Tooth Surgical Extraction', duration: 45, price: '3500' },
-  { name: 'Zirconia Ceramic Crown', duration: 45, price: '7500' },
-];
-
 export default function ConfigurationPage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'agent' | 'services' | 'policies'>('profile');
   const [saving, setSaving] = useState(false);
@@ -27,9 +20,12 @@ export default function ConfigurationPage() {
   const [loading, setLoading] = useState(true);
 
   // Clinic Profile State
-  const [clinicName, setClinicName] = useState('Don\'t Go Home Clinic');
+  const [businessType, setBusinessType] = useState<ClinicTypeId>('dental_clinic');
+  const currentConfig = getClinicTypeConfig(businessType);
+
+  const [clinicName, setClinicName] = useState("Don't Go Home Clinic");
   const [phone, setPhone] = useState('+91 98765 43210');
-  const [address, setAddress] = useState('What\'s My Location');
+  const [address, setAddress] = useState("What's My Location");
   const [city, setCity] = useState('Bengaluru');
   const [timezone, setTimezone] = useState('Asia/Kolkata');
 
@@ -68,6 +64,9 @@ export default function ConfigurationPage() {
           const { clinicProfile, agentConfig, services: loadedServices, bookingPolicy, organizationName } = json.data;
           if (clinicProfile?.clinic_name || organizationName) {
             setClinicName(clinicProfile?.clinic_name || organizationName);
+          }
+          if (clinicProfile?.business_type) {
+            setBusinessType(clinicProfile.business_type as ClinicTypeId);
           }
           if (clinicProfile?.phone) setPhone(clinicProfile.phone);
           if (clinicProfile?.address_line1) setAddress(clinicProfile.address_line1);
@@ -128,7 +127,7 @@ export default function ConfigurationPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          clinicInfo: { clinicName, phone, address, city, timezone },
+          clinicInfo: { clinicName, businessType, phone, address, city, timezone },
           agentConfig: { assistantName, tone, greetingMessage: greeting },
           services,
           bookingPolicy: {
@@ -246,7 +245,7 @@ export default function ConfigurationPage() {
         {[
           { id: 'profile', label: '🏥 Clinic Profile' },
           { id: 'agent', label: '🤖 AI Persona' },
-          { id: 'services', label: '🦷 Services & Prices' },
+          { id: 'services', label: `${currentConfig.icon} Services & Prices` },
           { id: 'policies', label: '📋 Booking Policies' },
         ].map(tab => {
           const isActive = activeTab === tab.id;
@@ -282,6 +281,43 @@ export default function ConfigurationPage() {
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* Clinic Specialty Selector */}
+            <div className="form-field" style={{
+              background: 'hsla(221, 83%, 58%, 0.08)',
+              padding: '1.25rem',
+              borderRadius: '12px',
+              border: '1px solid hsla(221, 83%, 58%, 0.25)',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <label className="label" style={{ fontWeight: 700, margin: 0 }}>
+                  <span>🩺</span> Clinic Specialty / Healthcare Type
+                </label>
+                <span style={{ fontSize: '0.8rem', color: '#93c5fd', fontWeight: 600 }}>
+                  {currentConfig.icon} {currentConfig.label}
+                </span>
+              </div>
+              <select
+                className="input"
+                value={businessType}
+                onChange={e => setBusinessType(e.target.value as ClinicTypeId)}
+                style={{
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  background: 'hsl(var(--color-surface))',
+                  border: '1px solid hsla(221, 83%, 58%, 0.4)',
+                }}
+              >
+                {CLINIC_TYPES.map(t => (
+                  <option key={t.id} value={t.id} style={{ background: '#0f172a', color: '#fff' }}>
+                    {t.icon} {t.label}
+                  </option>
+                ))}
+              </select>
+              <div style={{ fontSize: '0.775rem', color: '#93c5fd', marginTop: '0.5rem' }}>
+                ✨ {currentConfig.specialtyDescription}
+              </div>
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
               <div className="form-field">
                 <label className="label"><span>🏥</span> Clinic Name</label>
@@ -410,10 +446,10 @@ export default function ConfigurationPage() {
           {/* Quick Presets */}
           <div style={{ marginBottom: '1.25rem' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'hsl(var(--color-text-muted))', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              + Popular Dental Procedures:
+              + Popular {currentConfig.label.split('&')[0].trim()} Procedures:
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {POPULAR_DENTAL_PRESETS.map((p, i) => (
+              {currentConfig.popularPresets.map((p, i) => (
                 <button
                   key={i}
                   type="button"
