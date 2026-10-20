@@ -158,9 +158,12 @@ export async function POST(request: NextRequest) {
         .from('messages')
         .insert({
           conversation_id: conversationId,
+          organization_id: membership.organization_id,
+          external_id: `${membership.organization_id}:dashboard:${Date.now()}`,
           role: 'assistant',
           content: message,
           channel: 'whatsapp',
+          metadata: { sent_by_owner: true, from_dashboard: true },
         })
         .select()
         .single();

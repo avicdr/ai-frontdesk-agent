@@ -590,7 +590,16 @@ export default function ConversationsPage() {
               ) : (
                 messages.map(msg => {
                   const isPatient = msg.role === 'user' || msg.role === 'patient';
+                  const isStaff = Boolean(msg.metadata?.sent_by_owner || msg.metadata?.from_me || msg.metadata?.from_dashboard);
+                  const isOutgoing = !isPatient;
                   const displayContent = formatMessageContent(msg.content);
+
+                  let senderLabel = '🤖 AI Receptionist';
+                  if (isPatient) {
+                    senderLabel = `👤 ${selectedConv.patient_name || 'Patient'}`;
+                  } else if (isStaff) {
+                    senderLabel = msg.metadata?.from_me ? '📱 Staff (from WhatsApp)' : '👨‍⚕️ Staff (You)';
+                  }
 
                   return (
                     <div
@@ -598,17 +607,19 @@ export default function ConversationsPage() {
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        alignItems: isPatient ? 'flex-end' : 'flex-start',
+                        alignItems: isOutgoing ? 'flex-end' : 'flex-start',
                       }}
                     >
                       <div style={{
                         maxWidth: '75%',
                         padding: '0.875rem 1.125rem',
-                        borderRadius: isPatient ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                        background: isPatient
-                          ? 'linear-gradient(135deg, hsl(221 83% 58%) 0%, hsl(265 83% 65%) 100%)'
+                        borderRadius: isOutgoing ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                        background: isOutgoing
+                          ? isStaff
+                            ? 'linear-gradient(135deg, hsl(215 80% 50%) 0%, hsl(235 80% 60%) 100%)'
+                            : 'linear-gradient(135deg, hsl(221 83% 58%) 0%, hsl(265 83% 65%) 100%)'
                           : 'hsl(var(--color-surface-2))',
-                        border: isPatient ? 'none' : '1px solid hsl(var(--color-border))',
+                        border: isOutgoing ? 'none' : '1px solid hsl(var(--color-border))',
                         color: 'white',
                         fontSize: '0.875rem',
                         lineHeight: 1.5,
@@ -617,8 +628,18 @@ export default function ConversationsPage() {
                       }}>
                         {displayContent}
                       </div>
-                      <div style={{ fontSize: '0.65rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.25rem', padding: '0 0.25rem' }}>
-                        {isPatient ? (selectedConv.patient_name || 'Patient') : 'AI Receptionist'} • {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <div style={{
+                        fontSize: '0.65rem',
+                        color: 'hsl(var(--color-text-muted))',
+                        marginTop: '0.25rem',
+                        padding: '0 0.25rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                      }}>
+                        <span>{senderLabel}</span>
+                        <span>•</span>
+                        <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     </div>
                   );
