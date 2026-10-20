@@ -200,7 +200,7 @@ export default async function AdminSubscriberDetailPage({ params }: PageProps) {
           </div>
           <div className="stat-value" style={{ color: 'hsl(265, 83%, 70%)' }}>
             {sub?.ai_requests_used ?? 0}
-            <span style={{ fontSize: '0.9rem', color: 'hsl(var(--color-text-muted))' }}> / {plan?.included_ai_requests ?? 300} req</span>
+            <span style={{ fontSize: '0.9rem', color: 'hsl(var(--color-text-muted))' }}> / {plan?.included_ai_requests ?? 500} req</span>
           </div>
           <div className="stat-label">
             Est. Cost: ₹{Number(sub?.ai_cost_used_inr ?? 0).toFixed(2)}

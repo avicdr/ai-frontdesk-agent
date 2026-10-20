@@ -107,8 +107,9 @@ export default async function DashboardPage() {
   const onboardingComplete = !!profile?.onboarding_completed_at;
 
 
+  const planLimit = (plan?.included_ai_requests as number) || 500;
   const usagePercent = plan && subscription
-    ? Math.min(100, Math.round(((subscription as Record<string, number>).ai_requests_used / (plan.included_ai_requests as number)) * 100))
+    ? Math.min(100, Math.round(((subscription as Record<string, number>).ai_requests_used / planLimit) * 100))
     : 0;
 
   const expiresAt = (subscription as Record<string, string> | null)?.expires_at;
@@ -250,7 +251,7 @@ export default async function DashboardPage() {
             <div>
               <div style={{ fontWeight: 600 }}>AI Usage This Month</div>
               <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>
-                {(subscription as Record<string, number>).ai_requests_used} / {plan.included_ai_requests as number} AI requests
+                {(subscription as Record<string, number>).ai_requests_used} / {planLimit.toLocaleString()} AI requests
               </div>
             </div>
             <div style={{ fontSize: '1.25rem', fontWeight: 800 }} className={usagePercent >= 80 ? '' : ''}>

@@ -152,9 +152,9 @@ export default function BillingPage() {
     }
   };
 
-  const quotaLimit = subscription?.subscription_plans?.included_inbound_messages || 500;
-  const quotaUsed = subscription?.messages_used_inbound || 0;
-  const quotaPercent = Math.min(100, Math.round((quotaUsed / quotaLimit) * 100));
+  const quotaLimit = subscription?.subscription_plans?.included_ai_requests || subscription?.subscription_plans?.included_inbound_messages || 500;
+  const quotaUsed = Math.max(subscription?.ai_requests_used || 0, subscription?.messages_used_inbound || 0);
+  const quotaPercent = quotaLimit > 0 ? Math.min(100, Math.round((quotaUsed / quotaLimit) * 100)) : 0;
 
   return (
     <div>
@@ -262,7 +262,7 @@ export default function BillingPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--color-border))', paddingBottom: '0.5rem' }}>
               <span style={{ color: 'hsl(var(--color-text-muted))' }}>AI Requests Processed</span>
               <span style={{ fontWeight: 600 }}>
-                {subscription?.ai_requests_used ?? 0} / {subscription?.subscription_plans?.included_ai_requests ?? 300}
+                {subscription?.ai_requests_used ?? 0} / {subscription?.subscription_plans?.included_ai_requests ?? 500}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>

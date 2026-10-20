@@ -349,7 +349,7 @@ CREATE TABLE IF NOT EXISTS public.subscription_plans (
     billing_cycle TEXT NOT NULL DEFAULT 'monthly',
     included_inbound_messages INTEGER NOT NULL DEFAULT 500,
     included_outbound_messages INTEGER NOT NULL DEFAULT 500,
-    included_ai_requests INTEGER NOT NULL DEFAULT 300,
+    included_ai_requests INTEGER NOT NULL DEFAULT 500,
     max_input_tokens_per_request INTEGER NOT NULL DEFAULT 8000,
     max_output_tokens_per_response INTEGER NOT NULL DEFAULT 700,
     max_tool_calls_per_turn INTEGER NOT NULL DEFAULT 5,
