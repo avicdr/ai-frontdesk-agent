@@ -23,27 +23,19 @@ export default function ConfigurationPage() {
   const [businessType, setBusinessType] = useState<ClinicTypeId>('dental_clinic');
   const currentConfig = getClinicTypeConfig(businessType);
 
-  const [clinicName, setClinicName] = useState("Don't Go Home Clinic");
-  const [phone, setPhone] = useState('+91 98765 43210');
-  const [address, setAddress] = useState("What's My Location");
-  const [city, setCity] = useState('Bengaluru');
+  const [clinicName, setClinicName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
   const [timezone, setTimezone] = useState('Asia/Kolkata');
 
   // AI Agent State
   const [assistantName, setAssistantName] = useState('Roma');
   const [tone, setTone] = useState<'friendly' | 'professional' | 'concise'>('friendly');
-  const [greeting, setGreeting] = useState(
-    "Hello! Welcome to Don't Go Home Clinic. I'm Roma, your AI receptionist. How can I assist you with your dental care today?"
-  );
+  const [greeting, setGreeting] = useState('');
 
   // Services State
-  const [services, setServices] = useState<Service[]>([
-    { name: 'Routine Dental Consultation & Checkup', duration: 30, price: '500', isBookable: true },
-    { name: 'Professional Teeth Cleaning (Scaling & Polishing)', duration: 45, price: '1200', isBookable: true },
-    { name: 'Root Canal Treatment (RCT)', duration: 60, price: '4500', isBookable: true },
-    { name: 'Teeth Whitening (Laser Bleaching)', duration: 45, price: '3000', isBookable: true },
-    { name: 'Emergency Dental Pain Relief', duration: 30, price: '800', isBookable: true },
-  ]);
+  const [services, setServices] = useState<Service[]>([]);
   const [newSvcName, setNewSvcName] = useState('');
   const [newSvcPrice, setNewSvcPrice] = useState('');
   const [newSvcDuration, setNewSvcDuration] = useState('30');
@@ -191,6 +183,15 @@ export default function ConfigurationPage() {
     if (services.some(s => s.name.toLowerCase() === preset.name.toLowerCase())) return;
     setServices([...services, { ...preset, isBookable: true }]);
   };
+
+  if (loading) {
+    return (
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '4rem 1rem', textAlign: 'center' }}>
+        <div style={{ fontSize: '2rem', marginBottom: '1rem', animation: 'spin 1.5s linear infinite' }}>⏳</div>
+        <div style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.95rem', fontWeight: 600 }}>Loading clinic configuration...</div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>

@@ -1,55 +1,18 @@
 import { redirect } from 'next/navigation';
-import { requireServerUser, createSupabaseServerClient } from '@/lib/supabase/server';
+import { requireServerUser } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { isSuperAdminEmail } from '@/lib/security/admin';
 import Link from 'next/link';
 
 export const metadata = { title: 'Dashboard' };
 export const dynamic = 'force-dynamic';
 
-const DEFAULT_FALLBACK_DASHBOARD = {
-  org: {
-    id: 'default-org',
-    name: 'Apex Dental & Orthodontics',
-    slug: 'apex-dental',
-    timezone: 'Asia/Kolkata',
-    status: 'active',
-  },
-  profile: {
-    clinic_name: 'Apex Dental & Orthodontics',
-    onboarding_step: 8,
-    onboarding_completed_at: new Date().toISOString(),
-  },
-  subscription: {
-    status: 'active',
-    ai_requests_used: 142,
-    inbound_messages_used: 289,
-    expires_at: new Date(Date.now() + 24 * 24 * 60 * 60 * 1000).toISOString(),
-    subscription_plans: {
-      name: 'Pro Clinic',
-      included_ai_requests: 2000,
-      included_inbound_messages: 5000,
-    },
-  },
-  whatsapp: { status: 'connected' },
-  calendar: { status: 'connected' },
-  appointments: [
-    { id: 'appt-1', patient_name: 'Rahul Sharma', starts_at: new Date(Date.now() + 2 * 3600 * 1000).toISOString(), status: 'confirmed', services: { name: 'Root Canal Treatment (RCT)' } },
-    { id: 'appt-2', patient_name: 'Ananya Iyer', starts_at: new Date(Date.now() + 5 * 3600 * 1000).toISOString(), status: 'confirmed', services: { name: 'Teeth Cleaning (Scaling)' } },
-    { id: 'appt-3', patient_name: 'Vikram Patel', starts_at: new Date(Date.now() + 26 * 3600 * 1000).toISOString(), status: 'confirmed', services: { name: 'Invisible Aligners Consultation' } },
-  ],
-  conversations: [
-    { id: 'conv-1', patient_name: 'Rahul Sharma', patient_phone: '+91 98765 11223', last_message_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(), status: 'active', owner: 'ai' },
-    { id: 'conv-2', patient_name: 'Sneha Reddy', patient_phone: '+91 98112 33445', last_message_at: new Date(Date.now() - 45 * 60 * 1000).toISOString(), status: 'active', owner: 'ai' },
-    { id: 'conv-3', patient_name: 'Amitabh Joshi', patient_phone: '+91 97234 55667', last_message_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(), status: 'human_takeover', owner: 'human' },
-  ],
-  role: 'owner',
-};
-
-async function getDashboardData(userId: string) {
+async function getDashboardData(userId: string, userEmail?: string) {
   try {
     const admin = createSupabaseAdminClient();
 
-    let { data: membership } = await admin
+    // 1. Fetch organization membership for this user only
+    const { data: membership } = await admin
       .from('organization_memberships')
       .select('organization_id, role')
       .eq('user_id', userId)
@@ -57,31 +20,16 @@ async function getDashboardData(userId: string) {
 
     let orgId = membership?.organization_id;
 
-    // In dev / preview mode without user session, check if any organization was created
+    // If user has no organization membership, check if super-admin
     if (!orgId) {
-      const { data: latestOrg } = await admin
-        .from('organizations')
-        .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (latestOrg?.id) {
-        orgId = latestOrg.id;
+      const isSuperAdmin = isSuperAdminEmail(userEmail);
+      if (!isSuperAdmin) {
+        return null;
       }
     }
 
     if (!orgId) {
-      return {
-        org: { id: 'new-clinic', name: 'My Dental Clinic', slug: 'my-clinic', timezone: 'Asia/Kolkata', status: 'onboarding' },
-        profile: { clinic_name: 'My Dental Clinic', onboarding_step: 1, onboarding_completed_at: null },
-        subscription: null,
-        whatsapp: { status: 'disconnected' },
-        calendar: { status: 'disconnected' },
-        appointments: [],
-        conversations: [],
-        role: 'owner',
-      };
+      return null;
     }
 
     const [orgRes, profileRes, subRes, waRes, calRes, apptRes, convRes] = await Promise.all([
@@ -116,16 +64,7 @@ async function getDashboardData(userId: string) {
     };
   } catch (err) {
     console.error('Error fetching dashboard data:', err);
-    return {
-      org: { id: 'err-org', name: 'My Dental Clinic', slug: 'my-clinic', timezone: 'Asia/Kolkata', status: 'active' },
-      profile: { clinic_name: 'My Dental Clinic', onboarding_step: 1, onboarding_completed_at: null },
-      subscription: null,
-      whatsapp: { status: 'disconnected' },
-      calendar: { status: 'disconnected' },
-      appointments: [],
-      conversations: [],
-      role: 'owner',
-    };
+    return null;
   }
 }
 
@@ -155,14 +94,18 @@ export default async function DashboardPage() {
   try {
     user = await requireServerUser();
   } catch {
-    user = { id: 'demo-user-1', email: 'doctor@apexdental.com', user_metadata: { full_name: 'Dr. Sarah Verma' } };
+    redirect('/login?returnUrl=/dashboard');
   }
 
-  const data = (await getDashboardData(user.id)) ?? DEFAULT_FALLBACK_DASHBOARD;
+  const data = await getDashboardData(user.id, user.email);
+  if (!data) {
+    redirect('/onboarding');
+  }
 
   const { org, profile, subscription, whatsapp, calendar, appointments, conversations } = data;
   const plan = (subscription as Record<string, unknown>)?.subscription_plans as Record<string, unknown> | null;
   const onboardingComplete = !!profile?.onboarding_completed_at;
+
 
   const usagePercent = plan && subscription
     ? Math.min(100, Math.round(((subscription as Record<string, number>).ai_requests_used / (plan.included_ai_requests as number)) * 100))

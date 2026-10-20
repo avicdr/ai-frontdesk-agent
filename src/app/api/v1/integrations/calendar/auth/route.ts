@@ -30,14 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!orgId) {
-      const { data: existingOrg } = await admin
-        .from('organizations')
-        .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      orgId = existingOrg?.id || 'demo-org-1';
+      return NextResponse.redirect(getSafeRedirectUrl('/onboarding', request).toString());
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID;

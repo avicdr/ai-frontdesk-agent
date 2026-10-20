@@ -175,7 +175,12 @@ export default function OnboardingPage() {
       .then(res => res.json())
       .then(json => {
         if (json.success && json.data) {
-          const { clinicProfile, agentConfig, services: loadedServices, currentStep: dbStep } = json.data;
+          const { clinicProfile, agentConfig, services: loadedServices, currentStep: dbStep, userMeta } = json.data;
+          if (userMeta) {
+            if (userMeta.organizationName) setClinicName(userMeta.organizationName);
+            if (userMeta.fullName) setOwnerName(userMeta.fullName);
+            if (userMeta.phone) setPhone(userMeta.phone);
+          }
           if (clinicProfile) {
             if (clinicProfile.clinic_name) setClinicName(clinicProfile.clinic_name);
             if (clinicProfile.business_type) {

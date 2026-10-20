@@ -66,24 +66,28 @@ export default function RegisterPage() {
         return;
       }
 
-      // 2. Create organization and initial setup via API
-      const res = await fetch('/api/v1/onboarding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: formData.fullName,
-          phone: formData.phone,
-          organizationName: formData.organizationName,
-          country: formData.country,
-          timezone: formData.timezone,
-        }),
-      });
-
-      if (!res.ok) {
-        // Auth succeeded but org creation failed — user can retry
-        console.error('Org creation failed:', await res.json());
+      // 2. If a session is established immediately, provision org and redirect to onboarding
+      if (authData.session) {
+        try {
+          await fetch('/api/v1/onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fullName: formData.fullName,
+              phone: formData.phone,
+              organizationName: formData.organizationName,
+              country: formData.country,
+              timezone: formData.timezone,
+            }),
+          });
+        } catch (err) {
+          console.error('Org initialization error:', err);
+        }
+        router.push('/onboarding');
+        return;
       }
 
+      // If email confirmation is required by Supabase
       setStep('verify');
     } catch {
       setError('An unexpected error occurred. Please try again.');
@@ -107,10 +111,10 @@ export default function RegisterPage() {
           <h2 style={{ marginBottom: '0.75rem' }}>Check Your Email</h2>
           <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
             We sent a verification link to <strong>{formData.email}</strong>.
-            Click the link to activate your account and continue setup.
+            Click the link to activate your account and set up your clinic.
           </p>
-          <Link href="/login" className="btn btn-primary" style={{ display: 'block' }}>
-            Go to Sign In
+          <Link href="/login?returnUrl=/onboarding" className="btn btn-primary" style={{ display: 'block' }}>
+            Sign In to Continue Setup
           </Link>
         </div>
       </div>

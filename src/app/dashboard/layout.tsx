@@ -1,82 +1,13 @@
 import { requireServerUser } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { isSuperAdminEmail } from '@/lib/security/admin';
-import { SidebarNav } from '@/components/dashboard/SidebarNav';
+import { DashboardShell } from '@/components/dashboard/DashboardShell';
 
 export const dynamic = 'force-dynamic';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-}
-
-async function getSidebarData(userId: string) {
-  try {
-    const admin = createSupabaseAdminClient();
-    let { data: membership } = await admin
-      .from('organization_memberships')
-      .select('organization_id, role')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    let orgId = membership?.organization_id;
-
-    if (!orgId) {
-      const { data: latestOrg } = await admin
-        .from('organizations')
-        .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (latestOrg?.id) {
-        orgId = latestOrg.id;
-      }
-    }
-
-    if (!orgId) {
-      return {
-        org: { name: 'My Dental Clinic', slug: 'my-clinic' },
-        sub: null,
-        profile: { full_name: 'Clinic Owner', is_super_admin: false },
-        role: 'owner',
-      };
-    }
-
-    const { data: org } = await admin
-      .from('organizations')
-      .select('name, slug')
-      .eq('id', orgId)
-      .maybeSingle();
-
-    const { data: sub } = await admin
-      .from('subscriptions')
-      .select('status, expires_at')
-      .eq('organization_id', orgId)
-      .maybeSingle();
-
-    const { data: profile } = await admin
-      .from('user_profiles')
-      .select('full_name, is_super_admin')
-      .eq('id', userId)
-      .maybeSingle();
-
-    return {
-      org: org ?? { name: 'My Dental Clinic', slug: 'my-clinic' },
-      sub: sub ?? null,
-      profile: profile ?? { full_name: 'Clinic Owner', is_super_admin: false },
-      role: membership?.role ?? 'owner',
-    };
-  } catch (err) {
-    console.error('Error fetching sidebar data:', err);
-    return {
-      org: { name: 'My Dental Clinic', slug: 'my-clinic' },
-      sub: null,
-      profile: { full_name: 'Clinic Owner', is_super_admin: false },
-      role: 'owner',
-    };
-  }
 }
 
 const navItems = [
@@ -89,36 +20,76 @@ const navItems = [
   { href: '/dashboard/billing', icon: '💳', label: 'Billing & Usage' },
 ];
 
-import { DashboardShell } from '@/components/dashboard/DashboardShell';
-
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
   let user;
   try {
     user = await requireServerUser();
   } catch {
-    user = { id: 'demo-user-1', email: 'doctor@apexdental.com', user_metadata: { full_name: 'Dr. Sarah Verma' } };
+    redirect('/login?returnUrl=/dashboard');
   }
 
-  const sidebarData = (await getSidebarData(user.id)) ?? {
-    org: { name: 'My Dental Clinic', slug: 'my-clinic' },
-    sub: null,
-    profile: { full_name: 'Clinic Owner', is_super_admin: false },
-    role: 'owner',
-  };
+  const admin = createSupabaseAdminClient();
+  const isSuperAdminByEmail = isSuperAdminEmail(user.email);
 
-  const { org, sub, profile } = sidebarData;
+  // 1. Fetch user profile
+  const { data: profile } = await admin
+    .from('user_profiles')
+    .select('full_name, is_super_admin')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const isSuperAdmin = isSuperAdminByEmail || Boolean(profile?.is_super_admin);
+
+  // 2. Fetch user's organization membership
+  const { data: membership } = await admin
+    .from('organization_memberships')
+    .select('organization_id, role')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  const orgId = membership?.organization_id;
+
+  // If regular user has no organization -> redirect to onboarding immediately
+  if (!orgId && !isSuperAdmin) {
+    redirect('/onboarding');
+  }
+
+  // 3. If orgId exists, check clinic profile and onboarding status
+  let org: { name?: string; slug?: string } | null = null;
+  let sub: { status?: string; expires_at?: string } | null = null;
+
+  if (orgId) {
+    const [orgRes, profileRes, subRes] = await Promise.all([
+      admin.from('organizations').select('id, name, slug, status').eq('id', orgId).maybeSingle(),
+      admin.from('clinic_profiles').select('onboarding_completed_at, onboarding_step').eq('organization_id', orgId).maybeSingle(),
+      admin.from('subscriptions').select('status, expires_at').eq('organization_id', orgId).maybeSingle(),
+    ]);
+
+    org = orgRes.data;
+    const clinicProfile = profileRes.data;
+    sub = subRes.data;
+
+    // If regular user hasn't completed onboarding -> redirect to onboarding
+    if (!isSuperAdmin && (!clinicProfile?.onboarding_completed_at || orgRes.data?.status === 'onboarding')) {
+      redirect('/onboarding');
+    }
+  } else if (isSuperAdmin) {
+    org = { name: 'Platform Admin View', slug: 'admin-view' };
+  }
+
   const isExpired = sub ? (sub.status === 'expired' || sub.status === 'suspended') : false;
 
   return (
     <DashboardShell
-      org={org}
+      org={org ?? { name: 'My Dental Clinic', slug: 'my-clinic' }}
       isExpired={isExpired}
       user={user}
-      profile={profile}
-      isSuperAdmin={profile?.is_super_admin || isSuperAdminEmail(user.email)}
+      profile={profile ?? { full_name: user.user_metadata?.full_name || 'Clinic Owner', is_super_admin: isSuperAdmin }}
+      isSuperAdmin={isSuperAdmin}
       navItems={navItems}
     >
       {children}
     </DashboardShell>
   );
 }
+

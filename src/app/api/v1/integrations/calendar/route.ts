@@ -24,17 +24,6 @@ export async function GET() {
     }
 
     if (!orgId) {
-      const { data: existingOrg } = await admin
-        .from('organizations')
-        .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      orgId = existingOrg?.id || '';
-    }
-
-    if (!orgId) {
       return successResponse({
         status: 'disconnected',
         isLiveConfigured: false,
@@ -42,6 +31,8 @@ export async function GET() {
         calendarName: null,
       });
     }
+
+
 
     const { data: integration } = await admin
       .from('calendar_integrations')
@@ -134,19 +125,10 @@ export async function POST() {
     }
 
     if (!orgId) {
-      const { data: existingOrg } = await admin
-        .from('organizations')
-        .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      orgId = existingOrg?.id || '';
+      return Errors.badRequest('Organization not found. Please complete onboarding first.');
     }
 
-    if (!orgId) {
-      return Errors.badRequest('Organization not found');
-    }
+
 
     const { syncUnsyncedAppointments } = await import('@/lib/calendar/client');
     const result = await syncUnsyncedAppointments(orgId);
@@ -180,19 +162,10 @@ export async function DELETE() {
     }
 
     if (!orgId) {
-      const { data: existingOrg } = await admin
-        .from('organizations')
-        .select('id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      orgId = existingOrg?.id || '';
+      return Errors.badRequest('Organization not found. Please complete onboarding first.');
     }
 
-    if (!orgId) {
-      return Errors.badRequest('Organization not found');
-    }
+
 
     await admin
       .from('calendar_integrations')

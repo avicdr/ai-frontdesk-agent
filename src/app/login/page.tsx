@@ -47,8 +47,22 @@ export default function LoginPage() {
 
       const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const paramTarget = params?.get('returnUrl') || params?.get('redirectTo');
+
       let targetUrl = isSuperAdmin ? '/admin' : '/dashboard';
-      if (paramTarget && paramTarget !== '/dashboard' && paramTarget !== '/login') {
+
+      if (!isSuperAdmin && authData?.user) {
+        try {
+          const onbRes = await fetch('/api/v1/onboarding');
+          const onbJson = await onbRes.json();
+          if (!onbJson?.data || onbJson.data.status !== 'completed') {
+            targetUrl = '/onboarding';
+          } else if (paramTarget && paramTarget !== '/dashboard' && paramTarget !== '/login') {
+            targetUrl = paramTarget;
+          }
+        } catch {
+          targetUrl = '/onboarding';
+        }
+      } else if (paramTarget && paramTarget !== '/dashboard' && paramTarget !== '/login') {
         targetUrl = paramTarget;
       }
 

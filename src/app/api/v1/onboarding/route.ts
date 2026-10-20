@@ -155,7 +155,15 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (!membership) {
-      return successResponse({ status: 'not_started', currentStep: 0 });
+      return successResponse({
+        status: 'not_started',
+        currentStep: 1,
+        userMeta: {
+          fullName: user.user_metadata?.full_name || '',
+          organizationName: user.user_metadata?.organization_name || '',
+          phone: user.user_metadata?.phone || '',
+        },
+      });
     }
 
     const [profileRes, agentRes, servicesRes, policyRes, orgRes] = await Promise.all([
@@ -369,6 +377,41 @@ export async function PUT(request: NextRequest) {
         status: 'active',
         updated_at: new Date().toISOString(),
       }).eq('id', orgId);
+
+      // Auto-provision 3-day trial subscription if no subscription exists
+      const { data: existingSub } = await admin
+        .from('subscriptions')
+        .select('id')
+        .eq('organization_id', orgId)
+        .maybeSingle();
+
+      if (!existingSub) {
+        const { data: trialPlan } = await admin
+          .from('subscription_plans')
+          .select('id, grace_period_days')
+          .eq('slug', 'pro')
+          .maybeSingle();
+
+        if (trialPlan?.id) {
+          const now = new Date();
+          const trialExpiresAt = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+          const graceDays = trialPlan.grace_period_days || 3;
+          const graceExpiresAt = new Date(trialExpiresAt.getTime() + graceDays * 24 * 60 * 60 * 1000);
+
+          await admin.from('subscriptions').insert({
+            organization_id: orgId,
+            plan_id: trialPlan.id,
+            status: 'trial',
+            started_at: now.toISOString(),
+            expires_at: trialExpiresAt.toISOString(),
+            grace_expires_at: graceExpiresAt.toISOString(),
+            messages_used_inbound: 0,
+            messages_used_outbound: 0,
+            ai_requests_used: 0,
+            ai_cost_used_inr: 0,
+          });
+        }
+      }
     }
 
     return successResponse({ success: true, step, completed: isComplete });

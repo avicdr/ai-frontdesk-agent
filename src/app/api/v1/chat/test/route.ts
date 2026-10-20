@@ -43,13 +43,7 @@ export async function POST(request: NextRequest) {
     if (membership?.organization_id) {
       orgId = membership.organization_id;
     } else {
-      const { data: existingOrg } = await admin
-        .from('organizations')
-        .select('id')
-        .limit(1)
-        .maybeSingle();
-
-      orgId = existingOrg?.id || 'demo-org-1';
+      return Errors.badRequest('No active organization found. Please complete onboarding first.');
     }
 
     const body = await request.json();
