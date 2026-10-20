@@ -45,7 +45,7 @@ export default function IntegrationsPage() {
         setEnableApiUrl(json.data.enableApiUrl);
         setUnsyncedCount(json.data.unsyncedCount || 0);
       }
-    } catch {}
+    } catch { }
   };
 
   const handleSyncCalendarAppointments = async () => {
@@ -70,7 +70,7 @@ export default function IntegrationsPage() {
   const handleDisconnectCalendar = async () => {
     try {
       await fetch('/api/v1/integrations/calendar', { method: 'DELETE' });
-    } catch {}
+    } catch { }
     setCalendarConnected(false);
     setCalendarEmail(null);
     setCalendarName(null);
@@ -149,7 +149,8 @@ export default function IntegrationsPage() {
     }
   };
 
-  const handleStartQR = async () => {
+  const handleStartQR = async (forceReconnect?: boolean | React.MouseEvent) => {
+    const isForce = typeof forceReconnect === 'boolean' ? forceReconnect : false;
     setIsLoadingWA(true);
     setWaError(null);
     setQrCode(null);
@@ -157,7 +158,7 @@ export default function IntegrationsPage() {
       const res = await fetch('/api/v1/integrations/whatsapp/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'qr' }),
+        body: JSON.stringify({ mode: 'qr', forceReconnect: isForce }),
       });
       const json = await res.json();
       if (json.success && json.data) {
@@ -174,20 +175,23 @@ export default function IntegrationsPage() {
     }
   };
 
-  const handleRequestPairingCode = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRequestPairingCode = async (e?: React.FormEvent, forceReconnect = false) => {
+    if (e) e.preventDefault();
     if (!phoneNumber.trim()) {
       setWaError('Please enter a valid phone number with country code.');
       return;
     }
+    stopPolling();
     setIsLoadingWA(true);
     setWaError(null);
-    setPairingCode(null);
+    if (forceReconnect) {
+      setPairingCode(null);
+    }
     try {
       const res = await fetch('/api/v1/integrations/whatsapp/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'pairing_code', phoneNumber }),
+        body: JSON.stringify({ mode: 'pairing_code', phoneNumber, forceReconnect }),
       });
       const json = await res.json();
       if (json.success && json.data) {
@@ -225,18 +229,20 @@ export default function IntegrationsPage() {
     }
   };
 
-  const handleResetPairing = async () => {
+  const handleRevokePairing = async () => {
     stopPolling();
     setIsLoadingWA(true);
+    setWaError(null);
     try {
       await fetch('/api/v1/integrations/whatsapp/session', { method: 'DELETE' });
-    } catch {}
+    } catch { }
     setQrCode(null);
     setPairingCode(null);
     setWaStatus('disconnected');
-    setWaError(null);
     setIsLoadingWA(false);
   };
+
+  const handleResetPairing = handleRevokePairing;
 
   const handleCopyCode = () => {
     if (!pairingCode) return;
@@ -430,15 +436,26 @@ export default function IntegrationsPage() {
                       <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', marginBottom: '0.5rem' }}>
                         Waiting for you to scan... (Auto-refreshing)
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleResetPairing}
-                        disabled={isLoadingWA}
-                        className="btn btn-ghost"
-                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', color: 'hsl(var(--color-text-muted))' }}
-                      >
-                        Cancel / Reset QR
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleStartQR(true)}
+                          disabled={isLoadingWA}
+                          className="btn btn-secondary"
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        >
+                          🔄 Regenerate QR
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRevokePairing}
+                          disabled={isLoadingWA}
+                          className="btn btn-ghost"
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        >
+                          ✕ Revoke QR
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div style={{
@@ -504,14 +521,37 @@ export default function IntegrationsPage() {
                       </div>
                     </div>
 
-                    <button
-                      type="submit"
-                      disabled={isLoadingWA || Boolean(pairingCode)}
-                      className="btn btn-primary"
-                      style={{ width: '100%' }}
-                    >
-                      {isLoadingWA ? 'Requesting Code...' : pairingCode ? 'Code Active (See Below)' : 'Generate 8-Digit Pairing Code'}
-                    </button>
+                    {pairingCode ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleRequestPairingCode(undefined, true)}
+                          disabled={isLoadingWA}
+                          className="btn btn-primary"
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}
+                        >
+                          {isLoadingWA ? 'Regenerating...' : '🔄 Regenerate Code'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRevokePairing}
+                          disabled={isLoadingWA}
+                          className="btn btn-secondary"
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', borderColor: 'rgba(239, 68, 68, 0.4)', color: '#f87171' }}
+                        >
+                          ✕ Revoke Code
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="submit"
+                        disabled={isLoadingWA}
+                        className="btn btn-primary"
+                        style={{ width: '100%' }}
+                      >
+                        {isLoadingWA ? 'Requesting Code...' : 'Generate 8-Digit Pairing Code'}
+                      </button>
+                    )}
                   </form>
 
                   {pairingCode && (
@@ -536,23 +576,32 @@ export default function IntegrationsPage() {
                       }}>
                         {pairingCode}
                       </div>
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
                         <button
                           type="button"
                           onClick={handleCopyCode}
                           className="btn btn-secondary"
-                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem' }}
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                         >
-                          {codeCopied ? '✓ Copied' : 'Copy Code'}
+                          {codeCopied ? '✓ Copied' : '📋 Copy Code'}
                         </button>
                         <button
                           type="button"
-                          onClick={handleResetPairing}
+                          onClick={() => handleRequestPairingCode(undefined, true)}
+                          disabled={isLoadingWA}
+                          className="btn btn-primary"
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        >
+                          🔄 Regenerate Code
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRevokePairing}
                           disabled={isLoadingWA}
                           className="btn btn-ghost"
-                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', color: 'hsl(var(--color-text-muted))' }}
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                         >
-                          Change Number / Reset
+                          ✕ Revoke Code
                         </button>
                       </div>
                       <div style={{

@@ -14,6 +14,7 @@ import { z } from 'zod';
 const StartSessionSchema = z.object({
   mode: z.enum(['qr', 'pairing_code']).default('qr'),
   phoneNumber: z.string().optional(),
+  forceReconnect: z.boolean().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -35,12 +36,13 @@ export async function POST(request: NextRequest) {
       return Errors.validationError(parsed.error.flatten());
     }
 
-    const { mode, phoneNumber } = parsed.data;
+    const { mode, phoneNumber, forceReconnect } = parsed.data;
 
     // Trigger or get session state
     const state = await startBaileysSession(membership.organization_id, {
       mode,
       phoneNumber,
+      forceReconnect,
     });
 
     return successResponse(state);

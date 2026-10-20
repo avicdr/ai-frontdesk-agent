@@ -188,7 +188,7 @@ export async function startBaileysSession(
       version,
       auth: authState,
       logger,
-      browser: Browsers.macOS('Desktop'),
+      browser: Browsers.ubuntu('Chrome'),
       printQRInTerminal: false,
       markOnlineOnConnect: true,
       syncFullHistory: false,
@@ -205,291 +205,293 @@ export async function startBaileysSession(
     };
     sessions.set(organizationId, entry);
 
-  // 1. Handle credentials update
-  sock.ev.on('creds.update', saveCreds);
+    // 1. Handle credentials update
+    sock.ev.on('creds.update', saveCreds);
 
-  // 2. Handle connection updates (QR, pairing, connect, disconnect)
-  sock.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect, qr } = update;
+    // 2. Handle connection updates (QR, pairing, connect, disconnect)
+    sock.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update;
 
-    // A. QR Code received
-    if (qr && options?.mode !== 'pairing_code') {
-      try {
-        const qrDataUrl = await QRCode.toDataURL(qr, {
-          width: 300,
-          margin: 2,
-          color: { dark: '#000000', light: '#ffffff' },
-        });
-        sessionState.qrCode = qrDataUrl;
-        sessionState.status = 'connecting';
-      } catch (err) {
-        console.error('Failed to generate QR data URL:', err);
+      // A. QR Code received
+      if (qr && options?.mode !== 'pairing_code') {
+        try {
+          const qrDataUrl = await QRCode.toDataURL(qr, {
+            width: 300,
+            margin: 2,
+            color: { dark: '#000000', light: '#ffffff' },
+          });
+          sessionState.qrCode = qrDataUrl;
+          sessionState.status = 'connecting';
+        } catch (err) {
+          console.error('Failed to generate QR data URL:', err);
+        }
       }
-    }
 
-    // B. Connected successfully
-    if (connection === 'open') {
-      const jid = sock.user?.id;
-      const cleanPhone = jid?.split('@')[0]?.split(':')[0] ?? '';
-      const formattedCleanPhone = formatPhone(cleanPhone);
+      // B. Connected successfully
+      if (connection === 'open') {
+        const jid = sock.user?.id;
+        const cleanPhone = jid?.split('@')[0]?.split(':')[0] ?? '';
+        const formattedCleanPhone = formatPhone(cleanPhone);
 
-      sessionState.status = 'connected';
-      sessionState.jid = jid;
-      sessionState.phoneNumber = cleanPhone;
-      sessionState.qrCode = undefined;
-      sessionState.pairingCode = undefined;
-      sessionState.error = undefined;
+        sessionState.status = 'connected';
+        sessionState.jid = jid;
+        sessionState.phoneNumber = cleanPhone;
+        sessionState.qrCode = undefined;
+        sessionState.pairingCode = undefined;
+        sessionState.error = undefined;
 
-      cacheClinicPhone(organizationId, cleanPhone);
-      const clinic = await getClinicInfo(organizationId, cleanPhone);
-      console.log(`[Baileys] Clinic "${clinic.name}" connected as ${formattedCleanPhone}`);
+        cacheClinicPhone(organizationId, cleanPhone);
+        const clinic = await getClinicInfo(organizationId, cleanPhone);
+        console.log(`[Baileys] Clinic "${clinic.name}" connected as ${formattedCleanPhone}`);
 
-      // Update Supabase integration status
-      try {
-        const admin = createSupabaseAdminClient();
-        const { error: upsertErr } = await admin.from('whatsapp_integrations').upsert(
-          {
-            organization_id: organizationId,
-            display_phone_number: formattedCleanPhone,
-            jid,
-            status: 'connected',
-            connection_type: 'baileys',
-            connected_at: new Date().toISOString(),
-            last_error: null,
-            last_error_at: null,
-          },
-          { onConflict: 'organization_id' }
-        );
-
-        if (upsertErr) {
-          // Fallback if migration 002 has not been applied to Supabase yet
-          await admin.from('whatsapp_integrations').upsert(
+        // Update Supabase integration status
+        try {
+          const admin = createSupabaseAdminClient();
+          const { error: upsertErr } = await admin.from('whatsapp_integrations').upsert(
             {
               organization_id: organizationId,
               display_phone_number: formattedCleanPhone,
+              jid,
               status: 'connected',
+              connection_type: 'baileys',
               connected_at: new Date().toISOString(),
+              last_error: null,
+              last_error_at: null,
             },
             { onConflict: 'organization_id' }
           );
-        }
-      } catch (err) {
-        console.warn('Failed to update integration status in DB:', err);
-      }
-    }
 
-    // C. Connection closed
-    if (connection === 'close') {
-      const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-      const isLoggedOut = statusCode === DisconnectReason.loggedOut;
-      const isReplaced = statusCode === DisconnectReason.connectionReplaced || statusCode === 440;
-      const isRestartRequired = statusCode === DisconnectReason.restartRequired || statusCode === 515;
-
-      const clinic = await getClinicInfo(organizationId, sessionState.phoneNumber);
-      console.log(
-        `[Baileys] Socket closed for clinic "${clinic.name}" (${clinic.phone || 'unlinked'}). Status code: ${statusCode}, LoggedOut: ${isLoggedOut}, Replaced: ${isReplaced}, RestartRequired: ${isRestartRequired}`
-      );
-
-      clearReconnectTimer(organizationId);
-
-      if (isLoggedOut) {
-        sessions.delete(organizationId);
-        sessionState.status = 'disconnected';
-        sessionState.error = 'WhatsApp session unlinked or logged out.';
-        await clearSession();
-
-        try {
-          const admin = createSupabaseAdminClient();
-          await admin
-            .from('whatsapp_integrations')
-            .update({
-              status: 'disconnected',
-              disconnected_at: new Date().toISOString(),
-              last_error: 'Logged out from mobile device',
-            })
-            .eq('organization_id', organizationId);
-        } catch {
-          // ignore
-        }
-      } else if (isReplaced) {
-        console.warn(`[Baileys] Socket for clinic "${clinic.name}" was replaced by another active connection (440). Halting auto-reconnect.`);
-        sessions.delete(organizationId);
-        sessionState.status = 'disconnected';
-        sessionState.error = 'Session was replaced by another active connection.';
-      } else {
-        const isRegistered = sock.authState.creds.registered || !!sock.authState.creds.account;
-
-        // If an unregistered socket times out (408), QR code or pairing code expired without being linked
-        if (!isRegistered && (statusCode === 408 || statusCode === DisconnectReason.timedOut)) {
-          console.log(`[Baileys] Pairing timed out for clinic "${clinic.name}" (code 408). Stopping reconnect loop.`);
-          sessions.delete(organizationId);
-          sessionState.status = 'disconnected';
-          sessionState.error = 'Pairing window expired. Please click below to generate a new QR code or pairing code.';
-          sessionState.qrCode = undefined;
-          sessionState.pairingCode = undefined;
-          return;
-        }
-
-        // Keep in sessions map as 'connecting' to prevent concurrent re-initialization from status polling
-        sessionState.status = 'connecting';
-        const delay = isRestartRequired ? 500 : 3000;
-        console.log(`[Baileys] Reconnecting socket for clinic "${clinic.name}" in ${delay}ms...`);
-        const timer = setTimeout(() => {
-          reconnectTimers.delete(organizationId);
-          startBaileysSession(organizationId, { forceReconnect: true }).catch(err => {
-            console.error(`[Baileys] Auto-reconnect error for clinic "${clinic.name}":`, err);
-          });
-        }, delay);
-        reconnectTimers.set(organizationId, timer);
-      }
-    }
-  });
-
-  // 3. Handle Pairing Code mode (only if not registered)
-  if (options?.mode === 'pairing_code' && options.phoneNumber && !sock.authState.creds.registered) {
-    let rawNumber = options.phoneNumber.replace(/[^0-9]/g, '').replace(/^0+/, '');
-    // If user entered a 10-digit number (e.g. 8948006900 starting with 6,7,8,9), automatically prepend India country code 91
-    if (rawNumber.length === 10 && /^[6-9]/.test(rawNumber)) {
-      rawNumber = `91${rawNumber}`;
-    }
-
-    if (rawNumber.length >= 10) {
-      try {
-        // Allow socket sufficient handshake time before requesting pairing code
-        await new Promise(r => setTimeout(r, 2500));
-        const rawCode = await sock.requestPairingCode(rawNumber);
-        const formatted = rawCode?.match(/.{1,4}/g)?.join('-') || rawCode;
-        sessionState.pairingCode = formatted;
-        sessionState.phoneNumber = rawNumber;
-        sessionState.qrCode = undefined;
-      } catch (err: any) {
-        console.error('Failed to request pairing code:', err);
-        sessionState.error = err?.message || 'Could not request pairing code.';
-      }
-    }
-  }
-
-  // 4. Handle incoming patient messages & route to AI receptionist
-  sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    if (type !== 'notify') return;
-
-    for (const msg of messages) {
-      if (!msg.message) continue;
-
-      const remoteJid = msg.key.remoteJid;
-      if (!remoteJid || remoteJid.includes('@g.us') || remoteJid === 'status@broadcast') {
-        continue; // Skip group chats and broadcast status updates
-      }
-
-      const text =
-        msg.message.conversation ||
-        msg.message.extendedTextMessage?.text ||
-        msg.message.imageMessage?.caption ||
-        '';
-
-      const contactPhone = remoteJid.split('@')[0].split(':')[0];
-
-      // If doctor manually messages or replies from their own WhatsApp:
-      if (msg.key.fromMe) {
-        const clinic = await getClinicInfo(organizationId, sessionState.phoneNumber);
-        const formattedContact = formatPhone(contactPhone);
-        console.log(`[WhatsApp Staff Reply] Clinic "${clinic.name}" (${clinic.phone || 'phone'}) staff replied manually from phone to ${formattedContact}: "${text.trim()}". Handed off to human.`);
-
-        // Automatically switch conversation to human / handed off so AI doesn't interrupt
-        try {
-          const admin = createSupabaseAdminClient();
-          const { data: conv } = await admin
-            .from('conversations')
-            .select('id')
-            .eq('organization_id', organizationId)
-            .eq('patient_phone', contactPhone)
-            .in('status', ['active', 'handed_off'])
-            .order('last_message_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          let targetConvId = conv?.id;
-          if (!targetConvId) {
-            const { data: newConv } = await admin
-              .from('conversations')
-              .insert({
+          if (upsertErr) {
+            // Fallback if migration 002 has not been applied to Supabase yet
+            await admin.from('whatsapp_integrations').upsert(
+              {
                 organization_id: organizationId,
-                patient_phone: contactPhone,
-                channel: 'whatsapp',
-                status: 'handed_off',
-                owner: 'human',
-                handoff_reason: 'manual_reply_from_phone',
-                last_message_at: new Date().toISOString(),
-              })
-              .select('id')
-              .single();
-            targetConvId = newConv?.id;
-          } else {
-            await admin
-              .from('conversations')
-              .update({
-                owner: 'human',
-                status: 'handed_off',
-                handoff_reason: 'manual_reply_from_phone',
-                last_message_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', targetConvId);
-          }
-
-          if (targetConvId && text.trim()) {
-            await admin.from('messages').insert({
-              conversation_id: targetConvId,
-              organization_id: organizationId,
-              external_id: msg.key.id || `doc-${Date.now()}`,
-              role: 'assistant',
-              content: text.trim(),
-              status: 'sent',
-              sent_at: new Date().toISOString(),
-              metadata: { sent_by_owner: true, from_me: true },
-            });
+                display_phone_number: formattedCleanPhone,
+                status: 'connected',
+                connected_at: new Date().toISOString(),
+              },
+              { onConflict: 'organization_id' }
+            );
           }
         } catch (err) {
-          console.error(`[Baileys] Error updating handoff on manual phone reply for clinic "${clinic.name}" to ${formattedContact}:`, err);
+          console.warn('Failed to update integration status in DB:', err);
         }
-        continue;
       }
 
-      if (!text.trim()) continue;
+      // C. Connection closed
+      if (connection === 'close') {
+        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+        const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+        const isReplaced = statusCode === DisconnectReason.connectionReplaced || statusCode === 440;
+        const isRestartRequired = statusCode === DisconnectReason.restartRequired || statusCode === 515;
 
-      const senderPhone = contactPhone;
-      const formattedSender = formatPhone(senderPhone);
-      const messageId = msg.key.id || `baileys-${Date.now()}`;
-      const senderName = msg.pushName || undefined;
+        const clinic = await getClinicInfo(organizationId, sessionState.phoneNumber);
+        console.log(
+          `[Baileys] Socket closed for clinic "${clinic.name}" (${clinic.phone || 'unlinked'}). Status code: ${statusCode}, LoggedOut: ${isLoggedOut}, Replaced: ${isReplaced}, RestartRequired: ${isRestartRequired}`
+        );
 
-      const clinic = await getClinicInfo(organizationId, sessionState.phoneNumber);
-      console.log(
-        `[WhatsApp Incoming] Clinic "${clinic.name}" (${clinic.phone || 'agent'}) received text from patient ${formattedSender}${senderName ? ` (${senderName})` : ''}: "${text.trim()}"`
-      );
+        clearReconnectTimer(organizationId);
 
-      // Dispatch to AI Agent Pipeline
-      processTenantIncomingMessage({
-        organizationId,
-        fromPhone: senderPhone,
-        senderName,
-        text: text.trim(),
-        messageId,
-        sendReply: async (replyText: string) => {
+        if (isLoggedOut) {
+          sessions.delete(organizationId);
+          sessionState.status = 'disconnected';
+          sessionState.error = 'WhatsApp session unlinked or logged out.';
+          await clearSession();
+
           try {
-            const currentEntry = sessions.get(organizationId);
-            const activeSock = currentEntry?.socket ?? sock;
-            const sent = await activeSock.sendMessage(remoteJid, { text: replyText });
-            return { success: true, messageId: sent?.key.id ?? undefined };
-          } catch (err: any) {
-            console.error(`Failed to send WhatsApp reply for clinic "${clinic.name}" to ${remoteJid}:`, err);
-            return { success: false, error: err?.message || 'Send failed' };
+            const admin = createSupabaseAdminClient();
+            await admin
+              .from('whatsapp_integrations')
+              .update({
+                status: 'disconnected',
+                disconnected_at: new Date().toISOString(),
+                last_error: 'Logged out from mobile device',
+              })
+              .eq('organization_id', organizationId);
+          } catch {
+            // ignore
           }
-        },
-      }).catch(async err => {
-        console.error(`[WhatsApp Error] Error processing message for clinic "${clinic.name}":`, err);
-      });
+        } else if (isReplaced) {
+          console.warn(`[Baileys] Socket for clinic "${clinic.name}" was replaced by another active connection (440). Halting auto-reconnect.`);
+          sessions.delete(organizationId);
+          sessionState.status = 'disconnected';
+          sessionState.error = 'Session was replaced by another active connection.';
+        } else {
+          const isRegistered = sock.authState.creds.registered || !!sock.authState.creds.account;
+
+          // If an unregistered socket times out (408), QR code or pairing code expired without being linked
+          if (!isRegistered && (statusCode === 408 || statusCode === DisconnectReason.timedOut)) {
+            console.log(`[Baileys] Pairing timed out for clinic "${clinic.name}" (code 408). Stopping reconnect loop.`);
+            sessions.delete(organizationId);
+            sessionState.status = 'disconnected';
+            sessionState.error = 'Pairing window expired. Please click below to generate a new QR code or pairing code.';
+            sessionState.qrCode = undefined;
+            sessionState.pairingCode = undefined;
+            return;
+          }
+
+          // Keep in sessions map as 'connecting' to prevent concurrent re-initialization from status polling
+          sessionState.status = 'connecting';
+          const delay = isRestartRequired ? 500 : 3000;
+          console.log(`[Baileys] Reconnecting socket for clinic "${clinic.name}" in ${delay}ms...`);
+          const timer = setTimeout(() => {
+            reconnectTimers.delete(organizationId);
+            startBaileysSession(organizationId, { forceReconnect: true }).catch(err => {
+              console.error(`[Baileys] Auto-reconnect error for clinic "${clinic.name}":`, err);
+            });
+          }, delay);
+          reconnectTimers.set(organizationId, timer);
+        }
+      }
+    });
+
+    // 3. Handle Pairing Code mode (only if not registered)
+    if (options?.mode === 'pairing_code' && options.phoneNumber && !sock.authState.creds.registered) {
+      let rawNumber = options.phoneNumber.replace(/[^0-9]/g, '').replace(/^0+/, '');
+      // If user entered a 10-digit number (e.g. 8948006900 starting with 6,7,8,9), automatically prepend India country code 91
+      if (rawNumber.length === 10 && /^[6-9]/.test(rawNumber)) {
+        rawNumber = `91${rawNumber}`;
+      }
+
+      if (rawNumber.length >= 10) {
+        try {
+          // Allow socket sufficient handshake time before requesting pairing code
+          await new Promise(r => setTimeout(r, 2500));
+          const rawCode = await sock.requestPairingCode(rawNumber);
+          const formatted = rawCode?.match(/.{1,4}/g)?.join('-') || rawCode;
+          sessionState.pairingCode = formatted;
+          sessionState.phoneNumber = rawNumber;
+          sessionState.qrCode = undefined;
+          const clinic = await getClinicInfo(organizationId, rawNumber);
+          console.log(`[Baileys] Generated 8-digit pairing code "${formatted}" for clinic "${clinic.name}" (${rawNumber})`);
+        } catch (err: any) {
+          console.error('Failed to request pairing code:', err);
+          sessionState.error = err?.message || 'Could not request pairing code.';
+        }
+      }
     }
-  });
+
+    // 4. Handle incoming patient messages & route to AI receptionist
+    sock.ev.on('messages.upsert', async ({ messages, type }) => {
+      if (type !== 'notify') return;
+
+      for (const msg of messages) {
+        if (!msg.message) continue;
+
+        const remoteJid = msg.key.remoteJid;
+        if (!remoteJid || remoteJid.includes('@g.us') || remoteJid === 'status@broadcast') {
+          continue; // Skip group chats and broadcast status updates
+        }
+
+        const text =
+          msg.message.conversation ||
+          msg.message.extendedTextMessage?.text ||
+          msg.message.imageMessage?.caption ||
+          '';
+
+        const contactPhone = remoteJid.split('@')[0].split(':')[0];
+
+        // If doctor manually messages or replies from their own WhatsApp:
+        if (msg.key.fromMe) {
+          const clinic = await getClinicInfo(organizationId, sessionState.phoneNumber);
+          const formattedContact = formatPhone(contactPhone);
+          console.log(`[WhatsApp Staff Reply] Clinic "${clinic.name}" (${clinic.phone || 'phone'}) staff replied manually from phone to ${formattedContact}: "${text.trim()}". Handed off to human.`);
+
+          // Automatically switch conversation to human / handed off so AI doesn't interrupt
+          try {
+            const admin = createSupabaseAdminClient();
+            const { data: conv } = await admin
+              .from('conversations')
+              .select('id')
+              .eq('organization_id', organizationId)
+              .eq('patient_phone', contactPhone)
+              .in('status', ['active', 'handed_off'])
+              .order('last_message_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            let targetConvId = conv?.id;
+            if (!targetConvId) {
+              const { data: newConv } = await admin
+                .from('conversations')
+                .insert({
+                  organization_id: organizationId,
+                  patient_phone: contactPhone,
+                  channel: 'whatsapp',
+                  status: 'handed_off',
+                  owner: 'human',
+                  handoff_reason: 'manual_reply_from_phone',
+                  last_message_at: new Date().toISOString(),
+                })
+                .select('id')
+                .single();
+              targetConvId = newConv?.id;
+            } else {
+              await admin
+                .from('conversations')
+                .update({
+                  owner: 'human',
+                  status: 'handed_off',
+                  handoff_reason: 'manual_reply_from_phone',
+                  last_message_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', targetConvId);
+            }
+
+            if (targetConvId && text.trim()) {
+              await admin.from('messages').insert({
+                conversation_id: targetConvId,
+                organization_id: organizationId,
+                external_id: msg.key.id || `doc-${Date.now()}`,
+                role: 'assistant',
+                content: text.trim(),
+                status: 'sent',
+                sent_at: new Date().toISOString(),
+                metadata: { sent_by_owner: true, from_me: true },
+              });
+            }
+          } catch (err) {
+            console.error(`[Baileys] Error updating handoff on manual phone reply for clinic "${clinic.name}" to ${formattedContact}:`, err);
+          }
+          continue;
+        }
+
+        if (!text.trim()) continue;
+
+        const senderPhone = contactPhone;
+        const formattedSender = formatPhone(senderPhone);
+        const messageId = msg.key.id || `baileys-${Date.now()}`;
+        const senderName = msg.pushName || undefined;
+
+        const clinic = await getClinicInfo(organizationId, sessionState.phoneNumber);
+        console.log(
+          `[WhatsApp Incoming] Clinic "${clinic.name}" (${clinic.phone || 'agent'}) received text from patient ${formattedSender}${senderName ? ` (${senderName})` : ''}: "${text.trim()}"`
+        );
+
+        // Dispatch to AI Agent Pipeline
+        processTenantIncomingMessage({
+          organizationId,
+          fromPhone: senderPhone,
+          senderName,
+          text: text.trim(),
+          messageId,
+          sendReply: async (replyText: string) => {
+            try {
+              const currentEntry = sessions.get(organizationId);
+              const activeSock = currentEntry?.socket ?? sock;
+              const sent = await activeSock.sendMessage(remoteJid, { text: replyText });
+              return { success: true, messageId: sent?.key.id ?? undefined };
+            } catch (err: any) {
+              console.error(`Failed to send WhatsApp reply for clinic "${clinic.name}" to ${remoteJid}:`, err);
+              return { success: false, error: err?.message || 'Send failed' };
+            }
+          },
+        }).catch(async err => {
+          console.error(`[WhatsApp Error] Error processing message for clinic "${clinic.name}":`, err);
+        });
+      }
+    });
 
     // Wait up to 3.5 seconds for QR code if requested in this turn
     if (options?.mode === 'qr' && !sessionState.qrCode) {
@@ -729,16 +731,16 @@ const globalKeepAlive = globalThis as unknown as { __renderKeepAliveTimer?: Node
 
 function initRenderKeepAlive() {
   if (globalKeepAlive.__renderKeepAliveTimer) return;
-  const targetUrl = process.env.RENDER_EXTERNAL_URL 
-    ? `${process.env.RENDER_EXTERNAL_URL}/api/health` 
+  const targetUrl = process.env.RENDER_EXTERNAL_URL
+    ? `${process.env.RENDER_EXTERNAL_URL}/api/health`
     : (process.env.NODE_ENV === 'production' ? 'https://ai-frontdesk-agent.onrender.com/api/health' : null);
 
   if (!targetUrl) return;
 
   globalKeepAlive.__renderKeepAliveTimer = setInterval(async () => {
     try {
-      const res = await fetch(targetUrl, { 
-        method: 'HEAD', 
+      const res = await fetch(targetUrl, {
+        method: 'HEAD',
         headers: { 'user-agent': 'ai-front-desk-keepalive' },
       });
       console.log(`[KeepAlive] Heartbeat ping to ${targetUrl} returned ${res.status}`);
