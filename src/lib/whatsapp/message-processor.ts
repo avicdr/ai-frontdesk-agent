@@ -21,6 +21,28 @@ export interface ProcessIncomingOptions {
   sendReply: (text: string) => Promise<{ success: boolean; messageId?: string; error?: string }>;
 }
 
+export function isClinicInquiryOrGreeting(text: string): boolean {
+  if (!text) return false;
+  const lower = text.trim().toLowerCase();
+
+  // Greetings
+  if (/^(hey|hi|hello|heyy+|hii+|namaste|good\s*(morning|afternoon|evening)|hola|ola|receptionist|reception|clinic)\b/i.test(lower)) {
+    return true;
+  }
+
+  // Booking & Scheduling keywords
+  if (/\b(book|booking|appointment|appoint|slot|slots|reserve|reschedule|cancel|schedule|tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|timing|timings|available|availability|free\s*time|time\s*slot)\b/i.test(lower)) {
+    return true;
+  }
+
+  // Clinic, services, pricing keywords
+  if (/\b(doctor|dr|consult|consultation|fees|fee|charge|charges|cost|price|pricing|offer|services|service|address|location|open|close|hours|treatment|checkup|test|report)\b/i.test(lower)) {
+    return true;
+  }
+
+  return false;
+}
+
 export async function processTenantIncomingMessage(options: ProcessIncomingOptions): Promise<void> {
   const { organizationId, fromPhone, senderName, text, messageId, sendReply } = options;
   const admin = createSupabaseAdminClient();
@@ -30,10 +52,11 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
   const formattedPatient = formatPhone(fromPhone);
   console.log(`[WhatsApp Agent] Clinic "${clinic.name}" (${clinic.phone || 'agent'}) received text for agent from ${formattedPatient}${senderName ? ` (${senderName})` : ''}: "${text}"`);
 
-  // 1. Deduplicate using message ID
+  // 1. Deduplicate using message ID scoped by organization
   const { data: existing } = await admin
     .from('webhook_events')
     .select('id')
+    .eq('organization_id', organizationId)
     .eq('provider', 'whatsapp')
     .eq('external_event_id', messageId)
     .maybeSingle();
@@ -72,21 +95,62 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
   // 5. Get or create conversation with patient contact name
   const conversation = await getOrCreateConversation(organizationId, fromPhone, senderName);
 
-  // 6. Save incoming message
-  await admin.from('messages').insert({
+  // 6. Save incoming message with tenant-scoped external ID to avoid global unique collisions across clinics
+  const scopedIncomingId = `${organizationId}:in:${messageId}`;
+  const { error: insertMsgError } = await admin.from('messages').insert({
     conversation_id: conversation.id,
     organization_id: organizationId,
-    external_id: messageId,
+    external_id: scopedIncomingId,
     role: 'patient',
     content: text,
     status: 'delivered',
     delivered_at: new Date().toISOString(),
   });
+  if (insertMsgError && insertMsgError.code !== '23505') {
+    console.error(`[WhatsApp Save Error] Clinic "${clinic.name}" failed to save incoming message:`, insertMsgError);
+  }
 
-  // 6b. Guard: If conversation is managed by human or already handed off, do not call AI or send automated reply!
+  // 6b. Guard: If conversation is managed by human or already handed off,
+  // check whether AI should automatically resume (after 30 mins timeout, or patient clinic query)
   if (conversation.owner === 'human' || conversation.status === 'handed_off') {
-    console.log(`[WhatsApp Handed Off] Clinic "${clinic.name}" conversation with ${formattedPatient} is managed by staff / handed off. AI silenced.`);
-    return;
+    const isClinicQuery = isClinicInquiryOrGreeting(text);
+    const wasPersonalChatHandoff = conversation.handoff_reason === 'personal_day_to_day_chat';
+
+    // Calculate time elapsed since last activity or handoff
+    const lastActiveTime = conversation.updated_at || conversation.last_message_at;
+    const minutesSinceHandoff = lastActiveTime
+      ? (Date.now() - new Date(lastActiveTime).getTime()) / (1000 * 60)
+      : 999;
+
+    // The AI should automatically resume after 30 minutes!
+    // Also re-activate if it was an automated personal_chat classification and patient asks a clinic query
+    // Or if patient asks an explicit booking/appointment inquiry after at least 5 minutes
+    const shouldResumeAi =
+      minutesSinceHandoff >= 30 ||
+      (wasPersonalChatHandoff && (isClinicQuery || text.trim().length > 1)) ||
+      (isClinicQuery && minutesSinceHandoff >= 5);
+
+    if (shouldResumeAi) {
+      console.log(
+        `[WhatsApp Resume AI] Clinic "${clinic.name}" automatically resuming AI receptionist for ${formattedPatient} (${Math.round(minutesSinceHandoff)}m elapsed, previous reason: "${conversation.handoff_reason || 'unknown'}").`
+      );
+      await admin
+        .from('conversations')
+        .update({
+          owner: 'ai',
+          status: 'active',
+          handoff_reason: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', conversation.id);
+      conversation.owner = 'ai';
+      conversation.status = 'active';
+    } else {
+      console.log(
+        `[WhatsApp Handed Off] Clinic "${clinic.name}" conversation with ${formattedPatient} is managed by staff / handed off (${Math.round(minutesSinceHandoff)}m < 30m). AI silenced.`
+      );
+      return;
+    }
   }
 
   // 7. Load conversation history
@@ -103,6 +167,11 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
       role: (m.role === 'patient' || m.role === 'user') ? ('user' as const) : ('assistant' as const),
       content: m.content,
     }));
+
+  // CRITICAL: Ensure the current incoming message is ALWAYS in the history passed to AI!
+  if (messages.length === 0 || messages[messages.length - 1].content !== text || messages[messages.length - 1].role !== 'user') {
+    messages.push({ role: 'user', content: text });
+  }
 
   // 8. Build system prompt
   const systemPrompt = buildSystemPrompt(clinicContext);
@@ -143,23 +212,8 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
     aiResponse.response
   );
 
-  // 11. Parse response & execute tools safely
+  // 11. Parse response & execute tools safely FIRST
   const parsedResponse = parseAssistantResponse(aiResponse.response.content);
-
-  // 12. Human handoff if requested or personal / day-to-day conversation
-  if (parsedResponse.intent === 'out_of_scope' || !parsedResponse.user_message?.trim()) {
-    console.log(`[WhatsApp Personal Chat] Clinic "${clinic.name}" message from patient ${formattedPatient} identified as personal/day-to-day conversation. Silently handing off to staff.`);
-    await admin
-      .from('conversations')
-      .update({
-        owner: 'human',
-        status: 'handed_off',
-        handoff_reason: 'personal_day_to_day_chat',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', conversation.id);
-    return; // Strictly remain silent — do not send any message!
-  }
 
   const toolContext = {
     organizationId,
@@ -183,7 +237,25 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
     }
   }
 
-  // Handle explicit handoff if requested
+  // 12. Human handoff ONLY if explicitly classified as out_of_scope AND no tools were called AND not a clinic inquiry
+  const hasToolCalls = Boolean(parsedResponse.tool_calls && parsedResponse.tool_calls.length > 0);
+  const isOutOfScope = parsedResponse.intent === 'out_of_scope' && !hasToolCalls && !isClinicInquiryOrGreeting(text);
+
+  if (isOutOfScope) {
+    console.log(`[WhatsApp Personal Chat] Clinic "${clinic.name}" message from patient ${formattedPatient} identified as personal/day-to-day conversation. Silently handing off to staff.`);
+    await admin
+      .from('conversations')
+      .update({
+        owner: 'human',
+        status: 'handed_off',
+        handoff_reason: 'personal_day_to_day_chat',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', conversation.id);
+    return; // Strictly remain silent — do not send any message!
+  }
+
+  // Handle explicit handoff if requested by model or safety
   if (parsedResponse.handoff_required) {
     await admin
       .from('conversations')
@@ -196,11 +268,14 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
       .eq('id', conversation.id);
   }
 
-  // 13. Send reply
-  let replyText = parsedResponse.user_message;
-  if (!replyText || replyText.trim().length === 0) {
+  // 13. Build final reply text
+  let replyText = parsedResponse.user_message?.trim() || '';
+  if (!replyText) {
     if (toolResultsSummary.length > 0) {
       replyText = toolResultsSummary.join('\n\n') + '\n\nWould you like me to book one of these slots for you?';
+    } else {
+      replyText = clinicContext.agentConfig.greeting_message ||
+        `Hello! Welcome to ${clinicContext.clinicProfile.clinic_name}. How can I assist you with your appointment or health inquiry today?`;
     }
   } else if (toolResultsSummary.length > 0) {
     const hasSummaryAlready = toolResultsSummary.some(s => replyText.includes(s.slice(0, 15)));
@@ -219,14 +294,15 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
     console.error(`[WhatsApp AI Reply Failed] Clinic "${clinic.name}" failed to send reply to ${formattedPatient}: ${sendResult.error}`);
   }
 
-  // 14. Save outgoing message
+  // 14. Save outgoing message with tenant-scoped external ID
+  const scopedAiExternalId = `${organizationId}:ai:${sendResult.messageId || nanoid(12)}`;
   await admin.from('messages').insert({
     conversation_id: conversation.id,
     organization_id: organizationId,
     role: 'assistant',
     content: replyText,
     status: sendResult.success ? 'sent' : 'failed',
-    external_id: sendResult.messageId,
+    external_id: scopedAiExternalId,
     sent_at: sendResult.success ? new Date().toISOString() : null,
     failed_at: !sendResult.success ? new Date().toISOString() : null,
     failure_reason: sendResult.error,
@@ -236,6 +312,7 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
   await admin
     .from('webhook_events')
     .update({ status: 'completed', processed_at: new Date().toISOString() })
+    .eq('organization_id', organizationId)
     .eq('external_event_id', messageId)
     .eq('provider', 'whatsapp');
 }

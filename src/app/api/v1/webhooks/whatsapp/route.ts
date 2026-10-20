@@ -16,6 +16,7 @@ import { AIProviderFactory } from '@/lib/ai/provider';
 import { buildSystemPrompt, parseAssistantResponse } from '@/lib/ai/prompts';
 import { executeTool } from '@/lib/ai/tools';
 import { nanoid } from 'nanoid';
+import { isClinicInquiryOrGreeting } from '@/lib/whatsapp/message-processor';
 
 const SAFE_FALLBACK_MESSAGE =
   "Thank you for your message. Our reception is temporarily unavailable. Please call us directly or try again shortly.";
@@ -148,21 +149,50 @@ async function processIncomingMessage(payload: Record<string, unknown>): Promise
     incomingMessage.fromPhone
   );
 
-  // 11. Save incoming message
+  // 11. Save incoming message with tenant-scoped external ID
+  const scopedIncomingId = `${organizationId}:in:${incomingMessage.messageId}`;
   await admin.from('messages').insert({
     conversation_id: conversation.id,
     organization_id: organizationId,
-    external_id: incomingMessage.messageId,
+    external_id: scopedIncomingId,
     role: 'patient',
     content: incomingMessage.text,
     status: 'delivered',
     delivered_at: new Date().toISOString(),
   });
 
-  // 11b. Guard: If conversation is managed by human or already handed off, do not call AI or send automated reply!
+  // 11b. Guard: If conversation is managed by human or already handed off,
+  // check whether AI should automatically resume after 30 mins
   if (conversation.owner === 'human' || conversation.status === 'handed_off') {
-    console.log(`[Meta WhatsApp] Conversation ${conversation.id} (${incomingMessage.fromPhone}) is managed by a human / handed off. Silencing automated AI response.`);
-    return;
+    const isClinicQuery = isClinicInquiryOrGreeting(incomingMessage.text);
+    const wasPersonalChatHandoff = conversation.handoff_reason === 'personal_day_to_day_chat';
+    const lastActiveTime = conversation.updated_at || conversation.last_message_at;
+    const minutesSinceHandoff = lastActiveTime
+      ? (Date.now() - new Date(lastActiveTime).getTime()) / (1000 * 60)
+      : 999;
+
+    const shouldResumeAi =
+      minutesSinceHandoff >= 30 ||
+      (wasPersonalChatHandoff && (isClinicQuery || incomingMessage.text.trim().length > 1)) ||
+      (isClinicQuery && minutesSinceHandoff >= 5);
+
+    if (shouldResumeAi) {
+      console.log(`[Meta WhatsApp Resume AI] Resuming AI for ${incomingMessage.fromPhone} after ${Math.round(minutesSinceHandoff)}m`);
+      await admin
+        .from('conversations')
+        .update({
+          owner: 'ai',
+          status: 'active',
+          handoff_reason: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', conversation.id);
+      conversation.owner = 'ai';
+      conversation.status = 'active';
+    } else {
+      console.log(`[Meta WhatsApp] Conversation ${conversation.id} (${incomingMessage.fromPhone}) is managed by a human / handed off (${Math.round(minutesSinceHandoff)}m < 30m). Silencing AI.`);
+      return;
+    }
   }
 
   // 12. Load conversation history (last 20 messages)
@@ -176,6 +206,10 @@ async function processIncomingMessage(payload: Record<string, unknown>): Promise
   const messages = (history ?? [])
     .reverse()
     .map((m: any) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+
+  if (messages.length === 0 || messages[messages.length - 1].content !== incomingMessage.text || messages[messages.length - 1].role !== 'user') {
+    messages.push({ role: 'user', content: incomingMessage.text });
+  }
 
   // 13. Build system prompt
   const systemPrompt = buildSystemPrompt(clinicContext);
@@ -242,7 +276,10 @@ async function processIncomingMessage(payload: Record<string, unknown>): Promise
   }
 
   // 18. Handle human handoff or personal / out of scope conversation
-  if (parsedResponse.intent === 'out_of_scope' || !parsedResponse.user_message?.trim()) {
+  const hasToolCalls = Boolean(parsedResponse.tool_calls && parsedResponse.tool_calls.length > 0);
+  const isOutOfScope = parsedResponse.intent === 'out_of_scope' && !hasToolCalls && !isClinicInquiryOrGreeting(incomingMessage.text);
+
+  if (isOutOfScope) {
     console.log(`[Meta WhatsApp] Message from ${incomingMessage.fromPhone} identified as personal/day-to-day conversation (out_of_scope). Silently handing off to human.`);
     await admin
       .from('conversations')
@@ -269,7 +306,7 @@ async function processIncomingMessage(payload: Record<string, unknown>): Promise
   }
 
   // 19. Send reply
-  const replyText = parsedResponse.user_message;
+  const replyText = parsedResponse.user_message || clinicContext.agentConfig.greeting_message || 'How can I assist you today?';
   if (!replyText) {
     return;
   }
@@ -280,14 +317,15 @@ async function processIncomingMessage(payload: Record<string, unknown>): Promise
     replyText
   );
 
-  // 20. Save outgoing message
+  // 20. Save outgoing message with tenant-scoped external ID
+  const scopedAiExternalId = `${organizationId}:ai:${sendResult.messageId || nanoid(12)}`;
   await admin.from('messages').insert({
     conversation_id: conversation.id,
     organization_id: organizationId,
     role: 'assistant',
     content: replyText,
     status: sendResult.success ? 'sent' : 'failed',
-    external_id: sendResult.messageId,
+    external_id: scopedAiExternalId,
     sent_at: sendResult.success ? new Date().toISOString() : null,
     failed_at: !sendResult.success ? new Date().toISOString() : null,
     failure_reason: sendResult.error,
@@ -354,13 +392,13 @@ async function loadClinicContext(organizationId: string) {
 async function getOrCreateConversation(
   organizationId: string,
   patientPhone: string
-): Promise<{ id: string; owner: string; status: string }> {
+): Promise<{ id: string; owner: string; status: string; handoff_reason?: string | null; updated_at?: string | null; last_message_at?: string | null }> {
   const admin = createSupabaseAdminClient();
 
   // Try to find active or handed off conversation
   const { data: existing } = await admin
     .from('conversations')
-    .select('id, owner, status')
+    .select('id, owner, status, handoff_reason, updated_at, last_message_at')
     .eq('organization_id', organizationId)
     .eq('patient_phone', patientPhone)
     .in('status', ['active', 'handed_off'])
@@ -387,7 +425,7 @@ async function getOrCreateConversation(
       owner: 'ai',
       last_message_at: new Date().toISOString(),
     })
-    .select('id, owner, status')
+    .select('id, owner, status, handoff_reason, updated_at, last_message_at')
     .single();
 
   return created!;

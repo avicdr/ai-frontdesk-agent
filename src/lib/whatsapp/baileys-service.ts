@@ -443,7 +443,7 @@ export async function startBaileysSession(
               await admin.from('messages').insert({
                 conversation_id: targetConvId,
                 organization_id: organizationId,
-                external_id: msg.key.id || `doc-${Date.now()}`,
+                external_id: `${organizationId}:staff:${msg.key.id || Date.now()}`,
                 role: 'assistant',
                 content: text.trim(),
                 status: 'sent',
