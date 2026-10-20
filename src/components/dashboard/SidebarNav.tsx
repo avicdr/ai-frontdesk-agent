@@ -13,9 +13,10 @@ export interface NavItem {
 interface SidebarNavProps {
   navItems: NavItem[];
   isSuperAdmin?: boolean;
+  onNavigate?: () => void;
 }
 
-export function SidebarNav({ navItems, isSuperAdmin }: SidebarNavProps) {
+export function SidebarNav({ navItems, isSuperAdmin, onNavigate }: SidebarNavProps) {
   const pathname = usePathname();
 
   return (
@@ -29,6 +30,7 @@ export function SidebarNav({ navItems, isSuperAdmin }: SidebarNavProps) {
           <Link
             key={item.href}
             href={item.href}
+            onClick={onNavigate}
             className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
           >
             <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
@@ -42,6 +44,7 @@ export function SidebarNav({ navItems, isSuperAdmin }: SidebarNavProps) {
           <div className="divider" style={{ margin: '0.75rem 0.5rem' }} />
           <Link
             href="/admin"
+            onClick={onNavigate}
             className="sidebar-nav-item"
             style={{
               color: 'hsl(265, 83%, 70%)',

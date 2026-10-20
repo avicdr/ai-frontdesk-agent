@@ -110,12 +110,12 @@ export default function AppointmentsPage() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.5rem)', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
             📅 Dental Appointments & Schedule
           </h1>
-          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>
+          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem', marginTop: '0.25rem' }}>
             All patient appointments synced from WhatsApp AI bookings and Google Calendar.
           </p>
         </div>
@@ -124,59 +124,62 @@ export default function AppointmentsPage() {
           type="button"
           className="btn btn-primary"
           onClick={() => setShowModal(true)}
+          style={{ whiteSpace: 'nowrap' }}
         >
-          + Manual Walk-In Booking
+          + Manual Booking
         </button>
       </div>
 
       {/* Metrics Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
         {[
           { label: 'Total Scheduled', value: total, icon: '📋', color: 'hsl(221 83% 58%)' },
           { label: 'Confirmed / Upcoming', value: confirmed, icon: '⏰', color: 'hsl(142 71% 45%)' },
           { label: 'Completed Care', value: completed, icon: '✓', color: 'hsl(265 83% 65%)' },
           { label: 'Cancelled / Rescheduled', value: cancelled, icon: '✕', color: 'hsl(0 84% 60%)' },
         ].map((m, i) => (
-          <div key={i} className="card" style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div key={i} className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div style={{
-              width: 44,
-              height: 44,
-              borderRadius: '12px',
+              width: 38,
+              height: 38,
+              borderRadius: '10px',
               background: `${m.color}20`,
               color: m.color,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.25rem',
+              fontSize: '1.1rem',
               fontWeight: 800,
+              flexShrink: 0,
             }}>
               {m.icon}
             </div>
-            <div>
-              <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>{m.label}</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800 }}>{m.value}</div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.label}</div>
+              <div style={{ fontSize: '1.35rem', fontWeight: 800 }}>{m.value}</div>
             </div>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', overflowX: 'auto', flexWrap: 'wrap', paddingBottom: '0.25rem' }}>
         {['all', 'confirmed', 'completed', 'cancelled'].map(f => (
           <button
             key={f}
             type="button"
             onClick={() => setStatusFilter(f)}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.45rem 0.85rem',
               borderRadius: '8px',
               border: `1px solid ${statusFilter === f ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))'}`,
               background: statusFilter === f ? 'hsl(var(--color-primary) / 0.15)' : 'hsl(var(--color-surface))',
               color: statusFilter === f ? 'hsl(var(--color-primary))' : 'hsl(var(--color-text-muted))',
-              fontSize: '0.8rem',
+              fontSize: '0.75rem',
               fontWeight: 600,
               cursor: 'pointer',
               textTransform: 'capitalize',
+              whiteSpace: 'nowrap',
             }}
           >
             {f}
@@ -185,7 +188,7 @@ export default function AppointmentsPage() {
       </div>
 
       {/* Appointments Data Table */}
-      <div className="card" style={{ overflowX: 'auto', padding: 0 }}>
+      <div className="card table-responsive" style={{ padding: 0 }}>
         <table className="data-table">
           <thead>
             <tr>
@@ -310,7 +313,7 @@ export default function AppointmentsPage() {
           zIndex: 100,
           padding: '1rem',
         }}>
-          <div className="card" style={{ maxWidth: 480, width: '100%', padding: '1.75rem' }}>
+          <div className="card" style={{ maxWidth: 480, width: '100%', padding: 'clamp(1rem, 3vw, 1.75rem)', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h2 style={{ fontSize: '1.15rem', fontWeight: 700 }}>New Manual Walk-In Appointment</h2>
               <button

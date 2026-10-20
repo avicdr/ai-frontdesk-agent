@@ -123,50 +123,50 @@ export default function RegisterPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '2rem',
+      padding: 'clamp(1rem, 3vw, 2rem)',
       position: 'relative',
     }}>
       <div className="animated-bg" />
 
       <div style={{ width: '100%', maxWidth: '500px', position: 'relative', zIndex: 1 }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
             <div style={{
-              width: 40,
-              height: 40,
+              width: 36,
+              height: 36,
               borderRadius: '10px',
               background: 'var(--gradient-brand)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.25rem',
+              fontSize: '1.15rem',
             }}>🤖</div>
             <span style={{
               fontFamily: 'Plus Jakarta Sans, sans-serif',
               fontWeight: 800,
-              fontSize: '1.25rem',
+              fontSize: '1.2rem',
               letterSpacing: '-0.02em',
               color: 'hsl(var(--color-text-primary))',
             }}>AI Front Desk</span>
           </Link>
         </div>
 
-        <div className="card" style={{ padding: '2.5rem' }}>
-          <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', textAlign: 'center' }}>
+        <div className="card" style={{ padding: 'clamp(1.25rem, 4vw, 2.25rem)' }}>
+          <h1 style={{ fontSize: '1.4rem', marginBottom: '0.5rem', textAlign: 'center' }}>
             Create Your Account
           </h1>
           <p style={{
             color: 'hsl(var(--color-text-muted))',
-            fontSize: '0.875rem',
+            fontSize: '0.85rem',
             textAlign: 'center',
-            marginBottom: '2rem',
+            marginBottom: '1.5rem',
           }}>
             Get your AI receptionist live in minutes — free trial, no credit card
           </p>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '0.75rem' }}>
               <div>
                 <label htmlFor="fullName" className="form-label">Full Name *</label>
                 <input
@@ -224,7 +224,7 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '0.75rem' }}>
               <div>
                 <label htmlFor="reg-password" className="form-label">Password *</label>
                 <input
@@ -255,7 +255,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '0.75rem' }}>
               <div>
                 <label htmlFor="country" className="form-label">Country</label>
                 <select

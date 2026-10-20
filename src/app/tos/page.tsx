@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LandingNavbar } from '@/components/navigation/LandingNavbar';
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
@@ -9,43 +10,10 @@ export const metadata: Metadata = {
 export default function TermsOfServicePage() {
   return (
     <div style={{ minHeight: '100vh', background: 'hsl(var(--color-bg))', color: 'hsl(var(--color-text-primary))' }}>
-      {/* Navbar */}
-      <nav style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        padding: '1rem 2rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(8, 12, 24, 0.85)',
-      }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none', color: 'inherit' }}>
-          <div style={{
-            width: 32,
-            height: 32,
-            borderRadius: '8px',
-            background: 'var(--gradient-brand)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1rem',
-          }}>🤖</div>
-          <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>
-            AI Front Desk
-          </span>
-        </Link>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <Link href="/login" className="btn btn-ghost btn-sm">Sign In</Link>
-          <Link href="/register" className="btn btn-primary btn-sm">Get Started</Link>
-        </div>
-      </nav>
+      <LandingNavbar />
 
       {/* Main Container */}
-      <main style={{ maxWidth: 880, margin: '0 auto', padding: '3.5rem 1.5rem 5rem 1.5rem', lineHeight: 1.75 }}>
+      <main style={{ maxWidth: 880, margin: '0 auto', padding: '6rem 1.5rem 5rem 1.5rem', lineHeight: 1.75 }}>
         {/* Header */}
         <div style={{ marginBottom: '2.5rem', borderBottom: '1px solid hsl(var(--color-border))', paddingBottom: '1.5rem' }}>
           <div className="badge badge-info" style={{ marginBottom: '0.75rem' }}>

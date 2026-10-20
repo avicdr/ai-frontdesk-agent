@@ -21,7 +21,7 @@ export default async function AdminRevenuePage() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         <div className="card" style={{ padding: '1.25rem' }}>
           <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>Total Collected Revenue</div>
           <div style={{ fontSize: '1.75rem', fontWeight: 900, color: 'white' }}>

@@ -67,36 +67,36 @@ export default function LoginPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '2rem',
+      padding: 'clamp(1rem, 3vw, 2rem)',
       position: 'relative',
     }}>
       <div className="animated-bg" />
 
       <div style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 1 }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
             <div style={{
-              width: 40,
-              height: 40,
+              width: 36,
+              height: 36,
               borderRadius: '10px',
               background: 'var(--gradient-brand)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.25rem',
+              fontSize: '1.15rem',
             }}>🤖</div>
             <span style={{
               fontFamily: 'Plus Jakarta Sans, sans-serif',
               fontWeight: 800,
-              fontSize: '1.25rem',
+              fontSize: '1.2rem',
               letterSpacing: '-0.02em',
               color: 'hsl(var(--color-text-primary))',
             }}>AI Front Desk</span>
           </Link>
         </div>
 
-        <div className="card" style={{ padding: '2.5rem' }}>
+        <div className="card" style={{ padding: 'clamp(1.25rem, 4vw, 2.25rem)' }}>
           <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', textAlign: 'center' }}>
             Welcome back
           </h1>

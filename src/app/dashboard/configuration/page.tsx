@@ -195,17 +195,17 @@ export default function ConfigurationPage() {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
+          <h1 style={{ fontSize: 'clamp(1.25rem, 3vw, 1.75rem)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
             ⚙️ Clinic Configuration
           </h1>
-          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>
+          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>
             Manage clinic identity, AI receptionist persona, service catalog prices, and booking guardrails.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           {saveSuccess && (
             <span style={{
               display: 'inline-flex',
@@ -227,7 +227,7 @@ export default function ConfigurationPage() {
             className="btn btn-primary"
             onClick={handleSave}
             disabled={saving}
-            style={{ padding: '0.75rem 1.5rem', fontWeight: 700 }}
+            style={{ padding: '0.625rem 1.25rem', fontWeight: 700 }}
           >
             {saving ? 'Saving...' : '💾 Save Changes'}
           </button>
@@ -238,9 +238,11 @@ export default function ConfigurationPage() {
       <div style={{
         display: 'flex',
         gap: '0.5rem',
-        marginBottom: '2rem',
+        marginBottom: '1.5rem',
         borderBottom: '1px solid hsl(var(--color-border))',
         paddingBottom: '0.75rem',
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
       }}>
         {[
           { id: 'profile', label: '🏥 Clinic Profile' },
@@ -255,15 +257,17 @@ export default function ConfigurationPage() {
               type="button"
               onClick={() => setActiveTab(tab.id as any)}
               style={{
-                padding: '0.625rem 1.25rem',
+                padding: '0.55rem 1rem',
                 borderRadius: '10px',
                 border: `1px solid ${isActive ? 'hsl(var(--color-primary))' : 'transparent'}`,
                 background: isActive ? 'hsla(221, 83%, 58%, 0.15)' : 'transparent',
                 color: isActive ? '#93c5fd' : 'hsl(var(--color-text-secondary))',
                 fontWeight: 600,
-                fontSize: '0.875rem',
+                fontSize: '0.825rem',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
             >
               {tab.label}
@@ -522,10 +526,10 @@ export default function ConfigurationPage() {
           </div>
 
           {/* Services Table */}
-          <div style={{
+          <div className="table-responsive" style={{
             border: '1px solid hsl(var(--color-border))',
             borderRadius: '14px',
-            overflow: 'hidden',
+            overflowX: 'auto',
             background: 'hsl(var(--color-surface))',
           }}>
             <table className="data-table" style={{ width: '100%' }}>

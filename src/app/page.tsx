@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { LandingNavbar } from '@/components/navigation/LandingNavbar';
 
 export const metadata: Metadata = {
   title: 'AI Front Desk — AI Receptionist for Dental Clinics & Appointment Businesses',
@@ -107,41 +108,7 @@ export default function LandingPage() {
       <div className="animated-bg" />
 
       {/* ============ NAVBAR ============ */}
-      <nav style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 50,
-        padding: '1rem 2rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        background: 'rgba(8, 12, 24, 0.8)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <div style={{
-            width: 32,
-            height: 32,
-            borderRadius: '8px',
-            background: 'var(--gradient-brand)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1rem',
-          }}>🤖</div>
-          <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.02em' }}>
-            AI Front Desk
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <Link href="/login" className="btn btn-ghost btn-sm">Sign In</Link>
-          <Link href="/register" className="btn btn-primary btn-sm">Start Free Trial</Link>
-        </div>
-      </nav>
+      <LandingNavbar />
 
       {/* ============ HERO ============ */}
       <section style={{
@@ -150,53 +117,54 @@ export default function LandingPage() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '8rem 2rem 4rem',
+        padding: 'clamp(5.5rem, 12vw, 8rem) clamp(1rem, 4vw, 2rem) 3rem',
         textAlign: 'center',
         position: 'relative',
       }}>
-        <div className="badge badge-info" style={{ marginBottom: '1.5rem' }}>
+        <div className="badge badge-info" style={{ marginBottom: '1.25rem' }}>
           ✨ Powered by Google Gemini AI
         </div>
 
         <h1 style={{
-          fontSize: 'clamp(2.5rem, 6vw, 5rem)',
+          fontSize: 'clamp(1.9rem, 6.5vw, 4.5rem)',
           fontWeight: 900,
-          lineHeight: 1.05,
+          lineHeight: 1.1,
           maxWidth: '900px',
-          marginBottom: '1.5rem',
-          letterSpacing: '-0.04em',
+          marginBottom: '1.25rem',
+          letterSpacing: '-0.03em',
         }}>
           Your Clinic&apos;s AI Receptionist,{' '}
           <span className="text-gradient">Always On WhatsApp</span>
         </h1>
 
         <p style={{
-          fontSize: 'clamp(1rem, 2vw, 1.25rem)',
+          fontSize: 'clamp(0.95rem, 2vw, 1.25rem)',
           color: 'hsl(var(--color-text-secondary))',
           maxWidth: '600px',
-          marginBottom: '2.5rem',
+          marginBottom: '2rem',
           lineHeight: 1.6,
         }}>
           Deploy a smart AI receptionist for your dental clinic or appointment business in minutes.
           Books appointments, answers queries, and handles cancellations — 24/7, in any language.
         </p>
 
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Link href="/register" className="btn btn-primary btn-lg">
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', width: '100%', maxWidth: '450px' }}>
+          <Link href="/register" className="btn btn-primary btn-lg" style={{ flex: '1 1 200px', textAlign: 'center' }}>
             🚀 Start Free — No Credit Card
           </Link>
-          <Link href="#how-it-works" className="btn btn-secondary btn-lg">
+          <Link href="#how-it-works" className="btn btn-secondary btn-lg" style={{ flex: '1 1 160px', textAlign: 'center' }}>
             See How It Works
           </Link>
         </div>
 
         {/* Stats */}
         <div style={{
-          display: 'flex',
-          gap: '2rem',
-          marginTop: '4rem',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(75px, 1fr))',
+          gap: 'clamp(0.75rem, 3vw, 2rem)',
+          marginTop: 'clamp(2.5rem, 6vw, 4rem)',
+          width: '100%',
+          maxWidth: '560px',
         }}>
           {[
             { value: '24/7', label: 'Always Available' },
@@ -205,10 +173,10 @@ export default function LandingPage() {
             { value: '0', label: 'Missed Queries' },
           ].map(stat => (
             <div key={stat.label} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.03em' }} className="text-gradient">
+              <div style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 800, letterSpacing: '-0.03em' }} className="text-gradient">
                 {stat.value}
               </div>
-              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.2rem' }}>
                 {stat.label}
               </div>
             </div>
@@ -216,13 +184,13 @@ export default function LandingPage() {
         </div>
 
         {/* Demo Chat Mockup */}
-        <div className="float" style={{
-          marginTop: '4rem',
+        <div id="demo" className="float" style={{
+          marginTop: 'clamp(2.5rem, 6vw, 4rem)',
           background: 'hsl(var(--color-surface))',
           border: '1px solid hsl(var(--color-border))',
           borderRadius: '20px',
-          padding: '1.5rem',
-          maxWidth: '400px',
+          padding: 'clamp(1rem, 3vw, 1.5rem)',
+          maxWidth: '420px',
           width: '100%',
           textAlign: 'left',
           boxShadow: 'var(--shadow-elevated)',
@@ -237,6 +205,7 @@ export default function LandingPage() {
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '1.25rem',
+              flexShrink: 0,
             }}>🤖</div>
             <div>
               <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Aria — BrightSmile Dental</div>
@@ -257,7 +226,7 @@ export default function LandingPage() {
               marginBottom: '0.5rem',
             }}>
               <div style={{
-                maxWidth: '80%',
+                maxWidth: '85%',
                 padding: '0.5rem 0.75rem',
                 borderRadius: msg.role === 'patient' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
                 background: msg.role === 'patient' ? 'hsl(221, 83%, 48%)' : 'hsl(var(--color-surface-3))',
@@ -273,26 +242,26 @@ export default function LandingPage() {
       </section>
 
       {/* ============ FEATURES ============ */}
-      <section style={{ padding: '6rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', marginBottom: '1rem' }}>
+      <section id="features" style={{ padding: 'clamp(3.5rem, 8vw, 6rem) clamp(1rem, 4vw, 2rem)', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 3rem)', marginBottom: '0.75rem' }}>
             Everything Your Clinic Needs
           </h2>
-          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '1.1rem' }}>
+          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: 'clamp(0.9rem, 2vw, 1.1rem)' }}>
             A complete AI receptionist platform — not just a chatbot.
           </p>
         </div>
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: '1.5rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+          gap: '1.25rem',
         }}>
           {features.map(feature => (
-            <div key={feature.title} className="card" style={{ padding: '1.75rem' }}>
-              <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>{feature.icon}</div>
-              <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>{feature.title}</h3>
-              <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem', lineHeight: 1.6 }}>
+            <div key={feature.title} className="card" style={{ padding: 'clamp(1.25rem, 3vw, 1.75rem)' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>{feature.icon}</div>
+              <h3 style={{ fontSize: '1.05rem', marginBottom: '0.5rem' }}>{feature.title}</h3>
+              <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem', lineHeight: 1.6 }}>
                 {feature.description}
               </p>
             </div>
@@ -301,23 +270,23 @@ export default function LandingPage() {
       </section>
 
       {/* ============ HOW IT WORKS ============ */}
-      <section id="how-it-works" style={{ padding: '6rem 2rem', background: 'hsl(var(--color-surface))', borderTop: '1px solid hsl(var(--color-border))' }}>
+      <section id="how-it-works" style={{ padding: 'clamp(3.5rem, 8vw, 6rem) clamp(1rem, 4vw, 2rem)', background: 'hsl(var(--color-surface))', borderTop: '1px solid hsl(var(--color-border))' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 3rem)', marginBottom: '0.75rem' }}>
             Live in 4 Steps
           </h2>
-          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '1.1rem', marginBottom: '3rem' }}>
+          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: 'clamp(0.9rem, 2vw, 1.1rem)', marginBottom: '2.5rem' }}>
             No developer required. From signup to live AI receptionist in under an hour.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '2rem', textAlign: 'left' }}>
-            {steps.map((step, i) => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '1.5rem', textAlign: 'left' }}>
+            {steps.map(step => (
               <div key={step.number}>
-                <div className="text-gradient" style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '0.5rem', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                <div className="text-gradient" style={{ fontSize: '2.25rem', fontWeight: 900, marginBottom: '0.35rem', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                   {step.number}
                 </div>
-                <h3 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>{step.title}</h3>
-                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                <h3 style={{ fontSize: '0.95rem', marginBottom: '0.35rem' }}>{step.title}</h3>
+                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.825rem', lineHeight: 1.5 }}>
                   {step.description}
                 </p>
               </div>
@@ -327,20 +296,20 @@ export default function LandingPage() {
       </section>
 
       {/* ============ PRICING ============ */}
-      <section id="pricing" style={{ padding: '6rem 2rem', maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', marginBottom: '1rem' }}>
+      <section id="pricing" style={{ padding: 'clamp(3.5rem, 8vw, 6rem) clamp(1rem, 4vw, 2rem)', maxWidth: '1100px', margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 3rem)', marginBottom: '0.75rem' }}>
             Simple, Transparent Pricing
           </h2>
-          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '1.1rem' }}>
+          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: 'clamp(0.9rem, 2vw, 1.1rem)' }}>
             Monthly subscriptions via UPI. Cancel anytime.
           </p>
         </div>
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: '1.5rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+          gap: '1.25rem',
           alignItems: 'stretch',
         }}>
           {plans.map(plan => (
@@ -348,7 +317,7 @@ export default function LandingPage() {
               key={plan.name}
               className={plan.highlighted ? 'card glow-border' : 'card'}
               style={{
-                padding: '2.25rem 2rem 2rem',
+                padding: 'clamp(1.5rem, 4vw, 2.25rem) clamp(1.25rem, 3vw, 2rem) 1.75rem',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
@@ -375,18 +344,18 @@ export default function LandingPage() {
                   ⭐ Most Popular
                 </div>
               )}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{plan.name}</h3>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.25rem' }}>{plan.name}</h3>
                 <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.8rem', marginBottom: '1rem' }}>{plan.description}</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-                  <span style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em', fontFamily: 'Plus Jakarta Sans, sans-serif' }} className={plan.highlighted ? 'text-gradient' : ''}>{plan.price}</span>
+                  <span style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-0.04em', fontFamily: 'Plus Jakarta Sans, sans-serif' }} className={plan.highlighted ? 'text-gradient' : ''}>{plan.price}</span>
                   <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>{plan.period}</span>
                 </div>
               </div>
 
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem', flex: 1 }}>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.75rem', flex: 1 }}>
                 {plan.features.map(f => (
-                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.625rem', fontSize: '0.875rem', color: 'hsl(var(--color-text-secondary))' }}>
+                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>
                     <span style={{ color: 'hsl(142, 71%, 55%)', flexShrink: 0, marginTop: '0.1rem' }}>✓</span>
                     {f}
                   </li>
@@ -404,7 +373,7 @@ export default function LandingPage() {
           ))}
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: '2rem', color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>
+        <p style={{ textAlign: 'center', marginTop: '2rem', color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>
           All plans include a 3-day free trial. No credit card required to start.
           UPI payments accepted.
         </p>
@@ -412,15 +381,15 @@ export default function LandingPage() {
 
       {/* ============ CTA ============ */}
       <section style={{
-        padding: '6rem 2rem',
+        padding: 'clamp(3.5rem, 8vw, 6rem) clamp(1rem, 4vw, 2rem)',
         textAlign: 'center',
         background: 'linear-gradient(180deg, transparent 0%, hsl(var(--color-surface)) 100%)',
         borderTop: '1px solid hsl(var(--color-border))',
       }}>
-        <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', marginBottom: '1rem' }}>
+        <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 3rem)', marginBottom: '0.75rem' }}>
           Ready to Transform Your Clinic?
         </h2>
-        <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '1.1rem', marginBottom: '2rem' }}>
+        <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: 'clamp(0.9rem, 2vw, 1.1rem)', marginBottom: '1.75rem' }}>
           Join clinics already saving hours of reception time every day.
         </p>
         <Link href="/register" className="btn btn-primary btn-lg">
@@ -430,20 +399,20 @@ export default function LandingPage() {
 
       {/* ============ FOOTER ============ */}
       <footer style={{
-        padding: '2.5rem 2rem',
+        padding: '2.5rem clamp(1rem, 4vw, 2rem)',
         borderTop: '1px solid hsl(var(--color-border))',
         textAlign: 'center',
         color: 'hsl(var(--color-text-muted))',
         fontSize: '0.8125rem',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginBottom: '0.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 'clamp(0.75rem, 3vw, 1.5rem)', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
           <Link href="/privacy" style={{ color: 'hsl(var(--color-text-secondary))', textDecoration: 'none' }}>Privacy Policy</Link>
           <Link href="/tos" style={{ color: 'hsl(var(--color-text-secondary))', textDecoration: 'none' }}>Terms of Service</Link>
           <Link href="/login" style={{ color: 'hsl(var(--color-text-secondary))', textDecoration: 'none' }}>Sign In</Link>
           <Link href="/register" style={{ color: 'hsl(var(--color-text-secondary))', textDecoration: 'none' }}>Free Trial</Link>
         </div>
         <p>© {new Date().getFullYear()} AI Front Desk. Built for clinics and appointment businesses.</p>
-        <p style={{ marginTop: '0.5rem' }}>
+        <p style={{ marginTop: '0.5rem', lineHeight: 1.5 }}>
           <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>⚠️ SANDBOX MODE</span>
           {' '}This is a development build. WhatsApp and payment integrations are not yet live.
         </p>

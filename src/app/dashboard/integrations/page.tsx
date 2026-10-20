@@ -244,9 +244,9 @@ export default function IntegrationsPage() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.25rem', alignItems: 'start' }}>
         {/* WhatsApp Card */}
-        <div className="card" style={{ padding: '1.75rem', overflow: 'visible' }}>
+        <div className="card" style={{ padding: 'clamp(1rem, 3vw, 1.75rem)', overflow: 'visible' }}>
           {/* Card Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

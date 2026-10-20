@@ -239,8 +239,8 @@ export default async function DashboardPage() {
       {/* Stats row */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-        gap: '1rem',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 150px), 1fr))',
+        gap: '0.75rem',
         marginBottom: '1.5rem',
       }}>
         {/* Agent Status */}
@@ -332,7 +332,7 @@ export default async function DashboardPage() {
       )}
 
       {/* Two-column: Appointments + Conversations */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
         {/* Upcoming Appointments */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>

@@ -111,14 +111,14 @@ export default function BillingPage() {
       )}
 
       {/* Subscription Status Card */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        <div className="card" style={{ padding: '1.75rem', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+        <div className="card" style={{ padding: 'clamp(1.25rem, 3vw, 1.75rem)', position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
             <div>
               <span className="badge badge-success" style={{ marginBottom: '0.5rem', display: 'inline-block' }}>
                 Active Plan
               </span>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Pro Clinic Plan</h2>
+              <h2 style={{ fontSize: 'clamp(1.15rem, 3vw, 1.4rem)', fontWeight: 800 }}>Pro Clinic Plan</h2>
               <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>
                 ₹1,599 / month • Renews on 19th of every month
               </div>
@@ -141,7 +141,7 @@ export default function BillingPage() {
         </div>
 
         {/* AI Cost Efficiency Telemetry */}
-        <div className="card" style={{ padding: '1.75rem' }}>
+        <div className="card" style={{ padding: 'clamp(1.25rem, 3vw, 1.75rem)' }}>
           <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.75rem' }}>
             🤖 AI Engine Efficiency
           </h3>
@@ -164,7 +164,7 @@ export default function BillingPage() {
 
       {/* Available Plans */}
       <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem' }}>Upgrade Your Front Desk</h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
         {plans.map(p => (
           <div
             key={p.id}

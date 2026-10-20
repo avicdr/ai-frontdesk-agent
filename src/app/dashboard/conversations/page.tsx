@@ -200,41 +200,70 @@ export default function ConversationsPage() {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 5.5rem)', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 6rem)', minHeight: 480, overflow: 'hidden' }}>
       {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexShrink: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexShrink: 0 }}>
         <div>
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          <h1 style={{ fontSize: 'clamp(1.15rem, 3vw, 1.4rem)', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
             💬 Patient Conversations & Live Inbox
           </h1>
-          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.825rem', margin: '0.2rem 0 0 0' }}>
-            Monitor real-time WhatsApp dialogues, view contact names, take over chats, or let AI handle reception automatically.
+          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.8rem', margin: '0.2rem 0 0 0' }}>
+            Monitor WhatsApp dialogues, view contact names, take over chats, or let AI handle reception automatically.
           </p>
         </div>
       </div>
 
       {/* Main Container */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '360px 1fr',
-        gap: '0',
-        flex: 1,
-        minHeight: 0,
-        height: '100%',
-        background: 'hsl(var(--color-surface))',
-        border: '1px solid hsl(var(--color-border))',
-        borderRadius: '16px',
-        overflow: 'hidden',
-      }}>
-        {/* Left Column: Conversation List */}
-        <div style={{
-          borderRight: '1px solid hsl(var(--color-border))',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
+      <div
+        className="conversations-grid"
+        style={{
+          display: 'grid',
+          gap: '0',
+          flex: 1,
           minHeight: 0,
-          background: 'hsl(var(--color-background) / 0.5)',
-        }}>
+          height: '100%',
+          background: 'hsl(var(--color-surface))',
+          border: '1px solid hsl(var(--color-border))',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        <style jsx>{`
+          .conversations-grid {
+            grid-template-columns: 340px 1fr;
+          }
+          @media (max-width: 768px) {
+            .conversations-grid {
+              grid-template-columns: 1fr;
+            }
+            .conv-list-panel {
+              display: ${selectedConv ? 'none !important' : 'flex !important'};
+              width: 100% !important;
+              border-right: none !important;
+            }
+            .conv-chat-panel {
+              display: ${selectedConv ? 'flex !important' : 'none !important'};
+              width: 100% !important;
+            }
+            .conv-empty-panel {
+              display: none !important;
+            }
+          }
+        `}</style>
+
+        {/* Left Column: Conversation List */}
+        <div
+          className="conv-list-panel"
+          style={{
+            borderRight: '1px solid hsl(var(--color-border))',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            minHeight: 0,
+            background: 'hsl(var(--color-background) / 0.5)',
+          }}
+        >
           {/* Search bar */}
           <div style={{ padding: '0.875rem 1rem', borderBottom: '1px solid hsl(var(--color-border))', flexShrink: 0 }}>
             <input
@@ -319,28 +348,57 @@ export default function ConversationsPage() {
 
         {/* Right Column: Active Conversation Timeline */}
         {selectedConv ? (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-            minHeight: 0,
-            overflow: 'hidden',
-          }}>
+          <div
+            className="conv-chat-panel"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              minHeight: 0,
+              overflow: 'hidden',
+            }}
+          >
             {/* Thread Header */}
             <div style={{
-              padding: '0.875rem 1.5rem',
+              padding: '0.75rem clamp(0.75rem, 3vw, 1.25rem)',
               borderBottom: '1px solid hsl(var(--color-border))',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               background: 'hsl(var(--color-surface))',
+              flexWrap: 'wrap',
+              gap: '0.5rem',
               flexShrink: 0,
             }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <span style={{ fontSize: '1.25rem' }}>👤</span>
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'white' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                {/* Mobile back button */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedConvId(null)}
+                  className="show-on-mobile btn btn-ghost btn-sm"
+                  style={{
+                    padding: '0.35rem 0.6rem',
+                    background: 'hsl(var(--color-surface-2))',
+                    border: '1px solid hsl(var(--color-border))',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                  }}
+                  title="Back to contacts list"
+                >
+                  ←
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                  <span style={{ fontSize: '1.25rem', flexShrink: 0 }}>👤</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{
+                      fontWeight: 800,
+                      fontSize: 'clamp(0.9rem, 2.5vw, 1.05rem)',
+                      color: 'white',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
                       {selectedConv.patient_name || formatContactNumber(selectedConv.patient_phone)}
                     </div>
                     {selectedConv.patient_name && (
@@ -350,23 +408,17 @@ export default function ConversationsPage() {
                     )}
                   </div>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.2rem' }}>
-                  Channel: WhatsApp • Mode:{' '}
-                  <span style={{ color: selectedConv.owner === 'human' ? 'hsl(38 92% 50%)' : 'hsl(142 71% 45%)', fontWeight: 600 }}>
-                    {selectedConv.owner === 'human' ? 'Manual Staff Intervention' : 'Autonomous AI Receptionist'}
-                  </span>
-                </div>
               </div>
 
               {/* Takeover Toggle Button */}
               <button
                 type="button"
-                className={`btn ${selectedConv.owner === 'human' ? 'btn-primary' : 'btn-secondary'}`}
+                className={`btn ${selectedConv.owner === 'human' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
                 onClick={handleToggleTakeover}
                 disabled={actionInProgress}
-                style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
+                style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
               >
-                {selectedConv.owner === 'human' ? '🤖 Resume AI Receptionist' : '✋ Take Over (Pause AI)'}
+                {selectedConv.owner === 'human' ? '🤖 Resume AI' : '✋ Take Over'}
               </button>
             </div>
 
@@ -456,13 +508,24 @@ export default function ConversationsPage() {
                 className="btn btn-primary"
                 onClick={handleSendReply}
                 disabled={actionInProgress || !replyText.trim()}
+                style={{ padding: '0.5rem 0.875rem', flexShrink: 0 }}
               >
-                Send WhatsApp →
+                Send →
               </button>
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'hsl(var(--color-text-muted))' }}>
+          <div
+            className="conv-empty-panel"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'hsl(var(--color-text-muted))',
+              padding: '2rem',
+              textAlign: 'center',
+            }}
+          >
             Select a conversation on the left to view message history
           </div>
         )}

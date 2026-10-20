@@ -755,7 +755,7 @@ export default function OnboardingPage() {
                 </p>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.75rem', alignItems: 'start' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.75rem', alignItems: 'start' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <div className="form-field">
                     <label className="label">
@@ -1080,10 +1080,10 @@ export default function OnboardingPage() {
               </div>
 
               {/* Interactive Services Table */}
-              <div style={{
+              <div className="table-responsive" style={{
                 border: '1px solid hsl(var(--color-border))',
                 borderRadius: '14px',
-                overflow: 'hidden',
+                overflowX: 'auto',
                 background: 'hsl(var(--color-surface))',
               }}>
                 <table className="data-table" style={{ width: '100%' }}>
@@ -1202,14 +1202,16 @@ export default function OnboardingPage() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '0.875rem 1.25rem',
+                      flexWrap: 'wrap',
+                      gap: '0.75rem',
+                      padding: '0.875rem clamp(0.75rem, 3vw, 1.25rem)',
                       background: wh.isOpen ? 'hsl(var(--color-surface-2))' : 'hsl(var(--color-surface) / 0.5)',
                       borderRadius: '12px',
                       border: `1px solid ${wh.isOpen ? 'hsl(var(--color-border))' : 'hsl(var(--color-border-subtle))'}`,
                       transition: 'all 0.15s ease',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: 170 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <span style={{
                         width: 30,
                         height: 30,
@@ -1221,6 +1223,7 @@ export default function OnboardingPage() {
                         justifyContent: 'center',
                         fontWeight: 700,
                         fontSize: '0.75rem',
+                        flexShrink: 0,
                       }}>
                         {DAYS[wh.dayOfWeek].substring(0, 3)}
                       </span>
@@ -1229,7 +1232,7 @@ export default function OnboardingPage() {
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                       <button
                         type="button"
                         onClick={() => {
@@ -1751,10 +1754,10 @@ export default function OnboardingPage() {
                 background: 'hsl(var(--color-surface-2))',
                 borderRadius: '16px',
                 border: '1px solid hsl(var(--color-border))',
-                padding: '1.75rem',
+                padding: 'clamp(1rem, 3vw, 1.75rem)',
                 display: 'grid',
-                gridTemplateColumns: 'minmax(180px, 200px) 1fr',
-                gap: '1.75rem',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
+                gap: '1.5rem',
                 alignItems: 'center',
               }}>
                 {/* Visual UPI QR Card */}
