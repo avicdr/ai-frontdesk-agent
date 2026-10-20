@@ -7,17 +7,19 @@ export const dynamic = 'force-dynamic';
 async function getAdminData() {
   const admin = createSupabaseAdminClient();
 
-  const [orgsRes, subsRes, paymentsRes, usageRes] = await Promise.all([
+  const [orgsRes, subsRes, paymentsRes, usageRes, usersRes] = await Promise.all([
     admin.from('organizations').select('id, name, status, created_at').order('created_at', { ascending: false }),
     admin.from('subscriptions').select('id, organization_id, status, expires_at, plan_id, ai_requests_used, ai_cost_used_inr, subscription_plans(name, price_inr)'),
     admin.from('payment_transactions').select('id, amount_inr, status, created_at').order('created_at', { ascending: false }).limit(20),
     admin.from('ai_usage_records').select('organization_id, estimated_cost_inr, created_at').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+    admin.from('user_profiles').select('id', { count: 'exact', head: true }),
   ]);
 
   const orgs = orgsRes.data ?? [];
   const subs = subsRes.data ?? [];
   const payments = paymentsRes.data ?? [];
   const usage = usageRes.data ?? [];
+  const totalUsers = usersRes.count ?? 0;
 
   const activeCount = subs.filter((s: any) => s.status === 'active').length;
   const expiredCount = subs.filter((s: any) => s.status === 'expired').length;
@@ -47,6 +49,7 @@ async function getAdminData() {
     subs,
     payments,
     stats: {
+      totalUsers,
       totalOrgs: orgs.length,
       activeSubscribers: activeCount,
       expired: expiredCount,
@@ -97,13 +100,14 @@ export default async function AdminDashboard() {
         gap: '1rem',
         marginBottom: '2rem',
       }}>
+        <StatCard value={stats.totalUsers} label="Registered Users" color="hsl(265, 83%, 70%)" />
         <StatCard value={stats.totalOrgs} label="Total Organizations" />
         <StatCard value={stats.activeSubscribers} label="Active Subscribers" color="hsl(142, 71%, 55%)" />
         <StatCard value={stats.expired} label="Expired Subscriptions" color="hsl(0, 84%, 60%)" />
         <StatCard value={stats.suspended} label="Suspended Accounts" color="hsl(38, 92%, 50%)" />
         <StatCard value={`₹${stats.mrr.toLocaleString('en-IN')}`} label="Est. MRR" color="hsl(221, 83%, 70%)" />
         <StatCard value={`₹${stats.totalPaymentsThisMonth.toLocaleString('en-IN')}`} label="Payments This Month" />
-        <StatCard value={`₹${stats.aiSpend.toFixed(2)}`} label="AI Spend This Month" color="hsl(265, 83%, 70%)" />
+        <StatCard value={`₹${stats.aiSpend.toFixed(2)}`} label="AI Spend This Month" color="hsl(142, 71%, 55%)" />
         <StatCard value={stats.expiringCount} label="Expiring in 7 Days" color="hsl(38, 92%, 50%)" />
       </div>
 

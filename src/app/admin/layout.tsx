@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 
 const adminNavItems = [
   { href: '/admin', icon: '📊', label: 'Overview' },
+  { href: '/admin/users', icon: '👥', label: 'Users' },
   { href: '/admin/subscribers', icon: '🏥', label: 'Subscribers' },
   { href: '/admin/revenue', icon: '💰', label: 'Revenue' },
   { href: '/admin/usage', icon: '🤖', label: 'AI Usage & Costs' },
