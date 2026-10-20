@@ -430,13 +430,19 @@ export default function LandingPage() {
 
       {/* ============ FOOTER ============ */}
       <footer style={{
-        padding: '2rem',
+        padding: '2.5rem 2rem',
         borderTop: '1px solid hsl(var(--color-border))',
         textAlign: 'center',
         color: 'hsl(var(--color-text-muted))',
         fontSize: '0.8125rem',
       }}>
-        <p>© 2024 AI Front Desk. Built for dental clinics and appointment businesses.</p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginBottom: '0.75rem' }}>
+          <Link href="/privacy" style={{ color: 'hsl(var(--color-text-secondary))', textDecoration: 'none' }}>Privacy Policy</Link>
+          <Link href="/tos" style={{ color: 'hsl(var(--color-text-secondary))', textDecoration: 'none' }}>Terms of Service</Link>
+          <Link href="/login" style={{ color: 'hsl(var(--color-text-secondary))', textDecoration: 'none' }}>Sign In</Link>
+          <Link href="/register" style={{ color: 'hsl(var(--color-text-secondary))', textDecoration: 'none' }}>Free Trial</Link>
+        </div>
+        <p>© {new Date().getFullYear()} AI Front Desk. Built for clinics and appointment businesses.</p>
         <p style={{ marginTop: '0.5rem' }}>
           <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>⚠️ SANDBOX MODE</span>
           {' '}This is a development build. WhatsApp and payment integrations are not yet live.
