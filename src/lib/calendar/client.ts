@@ -187,22 +187,26 @@ export async function createCalendarAppointment(params: {
     });
 
     // Clear previous error on successful insert
-    const admin = createSupabaseAdminClient();
-    await admin.from('calendar_integrations').update({
-      last_error: null,
-      last_error_at: null,
-    }).eq('organization_id', params.organizationId).catch(() => {});
+    try {
+      const admin = createSupabaseAdminClient();
+      await admin.from('calendar_integrations').update({
+        last_error: null,
+        last_error_at: null,
+      }).eq('organization_id', params.organizationId);
+    } catch {}
 
     return res.data;
   } catch (err: any) {
     const errMsg = err?.message || String(err);
     console.error('Google Calendar event insert error:', errMsg);
 
-    const admin = createSupabaseAdminClient();
-    await admin.from('calendar_integrations').update({
-      last_error: errMsg,
-      last_error_at: new Date().toISOString(),
-    }).eq('organization_id', params.organizationId).catch(() => {});
+    try {
+      const admin = createSupabaseAdminClient();
+      await admin.from('calendar_integrations').update({
+        last_error: errMsg,
+        last_error_at: new Date().toISOString(),
+      }).eq('organization_id', params.organizationId);
+    } catch {}
 
     throw err;
   }

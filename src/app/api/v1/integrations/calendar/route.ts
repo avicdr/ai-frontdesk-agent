@@ -60,20 +60,51 @@ export async function GET() {
       .eq('status', 'confirmed')
       .is('external_event_id', null);
 
+    let lastError = integration?.last_error || null;
+    let lastErrorAt = integration?.last_error_at || null;
+    let email = integration?.google_account_email || null;
+    let calendarName = integration?.selected_calendar_name || null;
+
+    // Auto-verify: If there was a previous error or missing email, test if API works now
+    if (integration?.status === 'connected' && (lastError || !email)) {
+      try {
+        const { getAuthenticatedCalendar } = await import('@/lib/calendar/client');
+        const auth = await getAuthenticatedCalendar(orgId);
+        if (auth) {
+          const primaryCal = await auth.calendar.calendars.get({ calendarId: 'primary' });
+          if (primaryCal?.data?.id) {
+            email = primaryCal.data.id.includes('@') ? primaryCal.data.id : email;
+            calendarName = primaryCal.data.summary || calendarName;
+            lastError = null;
+            lastErrorAt = null;
+
+            await admin.from('calendar_integrations').update({
+              last_error: null,
+              last_error_at: null,
+              google_account_email: email,
+              selected_calendar_name: calendarName,
+              updated_at: new Date().toISOString(),
+            }).eq('organization_id', orgId);
+          }
+        }
+      } catch (testErr: any) {
+        lastError = testErr?.message || String(testErr);
+      }
+    }
+
     const projectId = clientId?.split('-')[0] || '88689336554';
     const enableApiUrl = `https://console.developers.google.com/apis/api/calendar-json.googleapis.com/overview?project=${projectId}`;
-    const lastError = integration?.last_error || null;
     const apiDisabled = Boolean(lastError && (lastError.includes('has not been used') || lastError.includes('disabled') || lastError.includes('calendar-json.googleapis.com')));
 
     return successResponse({
       status: integration?.status === 'connected' ? 'connected' : 'disconnected',
       isLiveConfigured,
-      email: integration?.google_account_email || null,
-      calendarName: integration?.selected_calendar_name || null,
+      email,
+      calendarName,
       calendarId: integration?.selected_calendar_id || null,
       updatedAt: integration?.updated_at || null,
       lastError,
-      lastErrorAt: integration?.last_error_at || null,
+      lastErrorAt,
       apiDisabled,
       enableApiUrl,
       unsyncedCount: unsyncedCount || 0,
