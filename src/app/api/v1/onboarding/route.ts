@@ -166,12 +166,13 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const [profileRes, agentRes, servicesRes, policyRes, orgRes] = await Promise.all([
+    const [profileRes, agentRes, servicesRes, policyRes, orgRes, hoursRes] = await Promise.all([
       admin.from('clinic_profiles').select('*').eq('organization_id', membership.organization_id).maybeSingle(),
       admin.from('agent_configurations').select('*').eq('organization_id', membership.organization_id).order('version', { ascending: false }).limit(1).maybeSingle(),
       admin.from('services').select('*').eq('organization_id', membership.organization_id).eq('is_active', true).order('sort_order', { ascending: true }),
       admin.from('booking_policies').select('*').eq('organization_id', membership.organization_id).maybeSingle(),
       admin.from('organizations').select('name').eq('id', membership.organization_id).maybeSingle(),
+      admin.from('working_hours').select('*').eq('organization_id', membership.organization_id).order('day_of_week', { ascending: true }),
     ]);
 
     return successResponse({
@@ -181,6 +182,7 @@ export async function GET(request: NextRequest) {
       clinicProfile: profileRes.data,
       agentConfig: agentRes.data,
       services: servicesRes.data ?? [],
+      workingHours: hoursRes.data ?? [],
       bookingPolicy: policyRes.data,
       organizationName: orgRes.data?.name,
     });
@@ -342,13 +344,18 @@ export async function PUT(request: NextRequest) {
     // 4. Update working hours
     if (Array.isArray(body.workingHours) && body.workingHours.length > 0) {
       await admin.from('working_hours').delete().eq('organization_id', orgId);
-      const hoursToInsert = body.workingHours.map((h: any) => ({
-        organization_id: orgId,
-        day_of_week: h.dayOfWeek,
-        is_open: !!h.isOpen,
-        open_time: h.isOpen ? h.openTime : null,
-        close_time: h.isOpen ? h.closeTime : null,
-      }));
+      const hoursToInsert = body.workingHours.map((h: any) => {
+        const isOpen = !!(h.isOpen ?? h.is_open);
+        const rawOpen = h.openTime || h.open_time;
+        const rawClose = h.closeTime || h.close_time;
+        return {
+          organization_id: orgId,
+          day_of_week: h.dayOfWeek != null ? h.dayOfWeek : h.day_of_week,
+          is_open: isOpen,
+          open_time: isOpen ? (rawOpen || '09:00') : null,
+          close_time: isOpen ? (rawClose || '18:00') : null,
+        };
+      });
       await admin.from('working_hours').insert(hoursToInsert);
     }
 

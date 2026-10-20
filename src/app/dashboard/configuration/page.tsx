@@ -13,8 +13,48 @@ interface Service {
   isBookable: boolean;
 }
 
+interface WorkingHourDay {
+  dayOfWeek: number;
+  isOpen: boolean;
+  openTime: string;
+  closeTime: string;
+}
+
+const DAYS_OF_WEEK = [
+  { dayOfWeek: 1, name: 'Monday', short: 'Mon' },
+  { dayOfWeek: 2, name: 'Tuesday', short: 'Tue' },
+  { dayOfWeek: 3, name: 'Wednesday', short: 'Wed' },
+  { dayOfWeek: 4, name: 'Thursday', short: 'Thu' },
+  { dayOfWeek: 5, name: 'Friday', short: 'Fri' },
+  { dayOfWeek: 6, name: 'Saturday', short: 'Sat' },
+  { dayOfWeek: 0, name: 'Sunday', short: 'Sun' },
+];
+
+function formatTime12h(timeStr: string): string {
+  if (!timeStr) return '';
+  const [hourStr, minStr] = timeStr.split(':');
+  let hour = parseInt(hourStr, 10);
+  if (isNaN(hour)) return timeStr;
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12 || 12;
+  return `${hour}:${minStr || '00'} ${ampm}`;
+}
+
+function calculateDurationHours(openTime: string, closeTime: string): string {
+  if (!openTime || !closeTime) return '';
+  const [oh, om] = openTime.split(':').map(Number);
+  const [ch, cm] = closeTime.split(':').map(Number);
+  const startMins = (oh || 0) * 60 + (om || 0);
+  const endMins = (ch || 0) * 60 + (cm || 0);
+  const diffMins = endMins - startMins;
+  if (diffMins <= 0) return '0 hrs';
+  const hours = Math.floor(diffMins / 60);
+  const mins = diffMins % 60;
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours} hrs`;
+}
+
 export default function ConfigurationPage() {
-  const [activeTab, setActiveTab] = useState<'profile' | 'agent' | 'services' | 'policies'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'agent' | 'services' | 'hours' | 'policies'>('profile');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -39,6 +79,17 @@ export default function ConfigurationPage() {
   const [newSvcName, setNewSvcName] = useState('');
   const [newSvcPrice, setNewSvcPrice] = useState('');
   const [newSvcDuration, setNewSvcDuration] = useState('30');
+
+  // Working Hours State
+  const [workingHours, setWorkingHours] = useState<WorkingHourDay[]>([
+    { dayOfWeek: 1, isOpen: true, openTime: '09:00', closeTime: '18:00' },
+    { dayOfWeek: 2, isOpen: true, openTime: '09:00', closeTime: '18:00' },
+    { dayOfWeek: 3, isOpen: true, openTime: '09:00', closeTime: '18:00' },
+    { dayOfWeek: 4, isOpen: true, openTime: '09:00', closeTime: '18:00' },
+    { dayOfWeek: 5, isOpen: true, openTime: '09:00', closeTime: '18:00' },
+    { dayOfWeek: 6, isOpen: false, openTime: '10:00', closeTime: '16:00' },
+    { dayOfWeek: 0, isOpen: false, openTime: '10:00', closeTime: '14:00' },
+  ]);
 
   // Policies State
   const [minAdvanceHours, setMinAdvanceHours] = useState('2');
@@ -99,6 +150,20 @@ export default function ConfigurationPage() {
             if (bookingPolicy.cancellation_hours != null) setCancellationHours(String(bookingPolicy.cancellation_hours));
             if (bookingPolicy.buffer_minutes != null) setBufferMinutes(String(bookingPolicy.buffer_minutes));
           }
+
+          if (Array.isArray(json.data.workingHours) && json.data.workingHours.length > 0) {
+            const hoursMap = new Map<number, any>(json.data.workingHours.map((h: any) => [h.day_of_week, h]));
+            const loaded = DAYS_OF_WEEK.map(d => {
+              const existing: any = hoursMap.get(d.dayOfWeek);
+              return {
+                dayOfWeek: d.dayOfWeek,
+                isOpen: existing ? !!existing.is_open : (d.dayOfWeek >= 1 && d.dayOfWeek <= 5),
+                openTime: existing?.open_time ? String(existing.open_time).slice(0, 5) : '09:00',
+                closeTime: existing?.close_time ? String(existing.close_time).slice(0, 5) : '18:00',
+              };
+            });
+            setWorkingHours(loaded);
+          }
         }
       } catch (err) {
         console.error('Failed to load clinic configuration:', err);
@@ -122,6 +187,12 @@ export default function ConfigurationPage() {
           clinicInfo: { clinicName, businessType, phone, address, city, timezone },
           agentConfig: { assistantName, tone, greetingMessage: greeting },
           services,
+          workingHours: workingHours.map(h => ({
+            dayOfWeek: h.dayOfWeek,
+            isOpen: h.isOpen,
+            openTime: h.isOpen ? h.openTime : null,
+            closeTime: h.isOpen ? h.closeTime : null,
+          })),
           bookingPolicy: {
             minAdvanceHours: parseInt(minAdvanceHours, 10),
             maxAdvanceDays: parseInt(maxAdvanceDays, 10),
@@ -136,6 +207,45 @@ export default function ConfigurationPage() {
       console.error(e);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleToggleDay = (dayOfWeek: number) => {
+    setWorkingHours(prev =>
+      prev.map(d => (d.dayOfWeek === dayOfWeek ? { ...d, isOpen: !d.isOpen } : d))
+    );
+  };
+
+  const handleTimeChange = (dayOfWeek: number, field: 'openTime' | 'closeTime', val: string) => {
+    setWorkingHours(prev =>
+      prev.map(d => (d.dayOfWeek === dayOfWeek ? { ...d, [field]: val } : d))
+    );
+  };
+
+  const handleApplyPreset = (preset: 'standard' | 'tuesday11to5' | 'allOpen' | 'copyMonday') => {
+    if (preset === 'standard') {
+      setWorkingHours([
+        { dayOfWeek: 1, isOpen: true, openTime: '09:00', closeTime: '18:00' },
+        { dayOfWeek: 2, isOpen: true, openTime: '09:00', closeTime: '18:00' },
+        { dayOfWeek: 3, isOpen: true, openTime: '09:00', closeTime: '18:00' },
+        { dayOfWeek: 4, isOpen: true, openTime: '09:00', closeTime: '18:00' },
+        { dayOfWeek: 5, isOpen: true, openTime: '09:00', closeTime: '18:00' },
+        { dayOfWeek: 6, isOpen: false, openTime: '10:00', closeTime: '16:00' },
+        { dayOfWeek: 0, isOpen: false, openTime: '10:00', closeTime: '14:00' },
+      ]);
+    } else if (preset === 'tuesday11to5') {
+      setWorkingHours(prev =>
+        prev.map(d => (d.isOpen ? { ...d, openTime: '11:00', closeTime: '17:00' } : d))
+      );
+    } else if (preset === 'allOpen') {
+      setWorkingHours(prev => prev.map(d => ({ ...d, isOpen: true })));
+    } else if (preset === 'copyMonday') {
+      const mon = workingHours.find(d => d.dayOfWeek === 1);
+      if (mon) {
+        setWorkingHours(prev =>
+          prev.map(d => (d.dayOfWeek !== 1 && d.isOpen ? { ...d, openTime: mon.openTime, closeTime: mon.closeTime } : d))
+        );
+      }
     }
   };
 
@@ -249,6 +359,7 @@ export default function ConfigurationPage() {
           { id: 'profile', label: '🏥 Clinic Profile' },
           { id: 'agent', label: '🤖 AI Persona' },
           { id: 'services', label: `${currentConfig.icon} Services & Prices` },
+          { id: 'hours', label: '🕒 Working Hours' },
           { id: 'policies', label: '📋 Booking Policies' },
         ].map(tab => {
           const isActive = activeTab === tab.id;
@@ -615,6 +726,217 @@ export default function ConfigurationPage() {
           <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
             <span>{services.length} services configured</span>
             <span>Remember to click "Save Changes" at the top right to apply updates</span>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Working Hours & Booking Days */}
+      {activeTab === 'hours' && (
+        <div className="card" style={{ padding: '2rem', background: 'hsl(var(--color-surface))' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.35rem' }}>
+                🕒 Weekly Working Hours & Booking Days
+              </h2>
+              <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>
+                Set your operating hours for each day of the week, or toggle off bookings completely for any day. The AI receptionist checks these hours in real time when scheduling appointments.
+              </p>
+            </div>
+
+            {/* Quick Presets */}
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => handleApplyPreset('standard')}
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                title="Mon-Fri 9:00 AM - 6:00 PM, Sat-Sun Closed"
+              >
+                ⚡ Mon-Fri (9 AM – 6 PM)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPreset('tuesday11to5')}
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                title="Set open days to 11:00 AM - 5:00 PM"
+              >
+                ⚡ 11 AM – 5 PM
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPreset('allOpen')}
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                title="Enable bookings on all 7 days"
+              >
+                ⚡ Open All 7 Days
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyPreset('copyMonday')}
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                title="Copy Monday's hours to all other open days"
+              >
+                📋 Copy Monday Hours
+              </button>
+            </div>
+          </div>
+
+          {/* Days List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            {DAYS_OF_WEEK.map(d => {
+              const dayConfig = workingHours.find(h => h.dayOfWeek === d.dayOfWeek) || {
+                dayOfWeek: d.dayOfWeek,
+                isOpen: d.dayOfWeek >= 1 && d.dayOfWeek <= 5,
+                openTime: '09:00',
+                closeTime: '18:00',
+              };
+
+              const durationLabel = dayConfig.isOpen
+                ? calculateDurationHours(dayConfig.openTime, dayConfig.closeTime)
+                : '';
+
+              return (
+                <div
+                  key={d.dayOfWeek}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '1rem',
+                    padding: '1rem 1.25rem',
+                    background: dayConfig.isOpen ? 'hsl(var(--color-surface-2))' : 'hsla(0, 0%, 50%, 0.05)',
+                    border: `1px solid ${dayConfig.isOpen ? 'hsl(var(--color-border))' : 'hsla(0, 0%, 50%, 0.15)'}`,
+                    borderRadius: '12px',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {/* Left: Day Name & Toggle Switch */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', minWidth: '220px' }}>
+                    <div style={{ width: '100px', fontWeight: 800, fontSize: '0.95rem', color: dayConfig.isOpen ? 'white' : 'hsl(var(--color-text-muted))' }}>
+                      {d.name}
+                    </div>
+
+                    {/* Toggle Switch */}
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        checked={dayConfig.isOpen}
+                        onChange={() => handleToggleDay(d.dayOfWeek)}
+                        style={{ display: 'none' }}
+                      />
+                      <div style={{
+                        width: '44px',
+                        height: '24px',
+                        borderRadius: '999px',
+                        background: dayConfig.isOpen ? '#22c55e' : 'rgba(255, 255, 255, 0.15)',
+                        border: `1px solid ${dayConfig.isOpen ? '#16a34a' : 'rgba(255, 255, 255, 0.2)'}`,
+                        position: 'relative',
+                        transition: 'all 0.2s ease',
+                      }}>
+                        <div style={{
+                          width: '18px',
+                          height: '18px',
+                          borderRadius: '50%',
+                          background: 'white',
+                          position: 'absolute',
+                          top: '2px',
+                          left: dayConfig.isOpen ? '22px' : '2px',
+                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        }} />
+                      </div>
+                      <span style={{
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        color: dayConfig.isOpen ? '#4ade80' : 'hsl(var(--color-text-muted))',
+                      }}>
+                        {dayConfig.isOpen ? 'Open for Bookings' : 'Closed'}
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Right: Time Controls or Closed Notice */}
+                  {dayConfig.isOpen ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', fontWeight: 600 }}>Opens:</span>
+                        <input
+                          type="time"
+                          value={dayConfig.openTime}
+                          onChange={(e) => handleTimeChange(d.dayOfWeek, 'openTime', e.target.value)}
+                          style={{
+                            padding: '0.4rem 0.65rem',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            borderRadius: '8px',
+                            background: 'hsl(var(--color-surface))',
+                            border: '1px solid hsl(var(--color-border))',
+                            color: 'white',
+                          }}
+                        />
+                      </div>
+
+                      <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem', fontWeight: 600 }}>to</span>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', fontWeight: 600 }}>Closes:</span>
+                        <input
+                          type="time"
+                          value={dayConfig.closeTime}
+                          onChange={(e) => handleTimeChange(d.dayOfWeek, 'closeTime', e.target.value)}
+                          style={{
+                            padding: '0.4rem 0.65rem',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            borderRadius: '8px',
+                            background: 'hsl(var(--color-surface))',
+                            border: '1px solid hsl(var(--color-border))',
+                            color: 'white',
+                          }}
+                        />
+                      </div>
+
+                      {/* Formatted Badge */}
+                      <span style={{
+                        fontSize: '0.75rem',
+                        background: 'hsla(221, 83%, 58%, 0.12)',
+                        color: '#93c5fd',
+                        padding: '0.35rem 0.65rem',
+                        borderRadius: '6px',
+                        fontWeight: 700,
+                        border: '1px solid hsla(221, 83%, 58%, 0.25)',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {formatTime12h(dayConfig.openTime)} – {formatTime12h(dayConfig.closeTime)} ({durationLabel})
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={{
+                      fontSize: '0.8rem',
+                      color: 'hsl(var(--color-text-muted))',
+                      fontStyle: 'italic',
+                      padding: '0.35rem 0.75rem',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      borderRadius: '6px',
+                      border: '1px dashed hsla(0, 0%, 50%, 0.25)',
+                    }}>
+                      No bookings accepted • Clinic marked as closed
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
+            <span>
+              {workingHours.filter(h => h.isOpen).length} of 7 days open for patient appointments
+            </span>
+            <span>Remember to click <strong>"💾 Save Changes"</strong> at the top right to apply updates</span>
           </div>
         </div>
       )}
