@@ -80,7 +80,8 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      * - api/v1/webhooks (webhooks must not require session cookies)
+     * - api/health (keep-alive pings must respond with minimal overhead)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api/v1/webhooks).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api/v1/webhooks|api/health).*)',
   ],
 };
