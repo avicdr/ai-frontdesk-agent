@@ -162,30 +162,130 @@ export async function createCalendarAppointment(params: {
   const { calendar, calendarId } = auth;
   const timeZone = params.clinicTimezone || 'Asia/Kolkata';
 
-  const res = await calendar.events.insert({
-    calendarId,
-    requestBody: {
-      summary: `Appointment: ${params.patientName} (${params.serviceName})`,
-      description: `Patient: ${params.patientName}\nPhone: ${params.patientPhone}\nService: ${params.serviceName}\n${params.notes ? `Notes: ${params.notes}` : ''}`,
-      start: {
-        dateTime: params.startsAt,
-        timeZone,
+  try {
+    const res = await calendar.events.insert({
+      calendarId,
+      requestBody: {
+        summary: `Appointment: ${params.patientName} (${params.serviceName})`,
+        description: `Patient: ${params.patientName}\nPhone: ${params.patientPhone}\nService: ${params.serviceName}\n${params.notes ? `Notes: ${params.notes}` : ''}`,
+        start: {
+          dateTime: params.startsAt,
+          timeZone,
+        },
+        end: {
+          dateTime: params.endsAt,
+          timeZone,
+        },
+        reminders: {
+          useDefault: false,
+          overrides: [
+            { method: 'popup', minutes: 60 },
+            { method: 'popup', minutes: 15 },
+          ],
+        },
       },
-      end: {
-        dateTime: params.endsAt,
-        timeZone,
-      },
-      reminders: {
-        useDefault: false,
-        overrides: [
-          { method: 'popup', minutes: 60 },
-          { method: 'popup', minutes: 15 },
-        ],
-      },
-    },
+    });
+
+    // Clear previous error on successful insert
+    const admin = createSupabaseAdminClient();
+    await admin.from('calendar_integrations').update({
+      last_error: null,
+      last_error_at: null,
+    }).eq('organization_id', params.organizationId).catch(() => {});
+
+    return res.data;
+  } catch (err: any) {
+    const errMsg = err?.message || String(err);
+    console.error('Google Calendar event insert error:', errMsg);
+
+    const admin = createSupabaseAdminClient();
+    await admin.from('calendar_integrations').update({
+      last_error: errMsg,
+      last_error_at: new Date().toISOString(),
+    }).eq('organization_id', params.organizationId).catch(() => {});
+
+    throw err;
+  }
+}
+
+/**
+ * Retroactively sync confirmed appointments that have not yet been pushed to Google Calendar
+ */
+export async function syncUnsyncedAppointments(organizationId: string) {
+  const admin = createSupabaseAdminClient();
+  const { data: appointments, error } = await admin
+    .from('appointments')
+    .select(`
+      id,
+      patient_name,
+      patient_phone,
+      starts_at,
+      ends_at,
+      notes,
+      timezone,
+      service_id
+    `)
+    .eq('organization_id', organizationId)
+    .eq('status', 'confirmed')
+    .is('external_event_id', null)
+    .order('starts_at', { ascending: true });
+
+  if (error || !appointments || appointments.length === 0) {
+    return { syncedCount: 0, totalPending: 0, errors: [] };
+  }
+
+  // Pre-fetch service names
+  const serviceIds = Array.from(new Set((appointments as any[]).map((a: any) => a.service_id).filter(Boolean)));
+  const { data: services } = await admin
+    .from('services')
+    .select('id, name')
+    .in('id', serviceIds);
+
+  const serviceMap = new Map<string, string>();
+  (services as any[] || []).forEach((s: any) => {
+    if (s?.id && s?.name) {
+      serviceMap.set(s.id, s.name);
+    }
   });
 
-  return res.data;
+  let syncedCount = 0;
+  const errors: string[] = [];
+
+  for (const apt of (appointments as any[])) {
+    try {
+      const serviceName: string = serviceMap.get(apt.service_id) || 'General Consultation';
+      const event = await createCalendarAppointment({
+        organizationId,
+        patientName: apt.patient_name,
+        patientPhone: apt.patient_phone,
+        serviceName,
+        startsAt: apt.starts_at,
+        endsAt: apt.ends_at,
+        notes: apt.notes || undefined,
+        clinicTimezone: apt.timezone || 'Asia/Kolkata',
+      });
+
+      if (event?.id) {
+        await admin
+          .from('appointments')
+          .update({
+            external_event_id: event.id,
+            external_calendar_id: 'primary',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', apt.id);
+        syncedCount++;
+      }
+    } catch (err: any) {
+      errors.push(`Appointment ${apt.id} (${apt.patient_name}): ${err?.message || err}`);
+    }
+  }
+
+  return {
+    syncedCount,
+    totalPending: appointments.length,
+    errors,
+  };
 }
 
 /**

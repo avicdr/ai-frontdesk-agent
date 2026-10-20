@@ -22,6 +22,12 @@ export default function IntegrationsPage() {
   const [calendarEmail, setCalendarEmail] = useState<string | null>(null);
   const [calendarName, setCalendarName] = useState<string | null>(null);
   const [isLiveGoogleConfigured, setIsLiveGoogleConfigured] = useState(false);
+  const [calendarError, setCalendarError] = useState<string | null>(null);
+  const [apiDisabled, setApiDisabled] = useState(false);
+  const [enableApiUrl, setEnableApiUrl] = useState<string | null>(null);
+  const [unsyncedCount, setUnsyncedCount] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -34,8 +40,31 @@ export default function IntegrationsPage() {
         setCalendarEmail(json.data.email);
         setCalendarName(json.data.calendarName);
         setIsLiveGoogleConfigured(json.data.isLiveConfigured);
+        setCalendarError(json.data.lastError);
+        setApiDisabled(Boolean(json.data.apiDisabled));
+        setEnableApiUrl(json.data.enableApiUrl);
+        setUnsyncedCount(json.data.unsyncedCount || 0);
       }
     } catch {}
+  };
+
+  const handleSyncCalendarAppointments = async () => {
+    setIsSyncing(true);
+    setSyncMessage(null);
+    try {
+      const res = await fetch('/api/v1/integrations/calendar', { method: 'POST' });
+      const json = await res.json();
+      if (json.success) {
+        setSyncMessage(json.data?.message || 'Sync complete!');
+        await fetchCalendarStatus();
+      } else {
+        setSyncMessage(json.error?.message || 'Sync failed.');
+      }
+    } catch (err: any) {
+      setSyncMessage(err?.message || 'Sync request failed.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const handleDisconnectCalendar = async () => {
@@ -45,6 +74,8 @@ export default function IntegrationsPage() {
     setCalendarConnected(false);
     setCalendarEmail(null);
     setCalendarName(null);
+    setCalendarError(null);
+    setApiDisabled(false);
   };
 
   // Initial load: Fetch current session status
@@ -579,36 +610,111 @@ export default function IntegrationsPage() {
 
           {calendarConnected ? (
             <div>
+              {/* Connected Banner */}
               <div style={{
-                background: 'hsla(142, 71%, 45%, 0.1)',
-                border: '1px solid hsla(142, 71%, 45%, 0.3)',
+                background: apiDisabled ? 'hsla(38, 92%, 50%, 0.1)' : 'hsla(142, 71%, 45%, 0.1)',
+                border: apiDisabled ? '1px solid hsla(38, 92%, 50%, 0.35)' : '1px solid hsla(142, 71%, 45%, 0.3)',
                 borderRadius: '12px',
                 padding: '1rem',
-                marginBottom: '1.25rem',
+                marginBottom: '1rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
               }}>
-                <span style={{ fontSize: '1.25rem' }}>✅</span>
+                <span style={{ fontSize: '1.25rem' }}>{apiDisabled ? '⚠️' : '✅'}</span>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#4ade80' }}>
-                    Google Doctor Calendar Connected
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: apiDisabled ? '#fbbf24' : '#4ade80' }}>
+                    {apiDisabled ? 'Google Calendar Connected (API Action Required)' : 'Google Doctor Calendar Connected'}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
-                    {calendarEmail ? `Account: ${calendarEmail}` : 'Two-way synchronization is active.'}
+                    {calendarEmail ? `Account: ${calendarEmail}` : 'OAuth credentials active.'}
                     {calendarName ? ` • Calendar: ${calendarName}` : ''}
                   </div>
                 </div>
               </div>
 
+              {/* API Disabled Notice */}
+              {apiDisabled && (
+                <div style={{
+                  background: 'hsla(38, 92%, 50%, 0.1)',
+                  border: '1px solid hsla(38, 92%, 50%, 0.3)',
+                  borderRadius: '12px',
+                  padding: '1.25rem',
+                  marginBottom: '1rem',
+                }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#fbbf24', marginBottom: '0.35rem' }}>
+                    Google Calendar API is Disabled in Google Cloud
+                  </div>
+                  <p style={{ fontSize: '0.785rem', color: 'hsl(var(--color-text-secondary))', lineHeight: 1.5, margin: 0, marginBottom: '0.75rem' }}>
+                    Google returned error 403: Google Calendar API has not been enabled in your Google Cloud Project. Please click the button below to turn it on, then click &quot;Sync Appointments&quot;.
+                  </p>
+                  {enableApiUrl && (
+                    <a
+                      href={enableApiUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-sm btn-primary"
+                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}
+                    >
+                      🚀 Enable Google Calendar API in Google Cloud
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Unsynced Appointments Notice */}
+              {unsyncedCount > 0 && (
+                <div style={{
+                  background: 'hsla(217, 91%, 60%, 0.1)',
+                  border: '1px solid hsla(217, 91%, 60%, 0.3)',
+                  borderRadius: '10px',
+                  padding: '0.85rem 1rem',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.75rem',
+                }}>
+                  <div style={{ fontSize: '0.8rem', color: '#93c5fd' }}>
+                    📅 <strong>{unsyncedCount} confirmed appointment{unsyncedCount > 1 ? 's' : ''}</strong> pending Google Calendar sync (including &quot;Om&quot;).
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSyncCalendarAppointments}
+                    disabled={isSyncing}
+                    className="btn btn-sm btn-primary"
+                    style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', whiteSpace: 'nowrap' }}
+                  >
+                    {isSyncing ? '⏳ Syncing...' : '⚡ Push to Calendar'}
+                  </button>
+                </div>
+              )}
+
+              {/* Feedback Message */}
+              {syncMessage && (
+                <div style={{
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  marginBottom: '1rem',
+                  background: syncMessage.includes('Successfully') ? 'hsla(142, 71%, 45%, 0.1)' : 'hsla(0, 84%, 60%, 0.1)',
+                  color: syncMessage.includes('Successfully') ? '#4ade80' : '#f87171',
+                  border: `1px solid ${syncMessage.includes('Successfully') ? 'hsla(142, 71%, 45%, 0.3)' : 'hsla(0, 84%, 60%, 0.3)'}`,
+                }}>
+                  {syncMessage}
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <a
-                  href="/api/v1/integrations/calendar/auth"
+                <button
+                  type="button"
+                  onClick={handleSyncCalendarAppointments}
+                  disabled={isSyncing}
                   className="btn btn-secondary"
-                  style={{ flex: 1, textAlign: 'center', textDecoration: 'none' }}
+                  style={{ flex: 1, textAlign: 'center' }}
                 >
-                  🔄 Re-sync Calendar
-                </a>
+                  {isSyncing ? '⏳ Syncing Appointments...' : '🔄 Sync Appointments'}
+                </button>
                 <button
                   type="button"
                   className="btn"
