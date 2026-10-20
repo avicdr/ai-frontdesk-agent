@@ -641,6 +641,31 @@ export async function autoResumeAllActiveBaileysSessions(): Promise<void> {
   }
 }
 
+// Keep-alive heartbeat: ping external URL every 10 minutes to prevent Render free-tier idle spin down
+const KEEP_ALIVE_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes (Render spins down at 15 mins)
+const globalKeepAlive = globalThis as unknown as { __renderKeepAliveTimer?: NodeJS.Timeout };
+
+function initRenderKeepAlive() {
+  if (globalKeepAlive.__renderKeepAliveTimer) return;
+  const targetUrl = process.env.RENDER_EXTERNAL_URL 
+    ? `${process.env.RENDER_EXTERNAL_URL}/api/health` 
+    : (process.env.NODE_ENV === 'production' ? 'https://ai-frontdesk-agent.onrender.com/api/health' : null);
+
+  if (!targetUrl) return;
+
+  globalKeepAlive.__renderKeepAliveTimer = setInterval(async () => {
+    try {
+      const res = await fetch(targetUrl, { 
+        method: 'HEAD', 
+        headers: { 'user-agent': 'ai-front-desk-keepalive' },
+      });
+      console.log(`[KeepAlive] Heartbeat ping to ${targetUrl} returned ${res.status}`);
+    } catch (err: any) {
+      console.warn('[KeepAlive] Heartbeat ping error:', err?.message || err);
+    }
+  }, KEEP_ALIVE_INTERVAL_MS);
+}
+
 // Automatically trigger on server module initialization
 if (
   typeof window === 'undefined' &&
@@ -651,5 +676,6 @@ if (
     autoResumeAllActiveBaileysSessions().catch(err => {
       console.warn('[Baileys] Background auto-resume trigger error:', err);
     });
+    initRenderKeepAlive();
   });
 }

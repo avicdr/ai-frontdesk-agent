@@ -1,0 +1,23 @@
+name: Render Keep-Alive Heartbeat
+
+on:
+  schedule:
+    # Run every 10 minutes (Render spins down after 15 mins of inactivity)
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  ping-render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping AI Front Desk Health Endpoint
+        run: |
+          echo "Pinging AI Front Desk on Render to prevent free-tier spin down..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://ai-frontdesk-agent.onrender.com/api/health)
+          echo "Render HTTP Status: $STATUS"
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            echo "✅ Service is awake and healthy!"
+          else
+            echo "⚠️ Wakeup request sent (status $STATUS)."
+          fi
