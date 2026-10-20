@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeCodeAndSave } from '@/lib/calendar/client';
+import { getSafeRedirectUrl } from '@/lib/url';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -22,23 +23,24 @@ export async function GET(request: NextRequest) {
     // rawState was a plain organization ID
   }
 
-  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
   if (error || !code || !organizationId) {
     console.error('Calendar OAuth Callback error:', error);
-    const redirectUrl = new URL(returnTo, appBaseUrl);
+    const redirectUrl = getSafeRedirectUrl(returnTo, request);
+    redirectUrl.searchParams.delete('calendar_connected');
     redirectUrl.searchParams.set('error', 'calendar_auth_denied');
     return NextResponse.redirect(redirectUrl.toString());
   }
 
   try {
     await exchangeCodeAndSave(code, organizationId);
-    const redirectUrl = new URL(returnTo, appBaseUrl);
+    const redirectUrl = getSafeRedirectUrl(returnTo, request);
+    redirectUrl.searchParams.delete('error');
     redirectUrl.searchParams.set('calendar_connected', 'true');
     return NextResponse.redirect(redirectUrl.toString());
   } catch (err) {
     console.error('Calendar Token Exchange Error:', err);
-    const redirectUrl = new URL(returnTo, appBaseUrl);
+    const redirectUrl = getSafeRedirectUrl(returnTo, request);
+    redirectUrl.searchParams.delete('calendar_connected');
     redirectUrl.searchParams.set('error', 'token_exchange_failed');
     return NextResponse.redirect(redirectUrl.toString());
   }

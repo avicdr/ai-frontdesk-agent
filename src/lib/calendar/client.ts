@@ -4,11 +4,20 @@
 import { google } from 'googleapis';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { encryptToken, decryptToken } from '@/lib/security/encryption';
+import { getAppBaseUrl } from '@/lib/url';
+
+function getDefaultRedirectUri(): string {
+  if (process.env.GOOGLE_REDIRECT_URI) {
+    return process.env.GOOGLE_REDIRECT_URI;
+  }
+  const baseUrl = getAppBaseUrl();
+  return `${baseUrl}/api/v1/integrations/calendar/callback`;
+}
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/integrations/calendar/callback`
+  getDefaultRedirectUri()
 );
 
 export const CALENDAR_SCOPES = [

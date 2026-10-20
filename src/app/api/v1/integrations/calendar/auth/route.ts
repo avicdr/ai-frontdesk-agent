@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerUser, createSupabaseAdminClient } from '@/lib/supabase/server';
 import { getCalendarAuthUrl } from '@/lib/calendar/client';
+import { getSafeRedirectUrl } from '@/lib/url';
 
 export async function GET(request: NextRequest) {
   const referer = request.headers.get('referer') || '';
@@ -56,13 +57,13 @@ export async function GET(request: NextRequest) {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'organization_id' });
 
-      return NextResponse.redirect(new URL(returnTo, request.url));
+      return NextResponse.redirect(getSafeRedirectUrl(returnTo, request).toString());
     }
 
     const authUrl = getCalendarAuthUrl(orgId, returnTo);
     return NextResponse.redirect(authUrl);
   } catch (err) {
     console.error('Google Calendar Auth Init Error:', err);
-    return NextResponse.redirect(new URL(returnTo, request.url));
+    return NextResponse.redirect(getSafeRedirectUrl(returnTo, request).toString());
   }
 }
