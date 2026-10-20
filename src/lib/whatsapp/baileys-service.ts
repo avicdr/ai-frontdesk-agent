@@ -77,8 +77,8 @@ export async function startBaileysSession(
 ): Promise<BaileysSessionState> {
   const existing = sessions.get(organizationId);
 
-  // If already connected and not forcing reconnect, return connected state immediately
-  if (!options?.forceReconnect && existing && existing.state.status === 'connected') {
+  // If already connected and NOT explicitly requesting a new link mode or forced reconnect, return connected state
+  if (!options?.forceReconnect && !options?.mode && existing && existing.state.status === 'connected') {
     return existing.state;
   }
 
@@ -118,9 +118,16 @@ export async function startBaileysSession(
 
     let { state: authState, saveCreds, clearSession } = await getPersistentAuthState(organizationId);
 
-    // If a new linking request is initiated and not yet registered AND no account signatures exist yet,
-    // wipe stale keys to guarantee a fresh handshake. (NEVER wipe if creds.account exists, as device signatures were already exchanged!)
-    if (options?.mode && !authState.creds.registered && !authState.creds.account) {
+    const isRegistered = !!authState.creds.registered;
+    const existingPhone = authState.creds.me?.id?.split('@')[0]?.split(':')[0];
+    const requestedPhone = options?.phoneNumber?.replace(/[^0-9]/g, '');
+    const isPhoneMismatch = Boolean(requestedPhone && existingPhone && !existingPhone.endsWith(requestedPhone));
+
+    // If user explicitly requests linking (mode: qr or pairing_code):
+    // and session is NOT registered, or requested a different phone, or forceReconnect is set:
+    // purge any stale/uncompleted keys so a 100% clean cryptographic handshake is initiated!
+    if (options?.mode && (!isRegistered || isPhoneMismatch || options.forceReconnect)) {
+      console.log(`[Baileys] Clearing stale/unregistered session keys for org ${organizationId}`);
       await clearSession();
       const fresh = await getPersistentAuthState(organizationId);
       authState = fresh.state;
@@ -290,8 +297,8 @@ export async function startBaileysSession(
     }
   });
 
-  // 3. Handle Pairing Code mode (only if not registered and no account signatures received yet)
-  if (options?.mode === 'pairing_code' && options.phoneNumber && !sock.authState.creds.registered && !sock.authState.creds.account) {
+  // 3. Handle Pairing Code mode (only if not registered)
+  if (options?.mode === 'pairing_code' && options.phoneNumber && !sock.authState.creds.registered) {
     let rawNumber = options.phoneNumber.replace(/[^0-9]/g, '');
     // If user entered a 10-digit number (e.g. 8948006900 starting with 6,7,8,9), automatically prepend India country code 91
     if (rawNumber.length === 10 && /^[6-9]/.test(rawNumber)) {
@@ -466,7 +473,7 @@ export async function getBaileysSessionStatus(organizationId: string): Promise<B
   if (fs.existsSync(credsFile)) {
     try {
       const creds = JSON.parse(fs.readFileSync(credsFile, 'utf-8'));
-      if ((creds.registered || creds.account) && creds.me?.id) {
+      if (creds.registered && creds.me?.id) {
         const cleanPhone = creds.me.id.split('@')[0].split(':')[0];
         console.log(`[Baileys] Found registered credentials for org ${organizationId}. Resuming socket...`);
         // Resume socket connection to keep WhatsApp active
@@ -528,6 +535,14 @@ export async function disconnectBaileysSession(organizationId: string): Promise<
     }
     await active.clearSession();
     sessions.delete(organizationId);
+  } else {
+    // Crucial: ALWAYS wipe persistent auth state from disk & Supabase even if socket wasn't in memory!
+    try {
+      const { clearSession } = await getPersistentAuthState(organizationId);
+      await clearSession();
+    } catch (e) {
+      console.warn('Error clearing persistent auth state on disconnect:', e);
+    }
   }
 
   try {
@@ -538,6 +553,8 @@ export async function disconnectBaileysSession(organizationId: string): Promise<
         status: 'disconnected',
         disconnected_at: new Date().toISOString(),
         jid: null,
+        display_phone_number: null,
+        last_error: null,
       })
       .eq('organization_id', organizationId);
   } catch (err) {
