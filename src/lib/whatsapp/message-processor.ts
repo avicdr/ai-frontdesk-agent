@@ -7,6 +7,7 @@ import { AIProviderFactory } from '@/lib/ai/provider';
 import { buildSystemPrompt, parseAssistantResponse } from '@/lib/ai/prompts';
 import { executeTool } from '@/lib/ai/tools';
 import { nanoid } from 'nanoid';
+import { getClinicInfo, formatPhone } from './clinic-resolver';
 
 const SAFE_FALLBACK_MESSAGE =
   "Thank you for reaching out. Our reception is temporarily unavailable. Please call us directly or try again shortly.";
@@ -24,6 +25,10 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
   const { organizationId, fromPhone, senderName, text, messageId, sendReply } = options;
   const admin = createSupabaseAdminClient();
   const requestId = nanoid(12);
+
+  const clinic = await getClinicInfo(organizationId);
+  const formattedPatient = formatPhone(fromPhone);
+  console.log(`[WhatsApp Agent] Clinic "${clinic.name}" (${clinic.phone || 'agent'}) received text for agent from ${formattedPatient}${senderName ? ` (${senderName})` : ''}: "${text}"`);
 
   // 1. Deduplicate using message ID
   const { data: existing } = await admin
@@ -80,7 +85,7 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
 
   // 6b. Guard: If conversation is managed by human or already handed off, do not call AI or send automated reply!
   if (conversation.owner === 'human' || conversation.status === 'handed_off') {
-    console.log(`[WhatsApp] Conversation ${conversation.id} (${fromPhone}) is managed by a human / handed off. Silencing automated AI response.`);
+    console.log(`[WhatsApp Handed Off] Clinic "${clinic.name}" conversation with ${formattedPatient} is managed by staff / handed off. AI silenced.`);
     return;
   }
 
@@ -143,7 +148,7 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
 
   // 12. Human handoff if requested or personal / day-to-day conversation
   if (parsedResponse.intent === 'out_of_scope' || !parsedResponse.user_message?.trim()) {
-    console.log(`[WhatsApp] Message from ${fromPhone} identified as personal/day-to-day conversation (out_of_scope). Silently handing off to human.`);
+    console.log(`[WhatsApp Personal Chat] Clinic "${clinic.name}" message from patient ${formattedPatient} identified as personal/day-to-day conversation. Silently handing off to staff.`);
     await admin
       .from('conversations')
       .update({
@@ -170,9 +175,10 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
         const result: any = await executeTool(toolContext, toolCall.name, toolCall.arguments);
         if (result?.message) {
           toolResultsSummary.push(result.message);
+          console.log(`[WhatsApp Tool] Clinic "${clinic.name}" executed tool ${toolCall.name} for ${formattedPatient}: "${result.message}"`);
         }
       } catch (err) {
-        console.error(`Tool execution error [${toolCall.name}]:`, err);
+        console.error(`[WhatsApp Tool Error] Clinic "${clinic.name}" error in [${toolCall.name}]:`, err);
       }
     }
   }
@@ -205,7 +211,13 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
 
   if (!replyText) return;
 
+  console.log(`[WhatsApp AI Reply] Clinic "${clinic.name}" (${clinic.phone || 'agent'}) replying to patient ${formattedPatient}: "${replyText.replace(/\n+/g, ' ')}"`);
   const sendResult = await sendReply(replyText);
+  if (sendResult.success) {
+    console.log(`[WhatsApp AI Reply Sent] Clinic "${clinic.name}" reply successfully sent to ${formattedPatient}`);
+  } else {
+    console.error(`[WhatsApp AI Reply Failed] Clinic "${clinic.name}" failed to send reply to ${formattedPatient}: ${sendResult.error}`);
+  }
 
   // 14. Save outgoing message
   await admin.from('messages').insert({

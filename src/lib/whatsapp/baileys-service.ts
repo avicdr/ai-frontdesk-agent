@@ -18,6 +18,7 @@ import { Boom } from '@hapi/boom';
 import { getPersistentAuthState, getSessionsBaseDir } from './session-storage';
 import { processTenantIncomingMessage } from './message-processor';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { getClinicInfo, cacheClinicPhone, formatPhone } from './clinic-resolver';
 
 export interface BaileysSessionState {
   status: 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -161,7 +162,8 @@ export async function startBaileysSession(
     );
 
     if (shouldClear) {
-      console.log(`[Baileys] Clearing stale/unregistered session keys for org ${organizationId}`);
+      const clinic = await getClinicInfo(organizationId, requestedPhone || existingPhone);
+      console.log(`[Baileys] Clearing stale/unregistered session keys for clinic "${clinic.name}" - ${clinic.phone || requestedPhone || 'unlinked'}`);
       await clearSession();
       const fresh = await getPersistentAuthState(organizationId);
       authState = fresh.state;
@@ -229,6 +231,7 @@ export async function startBaileysSession(
     if (connection === 'open') {
       const jid = sock.user?.id;
       const cleanPhone = jid?.split('@')[0]?.split(':')[0] ?? '';
+      const formattedCleanPhone = formatPhone(cleanPhone);
 
       sessionState.status = 'connected';
       sessionState.jid = jid;
@@ -237,7 +240,9 @@ export async function startBaileysSession(
       sessionState.pairingCode = undefined;
       sessionState.error = undefined;
 
-      console.log(`[Baileys] Clinic ${organizationId} connected as ${cleanPhone}`);
+      cacheClinicPhone(organizationId, cleanPhone);
+      const clinic = await getClinicInfo(organizationId, cleanPhone);
+      console.log(`[Baileys] Clinic "${clinic.name}" connected as ${formattedCleanPhone}`);
 
       // Update Supabase integration status
       try {
@@ -245,7 +250,7 @@ export async function startBaileysSession(
         const { error: upsertErr } = await admin.from('whatsapp_integrations').upsert(
           {
             organization_id: organizationId,
-            display_phone_number: `+${cleanPhone}`,
+            display_phone_number: formattedCleanPhone,
             jid,
             status: 'connected',
             connection_type: 'baileys',
@@ -261,7 +266,7 @@ export async function startBaileysSession(
           await admin.from('whatsapp_integrations').upsert(
             {
               organization_id: organizationId,
-              display_phone_number: `+${cleanPhone}`,
+              display_phone_number: formattedCleanPhone,
               status: 'connected',
               connected_at: new Date().toISOString(),
             },
@@ -280,8 +285,9 @@ export async function startBaileysSession(
       const isReplaced = statusCode === DisconnectReason.connectionReplaced || statusCode === 440;
       const isRestartRequired = statusCode === DisconnectReason.restartRequired || statusCode === 515;
 
+      const clinic = await getClinicInfo(organizationId, sessionState.phoneNumber);
       console.log(
-        `[Baileys] Socket closed for ${organizationId}. Status code: ${statusCode}, LoggedOut: ${isLoggedOut}, Replaced: ${isReplaced}, RestartRequired: ${isRestartRequired}`
+        `[Baileys] Socket closed for clinic "${clinic.name}" (${clinic.phone || 'unlinked'}). Status code: ${statusCode}, LoggedOut: ${isLoggedOut}, Replaced: ${isReplaced}, RestartRequired: ${isRestartRequired}`
       );
 
       clearReconnectTimer(organizationId);
@@ -306,7 +312,7 @@ export async function startBaileysSession(
           // ignore
         }
       } else if (isReplaced) {
-        console.warn(`[Baileys] Socket for ${organizationId} was replaced by another connection (440). Halting auto-reconnect.`);
+        console.warn(`[Baileys] Socket for clinic "${clinic.name}" was replaced by another active connection (440). Halting auto-reconnect.`);
         sessions.delete(organizationId);
         sessionState.status = 'disconnected';
         sessionState.error = 'Session was replaced by another active connection.';
@@ -315,7 +321,7 @@ export async function startBaileysSession(
 
         // If an unregistered socket times out (408), QR code or pairing code expired without being linked
         if (!isRegistered && (statusCode === 408 || statusCode === DisconnectReason.timedOut)) {
-          console.log(`[Baileys] Pairing timed out for ${organizationId} (code 408). Stopping reconnect loop.`);
+          console.log(`[Baileys] Pairing timed out for clinic "${clinic.name}" (code 408). Stopping reconnect loop.`);
           sessions.delete(organizationId);
           sessionState.status = 'disconnected';
           sessionState.error = 'Pairing window expired. Please click below to generate a new QR code or pairing code.';
@@ -327,11 +333,11 @@ export async function startBaileysSession(
         // Keep in sessions map as 'connecting' to prevent concurrent re-initialization from status polling
         sessionState.status = 'connecting';
         const delay = isRestartRequired ? 500 : 3000;
-        console.log(`[Baileys] Reconnecting socket for org ${organizationId} in ${delay}ms...`);
+        console.log(`[Baileys] Reconnecting socket for clinic "${clinic.name}" in ${delay}ms...`);
         const timer = setTimeout(() => {
           reconnectTimers.delete(organizationId);
           startBaileysSession(organizationId, { forceReconnect: true }).catch(err => {
-            console.error('[Baileys] Auto-reconnect error:', err);
+            console.error(`[Baileys] Auto-reconnect error for clinic "${clinic.name}":`, err);
           });
         }, delay);
         reconnectTimers.set(organizationId, timer);
@@ -385,6 +391,10 @@ export async function startBaileysSession(
 
       // If doctor manually messages or replies from their own WhatsApp:
       if (msg.key.fromMe) {
+        const clinic = await getClinicInfo(organizationId, sessionState.phoneNumber);
+        const formattedContact = formatPhone(contactPhone);
+        console.log(`[WhatsApp Staff Reply] Clinic "${clinic.name}" (${clinic.phone || 'phone'}) staff replied manually from phone to ${formattedContact}: "${text.trim()}". Handed off to human.`);
+
         // Automatically switch conversation to human / handed off so AI doesn't interrupt
         try {
           const admin = createSupabaseAdminClient();
@@ -440,7 +450,7 @@ export async function startBaileysSession(
             });
           }
         } catch (err) {
-          console.error(`[Baileys] Error updating handoff on manual phone reply to ${contactPhone}:`, err);
+          console.error(`[Baileys] Error updating handoff on manual phone reply for clinic "${clinic.name}" to ${formattedContact}:`, err);
         }
         continue;
       }
@@ -448,8 +458,14 @@ export async function startBaileysSession(
       if (!text.trim()) continue;
 
       const senderPhone = contactPhone;
+      const formattedSender = formatPhone(senderPhone);
       const messageId = msg.key.id || `baileys-${Date.now()}`;
       const senderName = msg.pushName || undefined;
+
+      const clinic = await getClinicInfo(organizationId, sessionState.phoneNumber);
+      console.log(
+        `[WhatsApp Incoming] Clinic "${clinic.name}" (${clinic.phone || 'agent'}) received text from patient ${formattedSender}${senderName ? ` (${senderName})` : ''}: "${text.trim()}"`
+      );
 
       // Dispatch to AI Agent Pipeline
       processTenantIncomingMessage({
@@ -465,12 +481,12 @@ export async function startBaileysSession(
             const sent = await activeSock.sendMessage(remoteJid, { text: replyText });
             return { success: true, messageId: sent?.key.id ?? undefined };
           } catch (err: any) {
-            console.error(`Failed to send WhatsApp reply to ${remoteJid}:`, err);
+            console.error(`Failed to send WhatsApp reply for clinic "${clinic.name}" to ${remoteJid}:`, err);
             return { success: false, error: err?.message || 'Send failed' };
           }
         },
-      }).catch(err => {
-        console.error(`Error processing Baileys message for ${organizationId}:`, err);
+      }).catch(async err => {
+        console.error(`[WhatsApp Error] Error processing message for clinic "${clinic.name}":`, err);
       });
     }
   });
@@ -517,7 +533,10 @@ export async function getBaileysSessionStatus(organizationId: string): Promise<B
       const creds = JSON.parse(fs.readFileSync(credsFile, 'utf-8'));
       if (creds.registered && creds.me?.id) {
         const cleanPhone = creds.me.id.split('@')[0].split(':')[0];
-        console.log(`[Baileys] Found registered credentials for org ${organizationId}. Resuming socket...`);
+        cacheClinicPhone(organizationId, cleanPhone);
+        getClinicInfo(organizationId, cleanPhone).then(clinic => {
+          console.log(`[Baileys] Found registered credentials for clinic "${clinic.name}" (${formatPhone(cleanPhone)}). Resuming socket...`);
+        });
         // Resume socket connection to keep WhatsApp active
         startBaileysSession(organizationId).catch(err => {
           console.warn('[Baileys] Socket resume error:', err);
@@ -693,8 +712,12 @@ export async function autoResumeAllActiveBaileysSessions(): Promise<void> {
   for (const orgId of orgsToResume) {
     const existing = sessions.get(orgId);
     if (!existing || existing.state.status !== 'connected') {
-      startBaileysSession(orgId).catch(err => {
-        console.error(`[Baileys] Failed to auto-resume session for org ${orgId}:`, err);
+      getClinicInfo(orgId).then(clinic => {
+        console.log(`[Baileys] Auto-resuming session for clinic "${clinic.name}" (${clinic.phone || 'registered'})...`);
+      });
+      startBaileysSession(orgId).catch(async err => {
+        const clinic = await getClinicInfo(orgId);
+        console.error(`[Baileys] Failed to auto-resume session for clinic "${clinic.name}":`, err);
       });
     }
   }

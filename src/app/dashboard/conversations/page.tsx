@@ -85,6 +85,7 @@ export default function ConversationsPage() {
   const [replyText, setReplyText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [actionInProgress, setActionInProgress] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -190,6 +191,70 @@ export default function ConversationsPage() {
     }
   };
 
+  // Delete a single conversation
+  const handleDeleteSingleConversation = async (convId: string) => {
+    const target = conversations.find(c => c.id === convId);
+    const label = target ? (target.patient_name || formatContactNumber(target.patient_phone)) : 'this conversation';
+    if (!confirm(`Are you sure you want to delete the conversation with ${label}? All messages will be permanently deleted.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/v1/conversations?conversationId=${convId}`, {
+        method: 'DELETE',
+      });
+      const json = await res.json();
+      if (json.success) {
+        const remaining = conversations.filter(c => c.id !== convId);
+        setConversations(remaining);
+        if (selectedConvId === convId) {
+          if (remaining.length > 0) {
+            setSelectedConvId(remaining[0].id);
+          } else {
+            setSelectedConvId(null);
+            setMessages([]);
+          }
+        }
+      } else {
+        alert(json.error?.message || 'Failed to delete conversation.');
+      }
+    } catch (e) {
+      console.error('Delete conversation error:', e);
+      alert('Network error while deleting conversation.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Clear all past conversations
+  const handleClearAllConversations = async () => {
+    if (conversations.length === 0) return;
+    if (!confirm(`Are you sure you want to clear all ${conversations.length} conversation thread(s)? All past patient messages will be permanently removed.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch('/api/v1/conversations?all=true', {
+        method: 'DELETE',
+      });
+      const json = await res.json();
+      if (json.success) {
+        setConversations([]);
+        setSelectedConvId(null);
+        setMessages([]);
+      } else {
+        alert(json.error?.message || 'Failed to clear conversations.');
+      }
+    } catch (e) {
+      console.error('Clear all conversations error:', e);
+      alert('Network error while clearing conversations.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Filter conversations by search term (name or phone)
   const filteredConversations = conversations.filter(c => {
     const q = searchQuery.toLowerCase().trim();
@@ -202,7 +267,7 @@ export default function ConversationsPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 6rem)', minHeight: 480, overflow: 'hidden' }}>
       {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexShrink: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexShrink: 0, flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
           <h1 style={{ fontSize: 'clamp(1.15rem, 3vw, 1.4rem)', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
             💬 Patient Conversations & Live Inbox
@@ -211,6 +276,30 @@ export default function ConversationsPage() {
             Monitor WhatsApp dialogues, view contact names, take over chats, or let AI handle reception automatically.
           </p>
         </div>
+
+        {conversations.length > 0 && (
+          <button
+            type="button"
+            onClick={handleClearAllConversations}
+            disabled={isDeleting}
+            className="btn btn-ghost btn-sm"
+            style={{
+              color: '#f87171',
+              border: '1px solid hsla(0, 84%, 60%, 0.25)',
+              background: 'hsla(0, 84%, 60%, 0.08)',
+              fontSize: '0.75rem',
+              padding: '0.4rem 0.8rem',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              flexShrink: 0,
+            }}
+            title="Permanently clear all conversation threads"
+          >
+            🗑️ {isDeleting ? 'Clearing...' : 'Clear All History'}
+          </button>
+        )}
       </div>
 
       {/* Main Container */}
@@ -324,9 +413,42 @@ export default function ConversationsPage() {
                         )}
                       </div>
 
-                      <span style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', whiteSpace: 'nowrap' }}>
-                        {new Date(conv.last_message_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', whiteSpace: 'nowrap' }}>
+                          {new Date(conv.last_message_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSingleConversation(conv.id);
+                          }}
+                          disabled={isDeleting}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'hsl(var(--color-text-muted))',
+                            cursor: 'pointer',
+                            padding: '2px 4px',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            lineHeight: 1,
+                            opacity: 0.5,
+                            transition: 'opacity 0.15s, color 0.15s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.opacity = '1';
+                            e.currentTarget.style.color = '#ef4444';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.opacity = '0.5';
+                            e.currentTarget.style.color = 'hsl(var(--color-text-muted))';
+                          }}
+                          title="Delete this conversation"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.35rem' }}>
@@ -410,16 +532,41 @@ export default function ConversationsPage() {
                 </div>
               </div>
 
-              {/* Takeover Toggle Button */}
-              <button
-                type="button"
-                className={`btn ${selectedConv.owner === 'human' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
-                onClick={handleToggleTakeover}
-                disabled={actionInProgress}
-                style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
-              >
-                {selectedConv.owner === 'human' ? '🤖 Resume AI' : '✋ Take Over'}
-              </button>
+              {/* Actions Button Group */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {/* Delete Single Conversation Button */}
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => handleDeleteSingleConversation(selectedConv.id)}
+                  disabled={isDeleting || actionInProgress}
+                  style={{
+                    fontSize: '0.75rem',
+                    padding: '0.4rem 0.65rem',
+                    color: '#f87171',
+                    border: '1px solid hsla(0, 84%, 60%, 0.25)',
+                    background: 'hsla(0, 84%, 60%, 0.05)',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                  }}
+                  title="Delete this conversation thread"
+                >
+                  🗑️ Delete Chat
+                </button>
+
+                {/* Takeover Toggle Button */}
+                <button
+                  type="button"
+                  className={`btn ${selectedConv.owner === 'human' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                  onClick={handleToggleTakeover}
+                  disabled={actionInProgress}
+                  style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
+                >
+                  {selectedConv.owner === 'human' ? '🤖 Resume AI' : '✋ Take Over'}
+                </button>
+              </div>
             </div>
 
             {/* Message History Bubble Feed (Scrollable) */}

@@ -194,3 +194,99 @@ export async function POST(request: NextRequest) {
     return Errors.internalError();
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await requireServerUser();
+    const admin = createSupabaseAdminClient();
+
+    const { data: membership } = await admin
+      .from('organization_memberships')
+      .select('organization_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!membership) return Errors.forbidden();
+
+    const conversationId = request.nextUrl.searchParams.get('conversationId');
+    const clearAll = request.nextUrl.searchParams.get('all') === 'true';
+
+    if (clearAll) {
+      // 1. Fetch all conversations belonging to the organization
+      const { data: convs, error: fetchErr } = await admin
+        .from('conversations')
+        .select('id')
+        .eq('organization_id', membership.organization_id);
+
+      if (fetchErr) {
+        console.error('Failed to fetch conversations for deletion:', fetchErr);
+        return Errors.internalError();
+      }
+
+      if (!convs || convs.length === 0) {
+        return successResponse({ success: true, count: 0, message: 'No conversations to clear' });
+      }
+
+      const convIds = convs.map((c: { id: string }) => c.id);
+
+      // Delete messages
+      await admin.from('messages').delete().in('conversation_id', convIds);
+
+      // Unlink references in appointments and ai usage records
+      await admin.from('appointments').update({ conversation_id: null }).in('conversation_id', convIds);
+      await admin.from('ai_usage_records').update({ conversation_id: null }).in('conversation_id', convIds);
+
+      // Delete conversations
+      const { error: delErr } = await admin
+        .from('conversations')
+        .delete()
+        .eq('organization_id', membership.organization_id);
+
+      if (delErr) {
+        console.error('Failed to clear conversations:', delErr);
+        return Errors.internalError();
+      }
+
+      return successResponse({ success: true, count: convIds.length, message: 'All conversations cleared successfully' });
+    }
+
+    if (conversationId) {
+      // Verify ownership
+      const { data: conv } = await admin
+        .from('conversations')
+        .select('id')
+        .eq('id', conversationId)
+        .eq('organization_id', membership.organization_id)
+        .maybeSingle();
+
+      if (!conv) return Errors.notFound('Conversation not found');
+
+      // Delete messages
+      await admin.from('messages').delete().eq('conversation_id', conversationId);
+
+      // Unlink references in appointments and ai usage records
+      await admin.from('appointments').update({ conversation_id: null }).eq('conversation_id', conversationId);
+      await admin.from('ai_usage_records').update({ conversation_id: null }).eq('conversation_id', conversationId);
+
+      // Delete conversation
+      const { error: delErr } = await admin
+        .from('conversations')
+        .delete()
+        .eq('id', conversationId);
+
+      if (delErr) {
+        console.error('Failed to delete conversation:', delErr);
+        return Errors.internalError();
+      }
+
+      return successResponse({ success: true, conversationId, message: 'Conversation deleted successfully' });
+    }
+
+    return Errors.badRequest('Must specify either conversationId or all=true');
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown';
+    if (msg === 'UNAUTHENTICATED') return Errors.unauthorized();
+    console.error('Delete conversation error:', err);
+    return Errors.internalError();
+  }
+}
