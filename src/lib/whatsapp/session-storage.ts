@@ -64,7 +64,7 @@ async function restoreSessionFromDatabase(organizationId: string, sessionDir: st
 
     // Restore each saved file
     for (const row of rows) {
-      const fileName = `${row.key_id}.json`;
+      const fileName = row.key_id.endsWith('.json') ? row.key_id : `${row.key_id}.json`;
       const filePath = path.join(sessionDir, fileName);
       fs.writeFileSync(filePath, JSON.stringify(row.value));
     }
@@ -112,7 +112,44 @@ export async function getPersistentAuthState(organizationId: string): Promise<{
   // 2. Initialize Baileys multi-file auth state
   const { state, saveCreds: baseSaveCreds } = await initMultiFileAuthState(sessionDir);
 
-  // 3. Wrapped saveCreds that syncs to Supabase safely directly from in-memory state
+  // 3. Wrap state.keys.set to sync all cryptographic keys (pre-keys, app-state, session keys) to Supabase
+  const originalKeysSet = state.keys.set;
+  state.keys.set = async (data: any) => {
+    await originalKeysSet(data);
+    try {
+      const admin = createSupabaseAdminClient();
+      const upserts: Array<{ organization_id: string; key_id: string; value: any; updated_at: string }> = [];
+      const deletes: string[] = [];
+
+      for (const category in data) {
+        for (const id in data[category]) {
+          const value = data[category][id];
+          const keyId = `${category}-${id}`;
+          if (value) {
+            upserts.push({
+              organization_id: organizationId,
+              key_id: keyId,
+              value: JSON.parse(JSON.stringify(value, BufferJSON.replacer)),
+              updated_at: new Date().toISOString(),
+            });
+          } else {
+            deletes.push(keyId);
+          }
+        }
+      }
+
+      if (upserts.length > 0) {
+        await admin.from('whatsapp_sessions').upsert(upserts, { onConflict: 'organization_id,key_id' });
+      }
+      if (deletes.length > 0) {
+        await admin.from('whatsapp_sessions').delete().eq('organization_id', organizationId).in('key_id', deletes);
+      }
+    } catch (err) {
+      console.warn(`[Baileys Storage] Error syncing keys to Supabase for ${organizationId}:`, err);
+    }
+  };
+
+  // 4. Wrapped saveCreds that syncs to Supabase safely directly from in-memory state
   const saveCreds = async () => {
     await baseSaveCreds();
     try {
@@ -126,7 +163,7 @@ export async function getPersistentAuthState(organizationId: string): Promise<{
     }
   };
 
-  // 4. Wrapped clearSession to completely wipe keys on logout
+  // 5. Wrapped clearSession to completely wipe keys on logout
   const clearSession = async () => {
     try {
       if (fs.existsSync(/*turbopackIgnore: true*/ sessionDir)) {

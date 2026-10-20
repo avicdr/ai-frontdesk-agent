@@ -225,6 +225,19 @@ export default function IntegrationsPage() {
     }
   };
 
+  const handleResetPairing = async () => {
+    stopPolling();
+    setIsLoadingWA(true);
+    try {
+      await fetch('/api/v1/integrations/whatsapp/session', { method: 'DELETE' });
+    } catch {}
+    setQrCode(null);
+    setPairingCode(null);
+    setWaStatus('disconnected');
+    setWaError(null);
+    setIsLoadingWA(false);
+  };
+
   const handleCopyCode = () => {
     if (!pairingCode) return;
     navigator.clipboard.writeText(pairingCode.replace('-', ''));
@@ -414,9 +427,18 @@ export default function IntegrationsPage() {
                           style={{ width: 220, height: 220, display: 'block', borderRadius: '8px' }}
                         />
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', marginBottom: '1rem' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', marginBottom: '0.5rem' }}>
                         Waiting for you to scan... (Auto-refreshing)
                       </div>
+                      <button
+                        type="button"
+                        onClick={handleResetPairing}
+                        disabled={isLoadingWA}
+                        className="btn btn-ghost"
+                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', color: 'hsl(var(--color-text-muted))' }}
+                      >
+                        Cancel / Reset QR
+                      </button>
                     </div>
                   ) : (
                     <div style={{
@@ -484,11 +506,11 @@ export default function IntegrationsPage() {
 
                     <button
                       type="submit"
-                      disabled={isLoadingWA}
+                      disabled={isLoadingWA || Boolean(pairingCode)}
                       className="btn btn-primary"
                       style={{ width: '100%' }}
                     >
-                      {isLoadingWA ? 'Requesting Code...' : 'Generate 8-Digit Pairing Code'}
+                      {isLoadingWA ? 'Requesting Code...' : pairingCode ? 'Code Active (See Below)' : 'Generate 8-Digit Pairing Code'}
                     </button>
                   </form>
 
@@ -514,14 +536,39 @@ export default function IntegrationsPage() {
                       }}>
                         {pairingCode}
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleCopyCode}
-                        className="btn btn-secondary"
-                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem' }}
-                      >
-                        {codeCopied ? '✓ Copied' : 'Copy Code'}
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                        <button
+                          type="button"
+                          onClick={handleCopyCode}
+                          className="btn btn-secondary"
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem' }}
+                        >
+                          {codeCopied ? '✓ Copied' : 'Copy Code'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleResetPairing}
+                          disabled={isLoadingWA}
+                          className="btn btn-ghost"
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', color: 'hsl(var(--color-text-muted))' }}
+                        >
+                          Change Number / Reset
+                        </button>
+                      </div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: 'hsl(var(--color-text-muted))',
+                        background: 'hsl(var(--color-surface))',
+                        padding: '0.5rem 0.75rem',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#eab308', display: 'inline-block' }} />
+                        Enter code on your phone now. WhatsApp takes 5–10s to link.
+                      </div>
                     </div>
                   )}
 

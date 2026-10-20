@@ -352,6 +352,18 @@ export default function OnboardingPage() {
     }
   };
 
+  const handleResetOnboardingPairing = async () => {
+    setIsLoadingWA(true);
+    try {
+      await fetch('/api/v1/integrations/whatsapp/session', { method: 'DELETE' });
+    } catch {}
+    setQrCode(null);
+    setPairingCode(null);
+    setWaStatus('disconnected');
+    setWaError(null);
+    setIsLoadingWA(false);
+  };
+
   const pollOnboardingStatus = () => {
     const interval = setInterval(async () => {
       try {
@@ -1517,8 +1529,8 @@ export default function OnboardingPage() {
                             placeholder="e.g. +91 98765 43210"
                             style={{ flex: 1 }}
                           />
-                          <button type="submit" disabled={isLoadingWA} className="btn btn-primary">
-                            {isLoadingWA ? 'Requesting...' : 'Get Code'}
+                          <button type="submit" disabled={isLoadingWA || Boolean(pairingCode)} className="btn btn-primary">
+                            {isLoadingWA ? 'Requesting...' : pairingCode ? 'Code Active' : 'Get Code'}
                           </button>
                         </div>
                       </form>
@@ -1536,19 +1548,30 @@ export default function OnboardingPage() {
                           <div style={{ fontSize: '1.75rem', fontWeight: 900, fontFamily: 'monospace', color: '#4ade80', letterSpacing: '0.15em', margin: '0.35rem 0' }}>
                             {pairingCode}
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard?.writeText(pairingCode.replace('-', ''));
-                              setCodeCopied(true);
-                              setTimeout(() => setCodeCopied(false), 2000);
-                            }}
-                            className="btn btn-secondary btn-sm"
-                          >
-                            {codeCopied ? '✓ Copied' : 'Copy Code'}
-                          </button>
-                          <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.5rem' }}>
-                            In WhatsApp: Settings &gt; Linked Devices &gt; Link a Device &gt; Tap &quot;Link with phone number instead&quot;
+                          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '0.5rem' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard?.writeText(pairingCode.replace('-', ''));
+                                setCodeCopied(true);
+                                setTimeout(() => setCodeCopied(false), 2000);
+                              }}
+                              className="btn btn-secondary btn-sm"
+                            >
+                              {codeCopied ? '✓ Copied' : 'Copy Code'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleResetOnboardingPairing}
+                              disabled={isLoadingWA}
+                              className="btn btn-ghost btn-sm"
+                              style={{ color: 'hsl(var(--color-text-muted))' }}
+                            >
+                              Reset
+                            </button>
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.4rem' }}>
+                            In WhatsApp: Settings &gt; Linked Devices &gt; Link a Device &gt; Tap &quot;Link with phone number instead&quot;. Keep WhatsApp open while linking (takes 5–10s).
                           </div>
                         </div>
                       )}

@@ -7,8 +7,10 @@ import path from 'path';
 import makeWASocket, {
   DisconnectReason,
   fetchLatestBaileysVersion,
+  fetchLatestWaWebVersion,
   Browsers,
   WASocket,
+  WAVersion,
 } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import QRCode from 'qrcode';
@@ -88,16 +90,36 @@ export async function startBaileysSession(
     return inFlight;
   }
 
+  // If auto-reconnect is scheduled (e.g. from 515 restartRequired) and user is polling, do not disrupt it
+  if (!options?.forceReconnect && reconnectTimers.has(organizationId) && existing) {
+    return existing.state;
+  }
+
   // If already connecting with active QR and not requesting a fresh mode or reconnect, reuse state
   if (
     !options?.forceReconnect &&
     existing &&
     existing.state.status === 'connecting' &&
-    inFlight &&
     options?.mode === 'qr' &&
     existing.state.qrCode
   ) {
     return existing.state;
+  }
+
+  // If already connecting with active pairing code for the same phone number, reuse state
+  if (
+    !options?.forceReconnect &&
+    existing &&
+    existing.state.status === 'connecting' &&
+    options?.mode === 'pairing_code' &&
+    existing.state.pairingCode
+  ) {
+    const existingPhone = existing.state.phoneNumber?.replace(/[^0-9]/g, '');
+    let reqClean = options.phoneNumber?.replace(/[^0-9]/g, '').replace(/^0+/, '');
+    if (reqClean && reqClean.length === 10 && /^[6-9]/.test(reqClean)) reqClean = `91${reqClean}`;
+    if (!reqClean || !existingPhone || existingPhone.endsWith(reqClean) || reqClean.endsWith(existingPhone)) {
+      return existing.state;
+    }
   }
 
   const connectTask = (async () => {
@@ -119,14 +141,26 @@ export async function startBaileysSession(
     let { state: authState, saveCreds, clearSession } = await getPersistentAuthState(organizationId);
 
     const isRegistered = !!authState.creds.registered;
+    const isMidHandshake = Boolean(authState.creds.account || reconnectTimers.has(organizationId));
     const existingPhone = authState.creds.me?.id?.split('@')[0]?.split(':')[0];
-    const requestedPhone = options?.phoneNumber?.replace(/[^0-9]/g, '');
-    const isPhoneMismatch = Boolean(requestedPhone && existingPhone && !existingPhone.endsWith(requestedPhone));
+    let requestedPhone = options?.phoneNumber?.replace(/[^0-9]/g, '').replace(/^0+/, '');
+    if (requestedPhone && requestedPhone.length === 10 && /^[6-9]/.test(requestedPhone)) {
+      requestedPhone = `91${requestedPhone}`;
+    }
+    const isPhoneMismatch = Boolean(requestedPhone && existingPhone && !existingPhone.endsWith(requestedPhone) && !requestedPhone.endsWith(existingPhone));
 
-    // If user explicitly requests linking (mode: qr or pairing_code):
-    // and session is NOT registered, or requested a different phone, or forceReconnect is set:
-    // purge any stale/uncompleted keys so a 100% clean cryptographic handshake is initiated!
-    if (options?.mode && (!isRegistered || isPhoneMismatch || options.forceReconnect)) {
+    // Only clear session if:
+    // 1. Phone is NOT in the middle of completing a login handshake (authState.creds.account)
+    // 2. Not already registered
+    // 3. User explicitly requested a new mode AND (phone number changed OR no active credentials exist OR forced)
+    const shouldClear = Boolean(
+      options?.mode &&
+      !isRegistered &&
+      !isMidHandshake &&
+      (isPhoneMismatch || options.forceReconnect || (!existing?.state.pairingCode && !existing?.state.qrCode))
+    );
+
+    if (shouldClear) {
       console.log(`[Baileys] Clearing stale/unregistered session keys for org ${organizationId}`);
       await clearSession();
       const fresh = await getPersistentAuthState(organizationId);
@@ -135,7 +169,14 @@ export async function startBaileysSession(
       clearSession = fresh.clearSession;
     }
 
-    const { version } = await fetchLatestBaileysVersion();
+    let version: WAVersion;
+    try {
+      const waWeb = await fetchLatestWaWebVersion({});
+      version = waWeb.version;
+    } catch {
+      const baileysVer = await fetchLatestBaileysVersion();
+      version = baileysVer.version;
+    }
 
     const sessionState: BaileysSessionState = {
       status: 'connecting',
@@ -145,8 +186,9 @@ export async function startBaileysSession(
       version,
       auth: authState,
       logger,
-      browser: Browsers.ubuntu('Chrome'),
+      browser: Browsers.macOS('Desktop'),
       printQRInTerminal: false,
+      markOnlineOnConnect: true,
       syncFullHistory: false,
       generateHighQualityLinkPreview: true,
       connectTimeoutMs: 60000,
@@ -299,7 +341,7 @@ export async function startBaileysSession(
 
   // 3. Handle Pairing Code mode (only if not registered)
   if (options?.mode === 'pairing_code' && options.phoneNumber && !sock.authState.creds.registered) {
-    let rawNumber = options.phoneNumber.replace(/[^0-9]/g, '');
+    let rawNumber = options.phoneNumber.replace(/[^0-9]/g, '').replace(/^0+/, '');
     // If user entered a 10-digit number (e.g. 8948006900 starting with 6,7,8,9), automatically prepend India country code 91
     if (rawNumber.length === 10 && /^[6-9]/.test(rawNumber)) {
       rawNumber = `91${rawNumber}`;
