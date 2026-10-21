@@ -11,6 +11,7 @@ const adminNavItems = [
   { href: '/admin/usage', icon: '🤖', label: 'AI Usage & Costs' },
   { href: '/admin/expirations', icon: '⏰', label: 'Expirations' },
   { href: '/admin/payments', icon: '💳', label: 'Payments' },
+  { href: '/admin/campaigns', icon: '🚀', label: 'Campaign Manager' },
   { href: '/admin/integrations', icon: '🔗', label: 'Integration Health' },
   { href: '/admin/audit-logs', icon: '📋', label: 'Audit Logs' },
 ];

@@ -19,6 +19,7 @@ import { getPersistentAuthState, getSessionsBaseDir } from './session-storage';
 import { processTenantIncomingMessage } from './message-processor';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { getClinicInfo, cacheClinicPhone, formatPhone } from './clinic-resolver';
+import { handleIncomingLeadReply } from '@/lib/campaigns/campaign-service';
 
 export interface BaileysSessionState {
   status: 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -469,6 +470,13 @@ export async function startBaileysSession(
           `[WhatsApp Incoming] Clinic "${clinic.name}" (${clinic.phone || 'agent'}) received text from patient ${formattedSender}${senderName ? ` (${senderName})` : ''}: "${text.trim()}"`
         );
 
+        // Check if incoming text is from an outreach campaign lead (qualify based on response time)
+        try {
+          handleIncomingLeadReply(senderPhone, text.trim());
+        } catch (leadErr) {
+          console.warn('[Campaign] Error checking lead qualification:', leadErr);
+        }
+
         // Dispatch to AI Agent Pipeline
         processTenantIncomingMessage({
           organizationId,
@@ -623,6 +631,86 @@ export async function disconnectBaileysSession(organizationId: string): Promise<
   } catch (err) {
     console.error('Error recording disconnect in DB:', err);
   }
+}
+
+/**
+ * Sends an outbound WhatsApp text message to any phone number using the specified organization's session.
+ */
+export async function sendBaileysTextMessage(
+  organizationId: string,
+  toPhone: string,
+  messageText: string
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // If orgId is not provided, pick the first active connected session
+  let targetEntry = organizationId ? sessions.get(organizationId) : undefined;
+  if (!targetEntry || targetEntry.state.status !== 'connected') {
+    for (const [orgId, entry] of sessions.entries()) {
+      if (entry.state.status === 'connected') {
+        targetEntry = entry;
+        break;
+      }
+    }
+  }
+
+  if (!targetEntry || targetEntry.state.status !== 'connected') {
+    return {
+      success: false,
+      error: 'No active WhatsApp connection available. Please connect WhatsApp in Onboarding or Integrations first.',
+    };
+  }
+
+  const cleanDigits = toPhone.replace(/\D/g, '');
+  if (!cleanDigits || cleanDigits.length < 8) {
+    return { success: false, error: 'Invalid recipient phone number' };
+  }
+
+  const remoteJid = `${cleanDigits}@s.whatsapp.net`;
+
+  try {
+    const sent = await targetEntry.socket.sendMessage(remoteJid, { text: messageText });
+    return { success: true, messageId: sent?.key.id || undefined };
+  } catch (err: any) {
+    console.error(`[Baileys Outbound] Failed to send message to ${remoteJid}:`, err);
+    return { success: false, error: err?.message || 'Failed to dispatch WhatsApp message' };
+  }
+}
+
+/**
+ * Returns a list of all currently active WhatsApp connections across all organizations.
+ */
+export async function getConnectedBaileysSessions(): Promise<Array<{
+  organizationId: string;
+  clinicName: string;
+  phoneNumber?: string;
+  status: 'connected' | 'connecting' | 'disconnected' | 'error';
+}>> {
+  const result: Array<{
+    organizationId: string;
+    clinicName: string;
+    phoneNumber?: string;
+    status: 'connected' | 'connecting' | 'disconnected' | 'error';
+  }> = [];
+
+  for (const [orgId, entry] of sessions.entries()) {
+    try {
+      const clinic = await getClinicInfo(orgId, entry.state.phoneNumber);
+      result.push({
+        organizationId: orgId,
+        clinicName: clinic.name || 'AI Front Desk',
+        phoneNumber: entry.state.phoneNumber,
+        status: entry.state.status,
+      });
+    } catch {
+      result.push({
+        organizationId: orgId,
+        clinicName: 'Clinic Connection',
+        phoneNumber: entry.state.phoneNumber,
+        status: entry.state.status,
+      });
+    }
+  }
+
+  return result;
 }
 
 /**
