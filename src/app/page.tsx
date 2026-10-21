@@ -30,69 +30,14 @@ const features = [
     description: 'Each clinic gets its own isolated environment, configuration, knowledge base, and conversation history.',
   },
   {
-    icon: '🪙',
-    title: 'UPI & Global Crypto Payments',
-    description: 'Instant UPI in India and Web3 Crypto (USDT, USDC, BTC, ETH) for international clients. Start in minutes.',
+    icon: '⚡',
+    title: 'Instant Automated Billing',
+    description: 'Hassle-free subscription activation and seamless renewals. Get your AI receptionist running in minutes.',
   },
   {
     icon: '🛡️',
     title: 'Privacy & Security First',
     description: 'Patient data stays isolated. Full audit logs. Human takeover anytime. Medical escalation built-in.',
-  },
-];
-
-const plans = [
-  {
-    name: 'Starter Practice',
-    price: '₹999',
-    period: 'per month',
-    description: 'Perfect for small clinics getting started with AI',
-    features: [
-      '500 AI patient conversations/month',
-      'WhatsApp integration',
-      'Operating hours logic',
-      'Gemini 1.5 Flash AI',
-      'Up to 10 clinical services',
-      'Google Calendar 2-way sync',
-      '3-day grace period',
-    ],
-    cta: 'Get Started',
-    highlighted: false,
-  },
-  {
-    name: 'Pro Clinic',
-    price: '₹1,599',
-    period: 'per month',
-    description: 'Recommended for active dental practices',
-    features: [
-      '2,000 AI patient conversations/month',
-      'WhatsApp integration',
-      'Google Calendar 2-way sync',
-      'OpenAI auto-fallback',
-      'Unlimited bookings',
-      'Live human takeover inbox',
-      'Appointment reminders',
-      '7-day grace period',
-    ],
-    cta: 'Start Free Trial',
-    highlighted: true,
-  },
-  {
-    name: 'Growth & Multi-Doctor',
-    price: '₹2,999',
-    period: 'per month',
-    description: 'For growing clinics with multi-doctor rosters',
-    features: [
-      '5,000 AI patient conversations/month',
-      'Multi-doctor calendar sync',
-      'Custom clinical voice & knowledge',
-      'Priority WhatsApp webhooks',
-      'Dedicated account manager',
-      'Advanced analytics',
-      '14-day grace period',
-    ],
-    cta: 'Contact Sales',
-    highlighted: false,
   },
 ];
 

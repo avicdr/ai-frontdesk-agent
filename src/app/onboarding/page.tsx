@@ -139,15 +139,23 @@ export default function OnboardingPage() {
 
   // Initial load: Fetch existing onboarding state & calendar status & geo detection
   useEffect(() => {
-    // Geo IP country check
+    // Geo IP country check & browser timezone fallback
     fetch('/api/v1/geo')
       .then(r => r.json())
       .then(geo => {
-        if (geo?.data?.isInternational) {
-          setIsInternational(true);
+        if (geo?.data?.country && geo.data.country !== 'UNKNOWN') {
+          setIsInternational(Boolean(geo.data.isInternational));
+        } else if (typeof Intl !== 'undefined') {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          setIsInternational(isInternationalClient(null, tz));
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (typeof Intl !== 'undefined') {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          setIsInternational(isInternationalClient(null, tz));
+        }
+      });
 
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -1758,59 +1766,15 @@ export default function OnboardingPage() {
           {/* STEP 8: Plan Selection & Payment Activation (UPI for India, Crypto for International) */}
           {currentStep === 8 && (
             <div>
-              <div style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                    {isInternational ? 'Step 8: Plan Selection & Crypto Activation' : 'Step 8: Plan Selection & Instant UPI Activation'}
-                  </h2>
-                  <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
-                    {isInternational
-                      ? 'Select your clinic’s subscription tier. Pay via Web3 Crypto (USDT, USDC, BTC, ETH) with instant hash confirmation.'
-                      : 'Select your clinic’s subscription tier. Pay directly via UPI for instant activation.'}
-                  </p>
-                </div>
-
-                {/* Currency & Region Switcher */}
-                <div style={{
-                  display: 'inline-flex',
-                  background: 'hsl(var(--color-surface-2))',
-                  padding: '0.25rem',
-                  borderRadius: '9999px',
-                  border: '1px solid hsl(var(--color-border))',
-                }}>
-                  <button
-                    type="button"
-                    onClick={() => setIsInternational(false)}
-                    style={{
-                      padding: '0.35rem 0.85rem',
-                      borderRadius: '9999px',
-                      fontSize: '0.75rem',
-                      fontWeight: !isInternational ? 700 : 500,
-                      background: !isInternational ? 'hsla(221, 83%, 58%, 0.2)' : 'transparent',
-                      color: !isInternational ? '#93c5fd' : 'hsl(var(--color-text-muted))',
-                      border: !isInternational ? '1px solid hsla(221, 83%, 58%, 0.4)' : 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    🇮🇳 India (INR • UPI)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsInternational(true)}
-                    style={{
-                      padding: '0.35rem 0.85rem',
-                      borderRadius: '9999px',
-                      fontSize: '0.75rem',
-                      fontWeight: isInternational ? 700 : 500,
-                      background: isInternational ? 'linear-gradient(135deg, hsla(263, 70%, 50%, 0.25), hsla(221, 83%, 58%, 0.25))' : 'transparent',
-                      color: isInternational ? '#c084fc' : 'hsl(var(--color-text-muted))',
-                      border: isInternational ? '1px solid rgba(192, 132, 252, 0.4)' : 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    🌐 International (USD • Crypto)
-                  </button>
-                </div>
+              <div style={{ marginBottom: '1.75rem' }}>
+                <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>
+                  {isInternational ? 'Step 8: Plan Selection & Crypto Activation' : 'Step 8: Plan Selection & Instant UPI Activation'}
+                </h2>
+                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
+                  {isInternational
+                    ? 'Select your clinic’s subscription tier ($100 Starter, $250 Pro, $400 Growth). Pay via Web3 Crypto with instant hash confirmation.'
+                    : 'Select your clinic’s subscription tier (₹999 Starter, ₹1,599 Pro, ₹2,999 Growth). Pay directly via Instant UPI for instant activation.'}
+                </p>
               </div>
 
               {/* Plan Cards */}

@@ -80,4 +80,32 @@ describe('International Crypto Billing & Pricing Tiers', () => {
     const polyUrl = getCryptoExplorerUrl('usdc_polygon', ethTx);
     assert.equal(polyUrl, `https://polygonscan.com/tx/${ethTx}`);
   });
+
+  it('should enforce strict regional isolation between Indian and International clients', () => {
+    // 1. Indian client simulation
+    const isIndia = isInternationalClient('IN', 'Asia/Kolkata');
+    assert.equal(isIndia, false);
+    // Indian plans must only present INR prices
+    const indianPlans = PRICING_PLANS.map(p => ({
+      name: p.name,
+      priceDisplay: !isIndia ? p.priceInrDisplay : p.priceUsdDisplay,
+    }));
+    assert.equal(indianPlans[0].priceDisplay, '₹999');
+    assert.equal(indianPlans[1].priceDisplay, '₹1,599');
+    assert.equal(indianPlans[2].priceDisplay, '₹2,999');
+    assert.ok(!indianPlans.some(p => p.priceDisplay.includes('$')));
+
+    // 2. International client simulation
+    const isIntl = isInternationalClient('US', 'America/New_York');
+    assert.equal(isIntl, true);
+    // International plans must only present USD prices
+    const intlPlans = PRICING_PLANS.map(p => ({
+      name: p.name,
+      priceDisplay: isIntl ? p.priceUsdDisplay : p.priceInrDisplay,
+    }));
+    assert.equal(intlPlans[0].priceDisplay, '$100');
+    assert.equal(intlPlans[1].priceDisplay, '$250');
+    assert.equal(intlPlans[2].priceDisplay, '$400');
+    assert.ok(!intlPlans.some(p => p.priceDisplay.includes('₹')));
+  });
 });

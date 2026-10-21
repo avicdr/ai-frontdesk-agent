@@ -35,25 +35,39 @@ export function PostOnboardingCryptoPrompt({
   );
 
   useEffect(() => {
-    // If not detected via org country/timezone, check client geo endpoint
+    // If explicitly Indian via org profile, do not allow geo check to flip it
+    const isDomesticIndian =
+      orgCountry === 'IN' ||
+      orgCountry === 'INDIA' ||
+      (orgTimezone && (orgTimezone.toLowerCase().includes('kolkata') || orgTimezone.toLowerCase().includes('calcutta')));
+
+    if (isDomesticIndian) {
+      setIsInternational(false);
+      return;
+    }
+
+    // Check client geo endpoint & browser timezone fallback
     fetch('/api/v1/geo')
       .then(res => res.json())
       .then(geo => {
-        if (geo?.data?.isInternational) {
-          setIsInternational(true);
+        if (geo?.data?.country && geo.data.country !== 'UNKNOWN') {
+          setIsInternational(Boolean(geo.data.isInternational));
+        } else if (typeof Intl !== 'undefined') {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          setIsInternational(isInternationalClient(null, tz));
         }
       })
       .catch(() => {});
 
-    // Auto-open modal if user was redirected from onboarding with require_crypto=true
-    if (searchParams.get('require_crypto') === 'true' || searchParams.get('onboarding') === 'complete') {
+    // Auto-open modal ONLY if user is international and require_crypto=true was flagged
+    if (isInternational && searchParams.get('require_crypto') === 'true') {
       const planFromUrl = searchParams.get('plan');
       if (planFromUrl && ['starter', 'pro', 'growth'].includes(planFromUrl)) {
         setSelectedPlanId(planFromUrl as any);
       }
       setShowCryptoModal(true);
     }
-  }, [searchParams]);
+  }, [searchParams, orgCountry, orgTimezone, isInternational]);
 
   // If already active or dismissed or not international, don't show prompt
   if (!isInternational || dismissed) {

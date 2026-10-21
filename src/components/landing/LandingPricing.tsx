@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useGeoCurrency } from '@/lib/hooks/use-geo-currency';
 
 export function LandingPricing() {
-  const { isInternational, setIsInternational, plans } = useGeoCurrency();
+  const { isInternational, plans } = useGeoCurrency();
 
   return (
     <section id="pricing" style={{ padding: 'clamp(3.5rem, 8vw, 6rem) clamp(1rem, 4vw, 2rem)', maxWidth: '1100px', margin: '0 auto' }}>
@@ -21,67 +21,6 @@ export function LandingPricing() {
             ? 'Monthly subscriptions via Crypto (USDT, USDC, BTC, ETH). No hidden fees. Cancel anytime.'
             : 'Monthly subscriptions via Instant UPI. Cancel anytime.'}
         </p>
-
-        {/* Currency & Region Selector Switcher */}
-        <div style={{
-          display: 'inline-flex',
-          background: 'hsl(var(--color-surface-2))',
-          padding: '0.25rem',
-          borderRadius: '9999px',
-          border: '1px solid hsl(var(--color-border))',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        }}>
-          <button
-            type="button"
-            onClick={() => setIsInternational(false)}
-            style={{
-              padding: '0.45rem 1rem',
-              borderRadius: '9999px',
-              fontSize: '0.8rem',
-              fontWeight: !isInternational ? 700 : 500,
-              background: !isInternational ? 'hsla(221, 83%, 58%, 0.2)' : 'transparent',
-              color: !isInternational ? '#93c5fd' : 'hsl(var(--color-text-muted))',
-              border: !isInternational ? '1px solid hsla(221, 83%, 58%, 0.4)' : '1px solid transparent',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <span>🇮🇳 India (INR • UPI)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsInternational(true)}
-            style={{
-              padding: '0.45rem 1rem',
-              borderRadius: '9999px',
-              fontSize: '0.8rem',
-              fontWeight: isInternational ? 700 : 500,
-              background: isInternational ? 'linear-gradient(135deg, hsla(263, 70%, 50%, 0.25), hsla(221, 83%, 58%, 0.25))' : 'transparent',
-              color: isInternational ? '#c084fc' : 'hsl(var(--color-text-muted))',
-              border: isInternational ? '1px solid rgba(192, 132, 252, 0.4)' : '1px solid transparent',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <span>🌐 International (USD • Crypto)</span>
-            <span style={{
-              background: '#10b981',
-              color: 'white',
-              fontSize: '0.62rem',
-              fontWeight: 800,
-              padding: '1px 5px',
-              borderRadius: '4px',
-            }}>
-              Web3
-            </span>
-          </button>
-        </div>
       </div>
 
       <div style={{

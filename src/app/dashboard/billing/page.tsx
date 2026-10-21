@@ -219,48 +219,6 @@ export default function BillingPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          {/* Currency Switcher */}
-          <div style={{
-            display: 'inline-flex',
-            background: 'hsl(var(--color-surface-2))',
-            padding: '0.2rem',
-            borderRadius: '9999px',
-            border: '1px solid hsl(var(--color-border))',
-          }}>
-            <button
-              type="button"
-              onClick={() => setIsInternational(false)}
-              style={{
-                padding: '0.3rem 0.75rem',
-                borderRadius: '9999px',
-                fontSize: '0.72rem',
-                fontWeight: !isInternational ? 700 : 500,
-                background: !isInternational ? 'hsla(221, 83%, 58%, 0.2)' : 'transparent',
-                color: !isInternational ? '#93c5fd' : 'hsl(var(--color-text-muted))',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              🇮🇳 INR (UPI)
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsInternational(true)}
-              style={{
-                padding: '0.3rem 0.75rem',
-                borderRadius: '9999px',
-                fontSize: '0.72rem',
-                fontWeight: isInternational ? 700 : 500,
-                background: isInternational ? 'linear-gradient(135deg, hsla(263, 70%, 50%, 0.25), hsla(221, 83%, 58%, 0.25))' : 'transparent',
-                color: isInternational ? '#c084fc' : 'hsl(var(--color-text-muted))',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              🌐 USD (Crypto)
-            </button>
-          </div>
-
           {isInternational ? (
             <button
               type="button"
@@ -473,18 +431,26 @@ export default function BillingPage() {
             </tr>
           </thead>
           <tbody>
-            {orders.length === 0 ? (
+            {orders.filter(order => {
+              const isOrderCrypto = order.currency === 'USD' || order.provider === 'crypto';
+              return isInternational ? isOrderCrypto : !isOrderCrypto;
+            }).length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'hsl(var(--color-text-muted))' }}>
                   <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>🧾</div>
                   <div style={{ fontWeight: 600 }}>No payment transactions yet</div>
                   <div style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                    When you renew or subscribe via Crypto or UPI, your payments and receipts will be logged here.
+                    {isInternational
+                      ? 'When you renew or subscribe via Crypto, your payments and receipts will be logged here.'
+                      : 'When you renew or subscribe via UPI, your payments and receipts will be logged here.'}
                   </div>
                 </td>
               </tr>
             ) : (
-              orders.map(order => {
+              orders.filter(order => {
+                const isOrderCrypto = order.currency === 'USD' || order.provider === 'crypto';
+                return isInternational ? isOrderCrypto : !isOrderCrypto;
+              }).map(order => {
                 const isOrderCrypto = order.currency === 'USD' || order.provider === 'crypto';
                 const explorerUrl = isOrderCrypto && order.utr_number
                   ? getCryptoExplorerUrl(order.metadata?.crypto_network || 'usdt_trc20', order.utr_number)
@@ -550,8 +516,8 @@ export default function BillingPage() {
         </table>
       </div>
 
-      {/* Crypto Payment Modal */}
-      {showCryptoModal && (
+      {/* Crypto Payment Modal - Strictly International Only */}
+      {isInternational && showCryptoModal && (
         <CryptoPaymentWidget
           planId={selectedPlan}
           planName={selectedPlanDetails.name}
@@ -565,8 +531,8 @@ export default function BillingPage() {
         />
       )}
 
-      {/* UPI QR & Manual UTR Modal */}
-      {showUpiModal && (
+      {/* UPI QR & Manual UTR Modal - Strictly Domestic India Only */}
+      {!isInternational && showUpiModal && (
         <div style={{
           position: 'fixed',
           top: 0,
