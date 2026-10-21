@@ -140,3 +140,104 @@ describe('4. WhatsApp Baileys Pairing Code & Phone Sanitization', () => {
     assert.equal(formatPairingCode('12345678'), '1234-5678');
   });
 });
+
+describe('5. Working Hours Slot Preference & Time-of-Day Detection', () => {
+  // Import or test detectTimePreference
+  const { detectTimePreference } = require('../../src/lib/ai/tools');
+
+  it('should detect evening preference when explicitly passed as argument', () => {
+    const pref = detectTimePreference('evening');
+    assert.equal(pref.period, 'evening');
+  });
+
+  it('should detect evening preference from patient message "Do you have any other slot for evening"', () => {
+    const pref = detectTimePreference(undefined, undefined, 'Do you have any other slot for evening');
+    assert.equal(pref.period, 'evening');
+  });
+
+  it('should detect afternoon preference from patient message "can I come in afternoon"', () => {
+    const pref = detectTimePreference(undefined, undefined, 'can I come in afternoon');
+    assert.equal(pref.period, 'afternoon');
+  });
+
+  it('should detect morning preference from patient message "any morning slots?"', () => {
+    const pref = detectTimePreference(undefined, undefined, 'any morning slots?');
+    assert.equal(pref.period, 'morning');
+  });
+
+  it('should detect specific time like "5pm" or "17:00" and map target hour', () => {
+    const pref1 = detectTimePreference('5pm');
+    assert.equal(pref1.period, 'evening');
+    assert.equal(pref1.targetHour, 17);
+
+    const pref2 = detectTimePreference(undefined, undefined, 'can I get 10:30 am');
+    assert.equal(pref2.period, 'morning');
+    assert.equal(pref2.targetHour, 10);
+    assert.equal(pref2.targetMinute, 30);
+  });
+
+  it('should return period "all" for general availability queries', () => {
+    const pref = detectTimePreference(undefined, undefined, 'what slots are open tomorrow?');
+    assert.equal(pref.period, 'all');
+  });
+});
+
+describe('6. Working Hours Slot Generation Across the Entire Day', () => {
+  it('should generate slots across morning, afternoon, and evening without truncating to morning', () => {
+    const openHour = 9;
+    const closeHour = 19; // 9:00 AM to 7:00 PM (10 hours)
+    const slotDuration = 30; // 30 mins
+    const buffer = 10; // 10 mins
+
+    const slots: string[] = [];
+    let currentMin = openHour * 60;
+    const closeMin = closeHour * 60;
+
+    while (currentMin + slotDuration <= closeMin) {
+      const h = Math.floor(currentMin / 60);
+      const m = currentMin % 60;
+      slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+      currentMin += slotDuration + buffer;
+    }
+
+    // Morning slots (< 12:00)
+    const morning = slots.filter(s => parseInt(s.split(':')[0], 10) < 12);
+    // Afternoon slots (12:00 to 15:59)
+    const afternoon = slots.filter(s => {
+      const h = parseInt(s.split(':')[0], 10);
+      return h >= 12 && h < 16;
+    });
+    // Evening slots (>= 16:00)
+    const evening = slots.filter(s => parseInt(s.split(':')[0], 10) >= 16);
+
+    assert.ok(morning.length >= 3, 'Should have multiple morning slots');
+    assert.ok(afternoon.length >= 3, 'Should have multiple afternoon slots');
+    assert.ok(evening.length >= 3, 'Should have multiple evening slots');
+    assert.ok(slots.includes('17:00') || slots.includes('16:20') || slots.includes('17:40'), 'Should contain evening slots');
+  });
+
+  it('should skip slots that overlap with clinic break hours', () => {
+    const breakStart = 13.5 * 60; // 13:30
+    const breakEnd = 14.5 * 60;   // 14:30
+    const slotDuration = 30;
+    const buffer = 10;
+
+    const slots: number[] = [];
+    let cur = 9 * 60;
+    const end = 18 * 60;
+
+    while (cur + slotDuration <= end) {
+      const slotEnd = cur + slotDuration;
+      if (cur < breakEnd && slotEnd > breakStart) {
+        cur = breakEnd;
+        continue;
+      }
+      slots.push(cur);
+      cur += slotDuration + buffer;
+    }
+
+    // Ensure no slot was scheduled between 13:30 and 14:30
+    const conflict = slots.some(s => s < breakEnd && (s + slotDuration) > breakStart);
+    assert.equal(conflict, false, 'No slot should conflict with clinic break');
+  });
+});

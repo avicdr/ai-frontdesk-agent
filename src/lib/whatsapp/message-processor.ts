@@ -220,6 +220,7 @@ export async function processTenantIncomingMessage(options: ProcessIncomingOptio
     conversationId: conversation.id,
     patientPhone: fromPhone,
     timezone: clinicContext.clinicProfile.timezone,
+    lastUserMessage: text,
   };
 
   const toolResultsSummary: string[] = [];

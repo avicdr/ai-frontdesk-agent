@@ -263,12 +263,17 @@ async function processIncomingMessage(payload: Record<string, unknown>): Promise
     conversationId: conversation.id,
     patientPhone: incomingMessage.fromPhone,
     timezone: clinicContext.clinicProfile.timezone,
+    lastUserMessage: incomingMessage.text,
   };
 
+  const toolResultsSummary: string[] = [];
   if (parsedResponse.tool_calls?.length) {
     for (const toolCall of parsedResponse.tool_calls.slice(0, clinicContext.plan?.max_tool_calls_per_turn ?? 5)) {
       try {
-        await executeTool(toolContext, toolCall.name, toolCall.arguments);
+        const result: any = await executeTool(toolContext, toolCall.name, toolCall.arguments);
+        if (result?.message) {
+          toolResultsSummary.push(result.message);
+        }
       } catch (err) {
         console.error(`Tool execution error [${toolCall.name}]:`, err);
       }
@@ -306,7 +311,13 @@ async function processIncomingMessage(payload: Record<string, unknown>): Promise
   }
 
   // 19. Send reply
-  const replyText = parsedResponse.user_message || clinicContext.agentConfig.greeting_message || 'How can I assist you today?';
+  let replyText = parsedResponse.user_message || clinicContext.agentConfig.greeting_message || 'How can I assist you today?';
+  if (toolResultsSummary.length > 0) {
+    const hasSummaryAlready = toolResultsSummary.some(s => replyText.includes(s.slice(0, 15)));
+    if (!hasSummaryAlready) {
+      replyText = `${replyText}\n\n${toolResultsSummary.join('\n\n')}`;
+    }
+  }
   if (!replyText) {
     return;
   }

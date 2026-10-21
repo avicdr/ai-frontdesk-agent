@@ -269,6 +269,7 @@ We accept UPI (GPay, PhonePe, Paytm), Credit/Debit cards, Net Banking, and cash.
                 conversationId: 'test-sandbox',
                 patientPhone: simulatePhone,
                 timezone: (clinicContext as any)?.timezone || 'Asia/Kolkata',
+                lastUserMessage: messages.filter(m => m.role === 'user').slice(-1)[0]?.content,
               },
               call.name,
               call.arguments

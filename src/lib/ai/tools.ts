@@ -13,6 +13,7 @@ export interface ToolContext {
   conversationId: string;
   patientPhone: string;
   timezone: string;
+  lastUserMessage?: string;
 }
 
 // ============================================================
@@ -177,12 +178,65 @@ export function parseDateInput(dateInput?: string, timeZone: string = 'Asia/Kolk
 // ============================================================
 // Tool: Check availability
 // ============================================================
+export function detectTimePreference(
+  explicitPref?: string,
+  explicitPeriod?: string,
+  lastUserMessage?: string
+): {
+  period: 'morning' | 'afternoon' | 'evening' | 'all';
+  targetHour?: number;
+  targetMinute?: number;
+  rawPreference?: string;
+} {
+  const combined = [explicitPeriod, explicitPref, lastUserMessage].filter(Boolean).join(' ').toLowerCase();
+
+  // 1. Specific time matching e.g. "5pm", "5:30 pm", "17:00", "at 4pm", "around 11:30"
+  const time12Match = combined.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
+  if (time12Match) {
+    let hour = parseInt(time12Match[1], 10);
+    const minute = time12Match[2] ? parseInt(time12Match[2], 10) : 0;
+    const meridian = time12Match[3].toLowerCase();
+    if (meridian === 'pm' && hour < 12) hour += 12;
+    if (meridian === 'am' && hour === 12) hour = 0;
+    const period = hour >= 16 ? 'evening' : hour >= 12 ? 'afternoon' : 'morning';
+    return { period, targetHour: hour, targetMinute: minute, rawPreference: time12Match[0] };
+  }
+
+  const time24Match = combined.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+  if (time24Match) {
+    const hour = parseInt(time24Match[1], 10);
+    const minute = parseInt(time24Match[2], 10);
+    const period = hour >= 16 ? 'evening' : hour >= 12 ? 'afternoon' : 'morning';
+    return { period, targetHour: hour, targetMinute: minute, rawPreference: time24Match[0] };
+  }
+
+  // 2. Period keywords
+  if (/\b(evening|night|pm|late|after 4|after 5|after 6|post 4|post 5)\b/i.test(combined)) {
+    return { period: 'evening', rawPreference: 'evening' };
+  }
+  if (/\b(afternoon|post lunch|noon|lunch)\b/i.test(combined)) {
+    return { period: 'afternoon', rawPreference: 'afternoon' };
+  }
+  if (/\b(morning|am|early)\b/i.test(combined)) {
+    return { period: 'morning', rawPreference: 'morning' };
+  }
+
+  return { period: 'all' };
+}
+
 export async function checkAvailability(
   ctx: ToolContext,
-  args: { date: string; serviceName?: string; durationMinutes?: number }
+  args: {
+    date: string;
+    serviceName?: string;
+    durationMinutes?: number;
+    preferredTime?: string;
+    period?: 'morning' | 'afternoon' | 'evening' | 'all';
+  }
 ): Promise<{
   available: boolean;
   slots: Array<{ startTime: string; endTime: string }>;
+  allSlots?: Array<{ startTime: string; endTime: string }>;
   message: string;
 }> {
   const admin = createSupabaseAdminClient();
@@ -222,7 +276,28 @@ export async function checkAvailability(
     .eq('organization_id', ctx.organizationId)
     .maybeSingle();
 
-  const duration = args.durationMinutes ?? policy?.buffer_minutes ?? 30;
+  // Determine appointment duration:
+  // 1. Explicitly requested durationMinutes
+  // 2. Duration of matching clinic service from DB
+  // 3. Default fallback: 30 minutes (do NOT use policy buffer as service duration!)
+  let duration = args.durationMinutes;
+  if (!duration && args.serviceName) {
+    const { data: svc } = await admin
+      .from('services')
+      .select('duration_minutes')
+      .eq('organization_id', ctx.organizationId)
+      .ilike('name', `%${args.serviceName.trim()}%`)
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle();
+    if (svc?.duration_minutes) {
+      duration = svc.duration_minutes;
+    }
+  }
+  if (!duration) {
+    duration = 30;
+  }
+
   const now = new Date();
   const minAdvanceMs = (policy?.min_advance_hours ?? 1) * 60 * 60 * 1000;
   const maxAdvanceDays = policy?.max_advance_days ?? 60;
@@ -247,26 +322,45 @@ export async function checkAvailability(
     .lte('starts_at', endOfDay.toISOString())
     .not('status', 'in', '("cancelled","rescheduled")');
 
-  // Generate available slots using clinic opening and closing times
-  const openTime = hours.open_time ?? '09:00';
-  const closeTime = hours.close_time ?? '18:00';
-  let current = parseClinicDateTime(`${dateStr}T${openTime}:00`, tz);
-  const close = parseClinicDateTime(`${dateStr}T${closeTime}:00`, tz);
-  const buffer = policy?.buffer_minutes ?? 10;
+  // Normalize open, close, and break times
+  const normalizeTime = (val: string | null | undefined, fallback: string) => {
+    if (!val) return fallback;
+    const parts = String(val).trim().split(':');
+    const h = parts[0].padStart(2, '0');
+    const m = (parts[1] || '00').padStart(2, '0');
+    return `${h}:${m}`;
+  };
 
-  const slots: Array<{ startTime: string; endTime: string }> = [];
+  const rawOpen = normalizeTime(hours.open_time, '09:00');
+  const rawClose = normalizeTime(hours.close_time, '18:00');
+  let current = parseClinicDateTime(`${dateStr}T${rawOpen}:00`, tz);
+  const close = parseClinicDateTime(`${dateStr}T${rawClose}:00`, tz);
 
+  const breakStart = hours.break_start ? parseClinicDateTime(`${dateStr}T${normalizeTime(hours.break_start, '13:00')}:00`, tz) : null;
+  const breakEnd = hours.break_end ? parseClinicDateTime(`${dateStr}T${normalizeTime(hours.break_end, '14:00')}:00`, tz) : null;
+
+  const buffer = policy?.buffer_minutes ?? 0;
+
+  const allDaySlots: Array<{ startTime: string; endTime: string; dateObj: Date }> = [];
+
+  // Generate ALL valid slots across the clinic's full working hours
   while (isBefore(current, close)) {
     const slotEnd = addMinutes(current, duration);
     if (isAfter(slotEnd, close)) break;
 
-    // Skip if within minimum advance time
+    // Skip if within minimum advance notice window
     if (isBefore(current, new Date(now.getTime() + minAdvanceMs))) {
       current = addMinutes(current, duration + buffer);
       continue;
     }
 
-    // Check for conflicts
+    // Skip if overlapping clinic break hours
+    if (breakStart && breakEnd && isBefore(current, breakEnd) && isAfter(slotEnd, breakStart)) {
+      current = breakEnd;
+      continue;
+    }
+
+    // Check for conflicts with existing booked appointments
     const hasConflict = (existing ?? []).some((appt: any) => {
       const apptStart = parseISO(appt.starts_at);
       const apptEnd = parseISO(appt.ends_at);
@@ -274,30 +368,48 @@ export async function checkAvailability(
     });
 
     if (!hasConflict) {
-      const localSlotHour = current.toLocaleTimeString('en-US', { timeZone: tz, hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const localSlotHour = current.toLocaleTimeString('en-US', {
+        timeZone: tz,
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
       const [hPart, mPart] = localSlotHour.split(':');
-      slots.push({
+      allDaySlots.push({
         startTime: `${dateStr}T${hPart}:${mPart}:00`,
         endTime: slotEnd.toISOString(),
+        dateObj: new Date(current.getTime()),
       });
-      if (slots.length >= 8) break;
     }
 
     current = addMinutes(current, duration + buffer);
   }
 
-  const formattedSlots = slots
-    .slice(0, 5)
-    .map(s => {
-      const d = parseClinicDateTime(s.startTime, tz);
-      return d.toLocaleTimeString('en-US', {
-        timeZone: tz,
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      });
-    })
-    .join(', ');
+  // Format helper for slot timestamps
+  const formatSlotTime = (isoOrLocalStr: string) => {
+    const d = parseClinicDateTime(isoOrLocalStr, tz);
+    return d.toLocaleTimeString('en-US', {
+      timeZone: tz,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const formatHeaderTime = (timeStr: string) => {
+    const [hStr, mStr] = timeStr.split(':');
+    const h = parseInt(hStr, 10);
+    const m = parseInt(mStr || '0', 10);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const displayH = h % 12 === 0 ? 12 : h % 12;
+    const displayM = m > 0 ? `:${String(m).padStart(2, '0')}` : ':00';
+    return `${displayH}${displayM} ${period}`;
+  };
+
+  const openDisplay = formatHeaderTime(rawOpen);
+  const closeDisplay = formatHeaderTime(rawClose);
+  const hoursNote = `Working hours: ${openDisplay} – ${closeDisplay}`;
 
   const dateFormatted = new Date(startOfDay.getTime() + 12 * 3600 * 1000).toLocaleDateString('en-US', {
     timeZone: tz,
@@ -307,12 +419,106 @@ export async function checkAvailability(
     year: 'numeric',
   });
 
+  if (allDaySlots.length === 0) {
+    return {
+      available: false,
+      slots: [],
+      allSlots: [],
+      message: `No available slots on ${dateFormatted} (${hoursNote}). The clinic is fully booked on this day.`,
+    };
+  }
+
+  // Partition slots by time of day in clinic local timezone
+  const getSlotHour = (d: Date) => {
+    const str = d.toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', hour12: false });
+    return parseInt(str, 10);
+  };
+
+  const morningSlots = allDaySlots.filter(s => getSlotHour(s.dateObj) < 12);
+  const afternoonSlots = allDaySlots.filter(s => {
+    const h = getSlotHour(s.dateObj);
+    return h >= 12 && h < 16;
+  });
+  const eveningSlots = allDaySlots.filter(s => getSlotHour(s.dateObj) >= 16);
+
+  // Detect time preference from arguments or last patient message
+  const pref = detectTimePreference(args.preferredTime, args.period, ctx.lastUserMessage);
+
+  let returnedSlots: Array<{ startTime: string; endTime: string }> = [];
+  let message = '';
+
+  if (pref.targetHour !== undefined) {
+    // Specific target time requested (e.g. 5pm)
+    const targetDate = parseClinicDateTime(
+      `${dateStr}T${String(pref.targetHour).padStart(2, '0')}:${String(pref.targetMinute ?? 0).padStart(2, '0')}:00`,
+      tz
+    );
+    const sorted = [...allDaySlots].sort((a, b) => {
+      return Math.abs(a.dateObj.getTime() - targetDate.getTime()) - Math.abs(b.dateObj.getTime() - targetDate.getTime());
+    });
+    const selected = sorted.slice(0, 5).sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+    returnedSlots = selected.map(s => ({ startTime: s.startTime, endTime: s.endTime }));
+    const formatted = selected.map(s => formatSlotTime(s.startTime)).join(', ');
+    const displayTarget = formatSlotTime(targetDate.toISOString());
+    message = `Found available slots around ${displayTarget} on ${dateFormatted}: ${formatted} (${hoursNote}).`;
+  } else if (pref.period === 'evening') {
+    if (eveningSlots.length > 0) {
+      const selected = eveningSlots.slice(0, 6);
+      returnedSlots = selected.map(s => ({ startTime: s.startTime, endTime: s.endTime }));
+      const formatted = selected.map(s => formatSlotTime(s.startTime)).join(', ');
+      message = `Found available evening slots on ${dateFormatted}: ${formatted} (${hoursNote}).`;
+    } else {
+      const alt = allDaySlots.slice(-4).map(s => formatSlotTime(s.startTime)).join(', ');
+      returnedSlots = allDaySlots.map(s => ({ startTime: s.startTime, endTime: s.endTime }));
+      message = `No evening slots are available on ${dateFormatted} (${hoursNote}). However, earlier slots are available: ${alt}. Would you like an earlier time?`;
+    }
+  } else if (pref.period === 'afternoon') {
+    if (afternoonSlots.length > 0) {
+      const selected = afternoonSlots.slice(0, 6);
+      returnedSlots = selected.map(s => ({ startTime: s.startTime, endTime: s.endTime }));
+      const formatted = selected.map(s => formatSlotTime(s.startTime)).join(', ');
+      message = `Found available afternoon slots on ${dateFormatted}: ${formatted} (${hoursNote}).`;
+    } else {
+      const alt = allDaySlots.slice(0, 4).map(s => formatSlotTime(s.startTime)).join(', ');
+      returnedSlots = allDaySlots.map(s => ({ startTime: s.startTime, endTime: s.endTime }));
+      message = `No afternoon slots are available on ${dateFormatted} (${hoursNote}). Available slots: ${alt}.`;
+    }
+  } else if (pref.period === 'morning') {
+    if (morningSlots.length > 0) {
+      const selected = morningSlots.slice(0, 6);
+      returnedSlots = selected.map(s => ({ startTime: s.startTime, endTime: s.endTime }));
+      const formatted = selected.map(s => formatSlotTime(s.startTime)).join(', ');
+      message = `Found available morning slots on ${dateFormatted}: ${formatted} (${hoursNote}).`;
+    } else {
+      const alt = allDaySlots.slice(0, 4).map(s => formatSlotTime(s.startTime)).join(', ');
+      returnedSlots = allDaySlots.map(s => ({ startTime: s.startTime, endTime: s.endTime }));
+      message = `No morning slots are available on ${dateFormatted} (${hoursNote}). Later slots available: ${alt}.`;
+    }
+  } else {
+    // All day distribution covering the clinic's full working hours
+    returnedSlots = allDaySlots.map(s => ({ startTime: s.startTime, endTime: s.endTime }));
+    const lines: string[] = [`Found available slots on ${dateFormatted} (${hoursNote}):`];
+    if (morningSlots.length > 0) {
+      lines.push(`• Morning: ${morningSlots.slice(0, 3).map(s => formatSlotTime(s.startTime)).join(', ')}`);
+    }
+    if (afternoonSlots.length > 0) {
+      lines.push(`• Afternoon: ${afternoonSlots.slice(0, 3).map(s => formatSlotTime(s.startTime)).join(', ')}`);
+    }
+    if (eveningSlots.length > 0) {
+      lines.push(`• Evening: ${eveningSlots.slice(0, 3).map(s => formatSlotTime(s.startTime)).join(', ')}`);
+    }
+    if (lines.length === 1) {
+      lines.push(allDaySlots.slice(0, 6).map(s => formatSlotTime(s.startTime)).join(', '));
+    }
+    lines.push('Which time works best for you?');
+    message = lines.join('\n');
+  }
+
   return {
-    available: slots.length > 0,
-    slots,
-    message: slots.length > 0
-      ? `Found available slots on ${dateFormatted}: ${formattedSlots}.`
-      : `No available slots on ${dateFormatted}.`,
+    available: allDaySlots.length > 0,
+    slots: returnedSlots,
+    allSlots: allDaySlots.map(s => ({ startTime: s.startTime, endTime: s.endTime })),
+    message,
   };
 }
 
@@ -442,16 +648,18 @@ export async function createAppointment(
     return { success: true, appointmentId: existing.id, message: 'Your appointment has already been confirmed.' };
   }
 
-  // Re-check availability in clinic timezone
+  // Re-check availability in clinic timezone across full working day
   const dateStr = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(startTime);
   const availabilityCheck = await checkAvailability(ctx, {
     date: dateStr,
     durationMinutes: service.duration_minutes,
+    preferredTime: 'all',
   });
 
+  const validSlots = availabilityCheck.allSlots ?? availabilityCheck.slots;
   const slotAvailable = availabilityCheck.available && (
-    availabilityCheck.slots.length === 0 ||
-    availabilityCheck.slots.some(
+    validSlots.length === 0 ||
+    validSlots.some(
       s => Math.abs(parseClinicDateTime(s.startTime, tz).getTime() - startTime.getTime()) <= 45 * 60 * 1000
     )
   );
@@ -703,7 +911,13 @@ export async function executeTool(
     case 'get_clinic_hours':
       return getClinicHours(ctx);
     case 'check_availability':
-      return checkAvailability(ctx, args as { date: string; serviceName?: string; durationMinutes?: number });
+      return checkAvailability(ctx, args as {
+        date: string;
+        serviceName?: string;
+        durationMinutes?: number;
+        preferredTime?: string;
+        period?: 'morning' | 'afternoon' | 'evening' | 'all';
+      });
     case 'get_patient_appointments':
       return getPatientAppointments(ctx);
     case 'create_appointment':

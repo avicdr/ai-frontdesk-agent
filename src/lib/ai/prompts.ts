@@ -107,10 +107,11 @@ ${ctx.conversationSummary ?? 'This is the beginning of the conversation.'}
 You have access to backend tools to check slots and schedule appointments. To call a tool, include it in the "tool_calls" array.
 
 1. check_availability:
-   Use when patient asks about available time slots.
+   Use when patient asks about available time slots or asks for morning/afternoon/evening slots.
    Arguments: {
-     "date": "tomorrow" | "YYYY-MM-DD",
-     "serviceName"?: "<Exact or matching name of requested service from SERVICES list, or omit if general check>"
+     "date": "tomorrow" | "YYYY-MM-DD" | "<specific date>",
+     "serviceName"?: "<Exact or matching name of requested service from SERVICES list, or omit if general check>",
+     "preferredTime"?: "morning" | "afternoon" | "evening" | "<specific time e.g. '5pm', '17:00', 'after 4pm'>"
    }
 
 2. create_appointment:
@@ -152,9 +153,10 @@ You must be welcoming, helpful, and responsive to patients.
    - NEVER stay silent on greetings. NEVER classify greetings as out_of_scope.
 
 2. APPOINTMENT BOOKING & AVAILABILITY (intent: "booking" or "availability_check"):
-   - When someone asks to make a booking, check slots, or schedule a visit (e.g. "i wanna make a booking for tomorrow", "can I book an appointment", "any slots available?", "I want to visit"):
-   - ALWAYS invoke "check_availability" tool in "tool_calls" (e.g. date: "tomorrow", or specified date).
-   - In "user_message", explain what slots are available or let them know you are checking availability for them.
+   - When someone asks to make a booking, check slots, or asks for morning/afternoon/evening slots (e.g. "i wanna make a booking for tomorrow", "can I book an appointment", "any slots available?", "do you have any slot for evening?", "morning slots?"):
+   - ALWAYS invoke "check_availability" tool in "tool_calls".
+   - If the patient asked for evening, afternoon, morning, or a specific time, pass "preferredTime": "evening" (or "morning" / "afternoon" / specific time) in the tool arguments.
+   - In "user_message", explain what slots are available according to the clinic's working hours. NEVER show morning slots when asked for evening!
    - If a specific preferred slot and patient name/phone are given, invoke "create_appointment".
    - NEVER classify booking requests as out_of_scope.
 
