@@ -2027,41 +2027,35 @@ export default function OnboardingPage() {
                   gap: '1.5rem',
                   alignItems: 'center',
                 }}>
-                  {/* Visual UPI QR Card */}
+                  {/* Official Paytm UPI QR Card */}
                   <div style={{
                     background: 'white',
-                    borderRadius: '14px',
-                    padding: '1rem',
+                    borderRadius: '16px',
+                    padding: '0.75rem',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     textAlign: 'center',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+                    maxWidth: 220,
+                    margin: '0 auto',
                   }}>
-                    <div style={{ width: 140, height: 140, background: '#f8fafc', padding: 8, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg viewBox="0 0 100 100" width="124" height="124" fill="#0f172a">
-                        <rect x="0" y="0" width="30" height="30" rx="3" fill="#0f172a"/>
-                        <rect x="5" y="5" width="20" height="20" rx="2" fill="#ffffff"/>
-                        <rect x="9" y="9" width="12" height="12" rx="1" fill="#0f172a"/>
-                        <rect x="70" y="0" width="30" height="30" rx="3" fill="#0f172a"/>
-                        <rect x="75" y="5" width="20" height="20" rx="2" fill="#ffffff"/>
-                        <rect x="79" y="9" width="12" height="12" rx="1" fill="#0f172a"/>
-                        <rect x="0" y="70" width="30" height="30" rx="3" fill="#0f172a"/>
-                        <rect x="5" y="75" width="20" height="20" rx="2" fill="#ffffff"/>
-                        <rect x="9" y="79" width="12" height="12" rx="1" fill="#0f172a"/>
-                        <rect x="40" y="10" width="8" height="20" fill="#0f172a"/>
-                        <rect x="10" y="40" width="20" height="8" fill="#0f172a"/>
-                        <rect x="40" y="40" width="20" height="20" rx="2" fill="#0f172a"/>
-                        <rect x="65" y="45" width="25" height="8" fill="#0f172a"/>
-                        <rect x="45" y="70" width="10" height="25" fill="#0f172a"/>
-                        <rect x="70" y="70" width="25" height="25" rx="2" fill="#0f172a"/>
-                      </svg>
-                    </div>
+                    <img
+                      src="/upi-qr.png"
+                      alt="Paytm UPI QR Code for aviwasasleep@ptaxis"
+                      style={{
+                        width: '100%',
+                        maxWidth: 200,
+                        height: 'auto',
+                        borderRadius: '12px',
+                        display: 'block',
+                      }}
+                    />
                     <div style={{ color: '#0f172a', fontSize: '0.75rem', fontWeight: 700, marginTop: '0.5rem' }}>
-                      UPI Instant Payment
+                      Scan with any UPI App
                     </div>
                     <div style={{ color: '#64748b', fontSize: '0.65rem' }}>
-                      GPay • PhonePe • Paytm • BHIM
+                      Paytm • GPay • PhonePe • BHIM
                     </div>
                   </div>
 
