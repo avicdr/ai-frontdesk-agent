@@ -195,17 +195,22 @@ async function processIncomingMessage(payload: Record<string, unknown>): Promise
     }
   }
 
-  // 12. Load conversation history (last 20 messages)
+  // 12. Load conversation history (last 10 messages for focused context)
   const { data: history } = await admin
     .from('messages')
     .select('role, content')
     .eq('conversation_id', conversation.id)
     .order('created_at', { ascending: false })
-    .limit(20);
+    .limit(10);
 
-  const messages = (history ?? [])
-    .reverse()
-    .map((m: any) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+  const rawReversed = (history ?? []).reverse();
+  const messages = rawReversed.map((m: any, idx: number) => {
+    let content = m.content;
+    if (m.role === 'assistant' && idx < rawReversed.length - 2 && content.includes('Found available slots')) {
+      content = content.replace(/Found available slots[\s\S]*?(?=\n\n|$)/, '[Provided available slots list]');
+    }
+    return { role: m.role as 'user' | 'assistant', content };
+  });
 
   if (messages.length === 0 || messages[messages.length - 1].content !== incomingMessage.text || messages[messages.length - 1].role !== 'user') {
     messages.push({ role: 'user', content: incomingMessage.text });
