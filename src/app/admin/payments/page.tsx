@@ -275,8 +275,8 @@ export default function AdminPaymentsPage() {
               <th>Clinic</th>
               <th>Plan</th>
               <th>Amount</th>
-              <th>Provider / Mode</th>
-              <th>UTR Number</th>
+              <th>Payment Method</th>
+              <th>Reference / TxID</th>
               <th>Status</th>
               <th>Action</th>
             </tr>
@@ -295,38 +295,76 @@ export default function AdminPaymentsPage() {
                 </td>
               </tr>
             ) : (
-              payments.map((p: any) => (
-                <tr key={p.id}>
-                  <td style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{p.id.slice(0, 8)}...</td>
-                  <td style={{ fontWeight: 600 }}>{p.organizations?.name ?? 'Clinic'}</td>
-                  <td>{p.subscription_plans?.name ?? '—'}</td>
-                  <td style={{ fontWeight: 700, color: 'white' }}>₹{Number(p.amount_inr).toLocaleString('en-IN')}</td>
-                  <td>{p.provider}</td>
-                  <td style={{ fontFamily: 'monospace', color: 'hsl(var(--color-primary))', fontWeight: 600 }}>
-                    {p.utr_number || '—'}
-                  </td>
-                  <td>
-                    <span className={`badge badge-${p.status === 'success' || p.status === 'completed' ? 'success' : p.status === 'processing' ? 'warning' : 'muted'}`}>
-                      {p.status}
-                    </span>
-                  </td>
-                  <td>
-                    {p.status === 'processing' || p.status === 'pending' ? (
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
-                        disabled={approvingId === p.id}
-                        onClick={() => handleApprove(p.id)}
-                      >
-                        {approvingId === p.id ? 'Approving...' : '✓ Approve & Activate'}
-                      </button>
-                    ) : (
-                      <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>Verified</span>
-                    )}
-                  </td>
-                </tr>
-              ))
+              payments.map((p: any) => {
+                const isCrypto = p.currency === 'USD' || p.provider === 'crypto';
+                const explorerUrl = isCrypto && p.utr_number
+                  ? (p.utr_number.startsWith('0x')
+                      ? `https://etherscan.io/tx/${p.utr_number}`
+                      : `https://tronscan.org/#/transaction/${p.utr_number}`)
+                  : null;
+
+                return (
+                  <tr key={p.id}>
+                    <td style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{p.id.slice(0, 8)}...</td>
+                    <td style={{ fontWeight: 600 }}>{p.organizations?.name ?? 'Clinic'}</td>
+                    <td>{p.subscription_plans?.name ?? '—'}</td>
+                    <td style={{ fontWeight: 700, color: isCrypto ? '#4ade80' : 'white' }}>
+                      {isCrypto ? `$${p.metadata?.amount_usd || 100} USD` : `₹${Number(p.amount_inr).toLocaleString('en-IN')}`}
+                    </td>
+                    <td>
+                      {isCrypto ? (
+                        <span className="badge" style={{ background: 'hsla(263, 70%, 50%, 0.15)', color: '#c084fc', border: '1px solid rgba(192, 132, 252, 0.4)', fontSize: '0.75rem' }}>
+                          🪙 Crypto ({p.metadata?.crypto_network ? p.metadata.crypto_network.replace('_', ' ').toUpperCase() : 'USDT'})
+                        </span>
+                      ) : (
+                        <span className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>
+                          🇮🇳 UPI ({p.provider})
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ fontFamily: 'monospace', color: 'hsl(var(--color-primary))', fontWeight: 600, fontSize: '0.75rem' }}>
+                      {p.utr_number ? (
+                        explorerUrl ? (
+                          <a
+                            href={explorerUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#93c5fd', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                            title="View on Block Explorer"
+                          >
+                            <span>{p.utr_number.slice(0, 10)}...{p.utr_number.slice(-6)}</span>
+                            <span>↗</span>
+                          </a>
+                        ) : (
+                          p.utr_number
+                        )
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td>
+                      <span className={`badge badge-${p.status === 'success' || p.status === 'completed' ? 'success' : p.status === 'processing' ? 'warning' : 'muted'}`}>
+                        {p.status}
+                      </span>
+                    </td>
+                    <td>
+                      {p.status === 'processing' || p.status === 'pending' ? (
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
+                          disabled={approvingId === p.id}
+                          onClick={() => handleApprove(p.id)}
+                        >
+                          {approvingId === p.id ? 'Approving...' : isCrypto ? '✓ Verify Crypto & Activate' : '✓ Approve & Activate'}
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>Verified</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

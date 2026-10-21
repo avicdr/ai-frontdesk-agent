@@ -1,5 +1,5 @@
 // src/app/api/v1/billing/orders/route.ts
-// Create and list payment orders for subscriptions & admin verification
+// Create and list payment orders for subscriptions & admin verification (supports UPI and Crypto)
 
 import { NextRequest } from 'next/server';
 import { successResponse, Errors } from '@/lib/api/response';
@@ -12,6 +12,9 @@ import { isSuperAdminEmail } from '@/lib/security/admin';
 const CreateOrderSchema = z.object({
   organizationId: z.string().uuid().optional(),
   planId: z.string().min(1),
+  currency: z.enum(['INR', 'USD']).optional(),
+  provider: z.enum(['cashfree', 'manual', 'crypto']).optional(),
+  cryptoNetwork: z.string().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -36,8 +39,10 @@ export async function GET(request: NextRequest) {
           plan_id,
           provider,
           amount_inr,
+          currency,
           status,
           utr_number,
+          metadata,
           created_at,
           organizations (name),
           subscription_plans (name)
@@ -72,8 +77,10 @@ export async function GET(request: NextRequest) {
         plan_id,
         provider,
         amount_inr,
+        currency,
         status,
         utr_number,
+        metadata,
         created_at,
         subscription_plans (name)
       `)
@@ -99,7 +106,7 @@ export async function POST(request: NextRequest) {
       return Errors.validationError(parsed.error.flatten());
     }
 
-    const { organizationId, planId } = parsed.data;
+    const { organizationId, planId, currency, provider, cryptoNetwork } = parsed.data;
     let targetOrgId = organizationId;
     if (!targetOrgId) {
       const { data: membership } = await admin
@@ -126,7 +133,12 @@ export async function POST(request: NextRequest) {
       planId,
       tenant.organization.name,
       user.email ?? '',
-      ''
+      '',
+      {
+        currency,
+        provider,
+        cryptoNetwork,
+      }
     );
 
     if (!result.success) {

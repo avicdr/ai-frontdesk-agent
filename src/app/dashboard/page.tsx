@@ -3,6 +3,7 @@ import { requireServerUser } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { isSuperAdminEmail } from '@/lib/security/admin';
 import Link from 'next/link';
+import { PostOnboardingCryptoPrompt } from '@/components/dashboard/PostOnboardingCryptoPrompt';
 
 export const metadata = { title: 'Dashboard' };
 export const dynamic = 'force-dynamic';
@@ -119,6 +120,14 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      {/* International Crypto Payment Prompt (Shows after onboarding or if subscription unpaid) */}
+      <PostOnboardingCryptoPrompt
+        subscriptionStatus={subscription?.status}
+        orgCountry={(org as any)?.country}
+        orgTimezone={(org as any)?.timezone}
+        currentPlanSlug={(plan as any)?.slug}
+      />
+
       {/* Onboarding banner */}
       {!onboardingComplete && (
         <div style={{

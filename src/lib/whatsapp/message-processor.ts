@@ -21,6 +21,41 @@ export interface ProcessIncomingOptions {
   sendReply: (text: string) => Promise<{ success: boolean; messageId?: string; error?: string }>;
 }
 
+export function isBotAversionOrStopRequest(text: string): boolean {
+  if (!text) return false;
+  const lower = text.trim().toLowerCase();
+
+  // 1. Mentions of bot in annoying / questioning / stop context
+  const botMentions = /\b(bot\s*reply|isme\s*bhi\s*bot|ye\s*bhi\s*bot|bot\s*hai|tu\s*bot|ye\s*bot|is\s*this\s*(a\s*)?bot|are\s*you\s*(a\s*)?bot|chatting\s*with\s*(a\s*)?bot|talk(ing)?\s*to\s*(a\s*)?bot|waste.*bot|stop\s*bot|bot\s*band|bot\s*mat|no\s*bot|don'?t\s*want\s*(a\s*)?bot|not\s*(a\s*)?bot)\b/i;
+
+  // 2. Stop or don't reply commands
+  const stopCommands = /\b(stop\s*(replying|texting|messaging|bothering|it)|don'?t\s*reply|mat\s*bhejo|message\s*mat\s*karo|reply\s*mat\s*karo)\b/i;
+
+  // 3. Waste of time complaints
+  const wasteTime = /\b(waste\s*(of\s*)?(my\s*)?time|time\s*waste|samay\s*barbaad)\b/i;
+
+  // 4. Requests to talk to a human / real person
+  const humanRequests = /\b(talk\s*to\s*(a\s*)?(human|doctor|person|staff|someone|receptionist)|speak\s*(with|to)\s*(a\s*)?(human|doctor|person|staff)|connect.*(human|doctor|staff)|real\s*person|asli\s*insaan|human\s*please)\b/i;
+
+  return botMentions.test(lower) || stopCommands.test(lower) || wasteTime.test(lower) || humanRequests.test(lower);
+}
+
+export function isExplicitClinicAppointmentQuery(text: string): boolean {
+  if (!text) return false;
+  const lower = text.trim().toLowerCase();
+
+  const bookingAction =
+    /\b(book|booking|schedule|reschedule|cancel|reserve|get|take|need|want)\b.*\b(appointment|slot|visit|consultation|checkup)\b/i.test(lower) ||
+    /\b(appointment|slot)\b.*\b(book|booking|schedule|available|availability|free|timing|time)\b/i.test(lower);
+
+  const clinicInfo =
+    /\b(consultation|treatment|checkup|doctor|dr)\b.*\b(fee|fees|cost|price|charge|charges)\b/i.test(lower) ||
+    /\b(clinic|hospital)\b.*\b(address|location|timing|timings|hours|open|close)\b/i.test(lower) ||
+    /\b(when|what\s*time)\b.*\b(open|close|available|clinic)\b/i.test(lower);
+
+  return bookingAction || clinicInfo;
+}
+
 export function isClinicInquiryOrGreeting(text: string): boolean {
   if (!text) return false;
   const lower = text.trim().toLowerCase();
@@ -31,12 +66,12 @@ export function isClinicInquiryOrGreeting(text: string): boolean {
   }
 
   // Booking & Scheduling keywords
-  if (/\b(book|booking|appointment|appoint|slot|slots|reserve|reschedule|cancel|schedule|tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday|sunday|timing|timings|available|availability|free\s*time|time\s*slot)\b/i.test(lower)) {
+  if (/\b(book|booking|appointment|appoint|slot|slots|reserve|reschedule|cancel|schedule|timing|timings|availability|time\s*slot)\b/i.test(lower)) {
     return true;
   }
 
   // Clinic, services, pricing keywords
-  if (/\b(doctor|dr|consult|consultation|fees|fee|charge|charges|cost|price|pricing|offer|services|service|address|location|open|close|hours|treatment|checkup|test|report)\b/i.test(lower)) {
+  if (/\b(doctor|dr|consult|consultation|fees|fee|charge|charges|treatment|checkup)\b/i.test(lower)) {
     return true;
   }
 

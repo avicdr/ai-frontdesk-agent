@@ -22,32 +22,13 @@ const DEFAULT_SERVICES: ClinicServiceItem[] = getClinicTypeConfig('dental_clinic
   isBookable: s.isBookable !== false,
 }));
 
-const PLATFORM_UPI_VPA = process.env.NEXT_PUBLIC_PLATFORM_UPI_ID || process.env.NEXT_PUBLIC_UPI_VPA || 'aviwasasleep@ptaxis';
-
-const PRICING_PLANS = [
-  {
-    id: 'starter',
-    name: 'Starter Practice',
-    price: '₹999',
-    chats: '500 AI chats/mo',
-    features: ['WhatsApp Cloud API Integration', 'Operating Hours Logic', 'Gemini 1.5 Flash AI', 'Single Clinician'],
-  },
-  {
-    id: 'pro',
-    name: 'Pro Clinic (Recommended)',
-    price: '₹1,599',
-    chats: '2,000 AI chats/mo',
-    features: ['Google Calendar 2-Way Sync', 'OpenAI Auto-Fallback', 'Unlimited Bookings', 'Live Human Takeover Inbox'],
-    badge: 'Most Popular',
-  },
-  {
-    id: 'growth',
-    name: 'Growth & Multi-Doctor',
-    price: '₹2,999',
-    chats: '5,000 AI chats/mo',
-    features: ['Multi-Doctor Rosters', 'Custom AI Clinical Voice', 'Priority WhatsApp Webhooks', 'Dedicated Account Manager'],
-  },
-];
+import {
+  PRICING_PLANS,
+  CRYPTO_NETWORKS,
+  PLATFORM_UPI_VPA,
+  isInternationalClient,
+  CryptoNetworkOption,
+} from '@/lib/constants/billing';
 
 const POPULAR_DENTAL_PRESETS = [
   { name: 'Invisible Aligners Consultation', duration: 30, price: '1500' },
@@ -138,15 +119,42 @@ export default function OnboardingPage() {
   const [calendarName, setCalendarName] = useState<string | null>(null);
   const [isLiveGoogleConfigured, setIsLiveGoogleConfigured] = useState(false);
 
-  // Step 8: Plan & UPI
+  // Step 8: Plan & Payment (UPI for India, Crypto for International)
   const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'growth'>('pro');
+  const [isInternational, setIsInternational] = useState<boolean>(false);
   const [utrNumber, setUtrNumber] = useState('');
   const [copiedVpa, setCopiedVpa] = useState(false);
+  const [selectedCryptoNetwork, setSelectedCryptoNetwork] = useState<CryptoNetworkOption>(CRYPTO_NETWORKS[0]);
+  const [cryptoTxHash, setCryptoTxHash] = useState('');
+  const [copiedCryptoAddress, setCopiedCryptoAddress] = useState(false);
+  const [copiedCryptoAmount, setCopiedCryptoAmount] = useState(false);
 
-  // Initial load: Fetch existing onboarding state & calendar status
+  // Auto-detect international based on timezone selection
   useEffect(() => {
+    if (timezone) {
+      const isIntl = isInternationalClient(null, timezone);
+      setIsInternational(isIntl);
+    }
+  }, [timezone]);
+
+  // Initial load: Fetch existing onboarding state & calendar status & geo detection
+  useEffect(() => {
+    // Geo IP country check
+    fetch('/api/v1/geo')
+      .then(r => r.json())
+      .then(geo => {
+        if (geo?.data?.isInternational) {
+          setIsInternational(true);
+        }
+      })
+      .catch(() => {});
+
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
+      const urlPlan = params.get('plan');
+      if (urlPlan && ['starter', 'pro', 'growth'].includes(urlPlan)) {
+        setSelectedPlan(urlPlan as any);
+      }
       if (params.get('calendar_connected') === 'true') {
         setCalendarConnected(true);
       }
@@ -475,7 +483,45 @@ export default function OnboardingPage() {
         }),
       });
 
-      router.push('/dashboard?activated=true');
+      // 3. If payment proof was provided (UTR or Crypto TxID), create order and submit verification
+      const reference = isInternational ? cryptoTxHash : utrNumber;
+      let orderCreated = false;
+
+      if (reference && reference.trim()) {
+        try {
+          const orderRes = await fetch('/api/v1/billing/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              planId: selectedPlan,
+              currency: isInternational ? 'USD' : 'INR',
+              provider: isInternational ? 'crypto' : 'manual',
+              cryptoNetwork: isInternational ? selectedCryptoNetwork.id : undefined,
+            }),
+          });
+          const orderJson = await orderRes.json();
+          if (orderJson.data?.orderId) {
+            await fetch('/api/v1/billing/manual-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderId: orderJson.data.orderId,
+                utrNumber: reference.trim(),
+                cryptoNetwork: isInternational ? selectedCryptoNetwork.id : undefined,
+              }),
+            });
+            orderCreated = true;
+          }
+        } catch (payErr) {
+          console.error('Failed to submit onboarding payment reference:', payErr);
+        }
+      }
+
+      const redirectUrl = isInternational
+        ? `/dashboard?onboarding=complete&plan=${selectedPlan}${orderCreated ? '&payment_submitted=true' : '&require_crypto=true'}`
+        : `/dashboard?activated=true${orderCreated ? '&payment_submitted=true' : ''}`;
+
+      router.push(redirectUrl);
     } catch (err) {
       console.error(err);
       // Still navigate so user is never trapped
@@ -1709,20 +1755,70 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* STEP 8: Plan Selection & UPI Activation */}
+          {/* STEP 8: Plan Selection & Payment Activation (UPI for India, Crypto for International) */}
           {currentStep === 8 && (
             <div>
-              <div style={{ marginBottom: '1.75rem' }}>
-                <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>Step 8: Plan Selection & Instant UPI Activation</h2>
-                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
-                  Select your clinic’s subscription tier. Pay directly via UPI without Razorpay for instant activation.
-                </p>
+              <div style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>
+                    {isInternational ? 'Step 8: Plan Selection & Crypto Activation' : 'Step 8: Plan Selection & Instant UPI Activation'}
+                  </h2>
+                  <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
+                    {isInternational
+                      ? 'Select your clinic’s subscription tier. Pay via Web3 Crypto (USDT, USDC, BTC, ETH) with instant hash confirmation.'
+                      : 'Select your clinic’s subscription tier. Pay directly via UPI for instant activation.'}
+                  </p>
+                </div>
+
+                {/* Currency & Region Switcher */}
+                <div style={{
+                  display: 'inline-flex',
+                  background: 'hsl(var(--color-surface-2))',
+                  padding: '0.25rem',
+                  borderRadius: '9999px',
+                  border: '1px solid hsl(var(--color-border))',
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsInternational(false)}
+                    style={{
+                      padding: '0.35rem 0.85rem',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: !isInternational ? 700 : 500,
+                      background: !isInternational ? 'hsla(221, 83%, 58%, 0.2)' : 'transparent',
+                      color: !isInternational ? '#93c5fd' : 'hsl(var(--color-text-muted))',
+                      border: !isInternational ? '1px solid hsla(221, 83%, 58%, 0.4)' : 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    🇮🇳 India (INR • UPI)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsInternational(true)}
+                    style={{
+                      padding: '0.35rem 0.85rem',
+                      borderRadius: '9999px',
+                      fontSize: '0.75rem',
+                      fontWeight: isInternational ? 700 : 500,
+                      background: isInternational ? 'linear-gradient(135deg, hsla(263, 70%, 50%, 0.25), hsla(221, 83%, 58%, 0.25))' : 'transparent',
+                      color: isInternational ? '#c084fc' : 'hsl(var(--color-text-muted))',
+                      border: isInternational ? '1px solid rgba(192, 132, 252, 0.4)' : 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    🌐 International (USD • Crypto)
+                  </button>
+                </div>
               </div>
 
               {/* Plan Cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
                 {PRICING_PLANS.map(p => {
                   const isSelected = selectedPlan === p.id;
+                  const priceDisplay = isInternational ? p.priceUsdDisplay : p.priceInrDisplay;
+
                   return (
                     <div
                       key={p.id}
@@ -1730,14 +1826,18 @@ export default function OnboardingPage() {
                       style={{
                         padding: '1.75rem 1.5rem 1.5rem',
                         borderRadius: '16px',
-                        border: `2px solid ${isSelected ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))'}`,
-                        background: isSelected ? 'hsla(221, 83%, 58%, 0.1)' : 'hsl(var(--color-surface-2))',
+                        border: `2px solid ${isSelected ? (isInternational ? '#c084fc' : 'hsl(var(--color-primary))') : 'hsl(var(--color-border))'}`,
+                        background: isSelected
+                          ? (isInternational ? 'hsla(263, 70%, 50%, 0.12)' : 'hsla(221, 83%, 58%, 0.1)')
+                          : 'hsl(var(--color-surface-2))',
                         cursor: 'pointer',
                         position: 'relative',
                         overflow: 'visible',
                         marginTop: '0.75rem',
                         transition: 'all 0.2s ease',
-                        boxShadow: isSelected ? '0 0 24px hsla(221, 83%, 58%, 0.25)' : 'none',
+                        boxShadow: isSelected
+                          ? (isInternational ? '0 0 24px hsla(263, 70%, 50%, 0.25)' : '0 0 24px hsla(221, 83%, 58%, 0.25)')
+                          : 'none',
                       }}
                     >
                       {p.badge && (
@@ -1745,7 +1845,9 @@ export default function OnboardingPage() {
                           position: 'absolute',
                           top: -11,
                           right: 16,
-                          background: 'var(--gradient-brand)',
+                          background: isInternational
+                            ? 'linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(221 83% 58%) 100%)'
+                            : 'var(--gradient-brand)',
                           color: 'white',
                           fontSize: '0.68rem',
                           fontWeight: 700,
@@ -1760,10 +1862,10 @@ export default function OnboardingPage() {
                       )}
                       <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.35rem' }}>{p.name}</div>
                       <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f8fafc', marginBottom: '0.35rem' }}>
-                        {p.price}<span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', fontWeight: 500 }}>/mo</span>
+                        {priceDisplay}<span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', fontWeight: 500 }}>/mo</span>
                       </div>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'hsl(221 83% 70%)', marginBottom: '1rem' }}>
-                        {p.chats}
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: isInternational ? '#c084fc' : 'hsl(221 83% 70%)', marginBottom: '1rem' }}>
+                        {p.chatsDisplay}
                       </div>
                       <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
                         {p.features.map((f, i) => (
@@ -1771,106 +1873,279 @@ export default function OnboardingPage() {
                             <span style={{ color: '#4ade80' }}>✓</span> {f}
                           </li>
                         ))}
+                        {isInternational && (
+                          <li style={{ marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#c084fc' }}>
+                            <span>🪙</span> Pay via Crypto (USDT / USDC / BTC)
+                          </li>
+                        )}
                       </ul>
                     </div>
                   );
                 })}
               </div>
 
-              {/* UPI Instant Payment Card */}
-              <div style={{
-                background: 'hsl(var(--color-surface-2))',
-                borderRadius: '16px',
-                border: '1px solid hsl(var(--color-border))',
-                padding: 'clamp(1rem, 3vw, 1.75rem)',
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
-                gap: '1.5rem',
-                alignItems: 'center',
-              }}>
-                {/* Visual UPI QR Card */}
+              {/* PAYMENT CARD: Either Crypto (International) or UPI (Domestic India) */}
+              {isInternational ? (
+                /* International Crypto Gateway Card */
                 <div style={{
-                  background: 'white',
-                  borderRadius: '14px',
-                  padding: '1rem',
+                  background: 'hsl(var(--color-surface-2))',
+                  borderRadius: '16px',
+                  border: '1px solid hsla(263, 70%, 50%, 0.3)',
+                  padding: 'clamp(1rem, 3vw, 1.75rem)',
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
-                  textAlign: 'center',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                  gap: '1.25rem',
                 }}>
-                  {/* Crisp SVG QR Code Representation */}
-                  <div style={{ width: 140, height: 140, background: '#f8fafc', padding: 8, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg viewBox="0 0 100 100" width="124" height="124" fill="#0f172a">
-                      <rect x="0" y="0" width="30" height="30" rx="3" fill="#0f172a"/>
-                      <rect x="5" y="5" width="20" height="20" rx="2" fill="#ffffff"/>
-                      <rect x="9" y="9" width="12" height="12" rx="1" fill="#0f172a"/>
-                      <rect x="70" y="0" width="30" height="30" rx="3" fill="#0f172a"/>
-                      <rect x="75" y="5" width="20" height="20" rx="2" fill="#ffffff"/>
-                      <rect x="79" y="9" width="12" height="12" rx="1" fill="#0f172a"/>
-                      <rect x="0" y="70" width="30" height="30" rx="3" fill="#0f172a"/>
-                      <rect x="5" y="75" width="20" height="20" rx="2" fill="#ffffff"/>
-                      <rect x="9" y="79" width="12" height="12" rx="1" fill="#0f172a"/>
-                      <rect x="40" y="10" width="8" height="20" fill="#0f172a"/>
-                      <rect x="10" y="40" width="20" height="8" fill="#0f172a"/>
-                      <rect x="40" y="40" width="20" height="20" rx="2" fill="#0f172a"/>
-                      <rect x="65" y="45" width="25" height="8" fill="#0f172a"/>
-                      <rect x="45" y="70" width="10" height="25" fill="#0f172a"/>
-                      <rect x="70" y="70" width="25" height="25" rx="2" fill="#0f172a"/>
-                    </svg>
-                  </div>
-                  <div style={{ color: '#0f172a', fontSize: '0.75rem', fontWeight: 700, marginTop: '0.5rem' }}>
-                    UPI Instant Payment
-                  </div>
-                  <div style={{ color: '#64748b', fontSize: '0.65rem' }}>
-                    GPay • PhonePe • Paytm • BHIM
-                  </div>
-                </div>
-
-                {/* VPA Details & UTR Input */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{
-                    padding: '0.875rem 1rem',
-                    borderRadius: '10px',
-                    background: 'hsl(var(--color-surface))',
-                    border: '1px solid hsl(var(--color-border))',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}>
-                    <div>
-                      <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        Official Clinic UPI VPA:
-                      </div>
-                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#93c5fd', fontFamily: 'monospace' }}>
-                        {PLATFORM_UPI_VPA}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontSize: '1.5rem' }}>🪙</span>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '1rem', color: '#f8fafc' }}>
+                          International Crypto Payment Gateway
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
+                          Selected Tier: <strong style={{ color: '#c084fc' }}>{PRICING_PLANS.find(p => p.id === selectedPlan)?.name}</strong> — <strong style={{ color: '#4ade80' }}>{PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsdDisplay} USD</strong>
+                        </div>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleCopyVpa}
-                      className="btn btn-secondary btn-sm"
-                    >
-                      {copiedVpa ? '✓ Copied' : '📋 Copy VPA'}
-                    </button>
+
+                    <div style={{
+                      padding: '0.4rem 0.85rem',
+                      borderRadius: '8px',
+                      background: 'hsla(142, 71%, 45%, 0.12)',
+                      border: '1px solid hsla(142, 71%, 45%, 0.3)',
+                      color: '#4ade80',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                    }}>
+                      Amount: {PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsd} {selectedCryptoNetwork.symbol}
+                    </div>
                   </div>
 
-                  <div className="form-field">
-                    <label className="label">
-                      <span>🧾</span> 12-Digit Bank UTR / UPI Transaction Reference
-                    </label>
-                    <input
-                      className="input"
-                      value={utrNumber}
-                      onChange={e => setUtrNumber(e.target.value)}
-                      placeholder="e.g. 429104928104 (from your UPI receipt)"
-                    />
-                    <span className="form-hint">
-                      💡 Automated verification activates your AI receptionist within seconds of UTR submission.
-                    </span>
+                  {/* Network Tabs */}
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Select Network:
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem' }}>
+                      {CRYPTO_NETWORKS.map(net => {
+                        const isNetActive = selectedCryptoNetwork.id === net.id;
+                        return (
+                          <button
+                            key={net.id}
+                            type="button"
+                            onClick={() => setSelectedCryptoNetwork(net)}
+                            style={{
+                              padding: '0.5rem',
+                              borderRadius: '8px',
+                              background: isNetActive ? 'hsla(263, 70%, 50%, 0.25)' : 'hsl(var(--color-surface))',
+                              border: `1.5px solid ${isNetActive ? '#c084fc' : 'hsl(var(--color-border))'}`,
+                              color: isNetActive ? '#ffffff' : 'hsl(var(--color-text-secondary))',
+                              fontSize: '0.75rem',
+                              fontWeight: isNetActive ? 700 : 500,
+                              cursor: 'pointer',
+                              textAlign: 'center',
+                            }}
+                          >
+                            <div>{net.name}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* QR & Deposit Details */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
+                    gap: '1.25rem',
+                    alignItems: 'center',
+                    background: 'hsl(var(--color-surface))',
+                    padding: '1rem',
+                    borderRadius: '12px',
+                    border: '1px solid hsl(var(--color-border))',
+                  }}>
+                    {/* SVG QR */}
+                    <div style={{
+                      background: 'white',
+                      borderRadius: '10px',
+                      padding: '0.75rem',
+                      textAlign: 'center',
+                      width: 130,
+                      margin: '0 auto',
+                    }}>
+                      <div style={{ width: 110, height: 110, background: '#f8fafc', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg viewBox="0 0 100 100" width="100" height="100" fill="#0f172a">
+                          <rect x="0" y="0" width="28" height="28" rx="3" fill="#0f172a"/>
+                          <rect x="4" y="4" width="20" height="20" rx="2" fill="#ffffff"/>
+                          <rect x="8" y="8" width="12" height="12" rx="1" fill="#0f172a"/>
+                          <rect x="72" y="0" width="28" height="28" rx="3" fill="#0f172a"/>
+                          <rect x="76" y="4" width="20" height="20" rx="2" fill="#ffffff"/>
+                          <rect x="80" y="8" width="12" height="12" rx="1" fill="#0f172a"/>
+                          <rect x="0" y="72" width="28" height="28" rx="3" fill="#0f172a"/>
+                          <rect x="4" y="76" width="20" height="20" rx="2" fill="#ffffff"/>
+                          <rect x="8" y="80" width="12" height="12" rx="1" fill="#0f172a"/>
+                          <rect x="38" y="8" width="10" height="20" fill="#0f172a"/>
+                          <rect x="8" y="38" width="20" height="10" fill="#0f172a"/>
+                          <rect x="36" y="36" width="28" height="28" rx="2" fill="#0f172a"/>
+                          <rect x="70" y="42" width="22" height="10" fill="#0f172a"/>
+                          <rect x="42" y="72" width="12" height="22" fill="#0f172a"/>
+                          <rect x="72" y="72" width="22" height="22" rx="2" fill="#0f172a"/>
+                        </svg>
+                      </div>
+                      <div style={{ color: '#0f172a', fontSize: '0.68rem', fontWeight: 700, marginTop: '0.25rem' }}>
+                        {selectedCryptoNetwork.symbol} Deposit
+                      </div>
+                    </div>
+
+                    {/* Deposit Address Box & TxID input */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div>
+                        <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Official {selectedCryptoNetwork.name} Address:
+                        </div>
+                        <div style={{
+                          padding: '0.6rem 0.75rem',
+                          borderRadius: '8px',
+                          background: 'hsl(var(--color-surface-2))',
+                          border: '1px solid hsl(var(--color-border))',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '0.5rem',
+                          marginTop: '0.25rem',
+                        }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#93c5fd', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                            {selectedCryptoNetwork.address}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard?.writeText(selectedCryptoNetwork.address);
+                              setCopiedCryptoAddress(true);
+                              setTimeout(() => setCopiedCryptoAddress(false), 2000);
+                            }}
+                            className="btn btn-secondary btn-sm"
+                            style={{ flexShrink: 0, fontSize: '0.72rem', padding: '0.35rem 0.6rem' }}
+                          >
+                            {copiedCryptoAddress ? '✓ Copied' : '📋 Copy'}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="form-field" style={{ margin: 0 }}>
+                        <label className="label" style={{ fontSize: '0.8rem' }}>
+                          <span>🧾</span> Transaction Hash (TxID)
+                        </label>
+                        <input
+                          className="input"
+                          value={cryptoTxHash}
+                          onChange={e => setCryptoTxHash(e.target.value)}
+                          placeholder="e.g. 0x8f... or Tron TxID from your withdrawal receipt"
+                          style={{ fontFamily: 'monospace', fontSize: '0.825rem' }}
+                        />
+                        <span className="form-hint" style={{ fontSize: '0.7rem' }}>
+                          💡 Send {PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsd} {selectedCryptoNetwork.symbol} on {selectedCryptoNetwork.networkName} and paste your TxID here.
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                /* Domestic UPI Instant Payment Card */
+                <div style={{
+                  background: 'hsl(var(--color-surface-2))',
+                  borderRadius: '16px',
+                  border: '1px solid hsl(var(--color-border))',
+                  padding: 'clamp(1rem, 3vw, 1.75rem)',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
+                  gap: '1.5rem',
+                  alignItems: 'center',
+                }}>
+                  {/* Visual UPI QR Card */}
+                  <div style={{
+                    background: 'white',
+                    borderRadius: '14px',
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    textAlign: 'center',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                  }}>
+                    <div style={{ width: 140, height: 140, background: '#f8fafc', padding: 8, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg viewBox="0 0 100 100" width="124" height="124" fill="#0f172a">
+                        <rect x="0" y="0" width="30" height="30" rx="3" fill="#0f172a"/>
+                        <rect x="5" y="5" width="20" height="20" rx="2" fill="#ffffff"/>
+                        <rect x="9" y="9" width="12" height="12" rx="1" fill="#0f172a"/>
+                        <rect x="70" y="0" width="30" height="30" rx="3" fill="#0f172a"/>
+                        <rect x="75" y="5" width="20" height="20" rx="2" fill="#ffffff"/>
+                        <rect x="79" y="9" width="12" height="12" rx="1" fill="#0f172a"/>
+                        <rect x="0" y="70" width="30" height="30" rx="3" fill="#0f172a"/>
+                        <rect x="5" y="75" width="20" height="20" rx="2" fill="#ffffff"/>
+                        <rect x="9" y="79" width="12" height="12" rx="1" fill="#0f172a"/>
+                        <rect x="40" y="10" width="8" height="20" fill="#0f172a"/>
+                        <rect x="10" y="40" width="20" height="8" fill="#0f172a"/>
+                        <rect x="40" y="40" width="20" height="20" rx="2" fill="#0f172a"/>
+                        <rect x="65" y="45" width="25" height="8" fill="#0f172a"/>
+                        <rect x="45" y="70" width="10" height="25" fill="#0f172a"/>
+                        <rect x="70" y="70" width="25" height="25" rx="2" fill="#0f172a"/>
+                      </svg>
+                    </div>
+                    <div style={{ color: '#0f172a', fontSize: '0.75rem', fontWeight: 700, marginTop: '0.5rem' }}>
+                      UPI Instant Payment
+                    </div>
+                    <div style={{ color: '#64748b', fontSize: '0.65rem' }}>
+                      GPay • PhonePe • Paytm • BHIM
+                    </div>
+                  </div>
+
+                  {/* VPA Details & UTR Input */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{
+                      padding: '0.875rem 1rem',
+                      borderRadius: '10px',
+                      background: 'hsl(var(--color-surface))',
+                      border: '1px solid hsl(var(--color-border))',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Official Clinic UPI VPA:
+                        </div>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#93c5fd', fontFamily: 'monospace' }}>
+                          {PLATFORM_UPI_VPA}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyVpa}
+                        className="btn btn-secondary btn-sm"
+                      >
+                        {copiedVpa ? '✓ Copied' : '📋 Copy VPA'}
+                      </button>
+                    </div>
+
+                    <div className="form-field">
+                      <label className="label">
+                        <span>🧾</span> 12-Digit Bank UTR / UPI Transaction Reference
+                      </label>
+                      <input
+                        className="input"
+                        value={utrNumber}
+                        onChange={e => setUtrNumber(e.target.value)}
+                        placeholder="e.g. 429104928104 (from your UPI receipt)"
+                      />
+                      <span className="form-hint">
+                        💡 Automated verification activates your AI receptionist within seconds of UTR submission.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

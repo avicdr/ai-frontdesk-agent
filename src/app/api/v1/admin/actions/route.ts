@@ -68,12 +68,23 @@ export async function POST(request: NextRequest) {
 
       if (!order) return Errors.notFound('Order not found');
 
-      const txnId = `manual-${order.utr_number || Date.now()}-${Date.now().toString(36)}`;
+      const isCrypto = order.currency === 'USD' || order.provider === 'crypto';
+      const txnId = isCrypto
+        ? `crypto-${order.utr_number || Date.now()}-${Date.now().toString(36)}`
+        : `manual-${order.utr_number || Date.now()}-${Date.now().toString(36)}`;
+
       const activation = await activateSubscription(
         orderId,
         txnId,
-        'upi_manual',
-        { approvedBy: user.id, approvedAt: new Date().toISOString() }
+        isCrypto ? 'crypto' : 'upi_manual',
+        {
+          approvedBy: user.id,
+          approvedAt: new Date().toISOString(),
+          currency: order.currency || 'INR',
+          amountUsd: order.metadata?.amount_usd,
+          cryptoNetwork: order.metadata?.crypto_network,
+          txHash: order.utr_number,
+        }
       );
 
       if (!activation.success) {
@@ -84,13 +95,19 @@ export async function POST(request: NextRequest) {
         organization_id: order.organization_id,
         actor_type: 'super_admin',
         actor_id: user.id,
-        action: 'manual_payment_approved',
+        action: isCrypto ? 'crypto_payment_approved' : 'manual_payment_approved',
         entity_type: 'payment_order',
         entity_id: orderId,
-        new_state: { utr: order.utr_number, amount: order.amount_inr },
+        new_state: {
+          reference: order.utr_number,
+          currency: order.currency,
+          amount: order.currency === 'USD' ? (order.metadata?.amount_usd || 100) : order.amount_inr,
+        },
       });
 
-      return successResponse({ message: 'Payment approved and subscription activated!' });
+      return successResponse({
+        message: `${isCrypto ? 'Crypto' : 'UPI'} payment approved and subscription activated!`,
+      });
     }
 
     // 2. Reject manual payment

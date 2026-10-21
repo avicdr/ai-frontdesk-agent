@@ -1,15 +1,22 @@
 // src/app/api/v1/billing/manual-payment/route.ts
-// Handles submission of UPI UTR (Unique Transaction Reference) for manual approval
+// Handles submission of UPI UTR or Crypto Transaction Hash (TxID) for manual/crypto verification
 
 import { NextRequest } from 'next/server';
 import { successResponse, Errors } from '@/lib/api/response';
 import { requireServerUser, createSupabaseAdminClient } from '@/lib/supabase/server';
-import { submitManualUtr } from '@/lib/billing/service';
+import { submitManualPaymentProof } from '@/lib/billing/service';
 import { z } from 'zod';
 
 const ManualPaymentSchema = z.object({
   orderId: z.string().uuid(),
-  utrNumber: z.string().min(8).max(30),
+  // Accepts either utrNumber or txHash, length from 6 (short test/hash) to 128 (extended crypto tx hash)
+  utrNumber: z.string().min(6).max(128).optional(),
+  txHash: z.string().min(6).max(128).optional(),
+  cryptoNetwork: z.string().optional(),
+  senderWallet: z.string().optional(),
+}).refine(data => !!(data.utrNumber || data.txHash), {
+  message: 'Either utrNumber or txHash must be provided',
+  path: ['utrNumber'],
 });
 
 export async function POST(request: NextRequest) {
@@ -31,26 +38,35 @@ export async function POST(request: NextRequest) {
       return Errors.validationError(parsed.error.flatten());
     }
 
-    const { orderId, utrNumber } = parsed.data;
+    const { orderId, utrNumber, txHash, cryptoNetwork, senderWallet } = parsed.data;
+    const reference = (txHash || utrNumber)!.trim();
 
-    const res = await submitManualUtr(orderId, membership.organization_id, utrNumber);
+    const res = await submitManualPaymentProof(orderId, membership.organization_id, reference, {
+      cryptoNetwork,
+      senderWallet,
+    });
+
     if (!res.success) {
-      return Errors.badRequest(res.error || 'Failed to submit UTR');
+      return Errors.badRequest(res.error || 'Failed to submit payment verification reference');
     }
 
-    // Create an audit log and notification for admin review
+    // Create an audit log for admin review
     await admin.from('audit_logs').insert({
       organization_id: membership.organization_id,
       actor_type: 'user',
       actor_id: user.id,
-      action: 'manual_payment_submitted',
+      action: 'payment_proof_submitted',
       entity_type: 'payment_order',
       entity_id: orderId,
-      new_state: { utrNumber },
+      new_state: {
+        referenceNumber: reference,
+        cryptoNetwork: cryptoNetwork || null,
+        senderWallet: senderWallet || null,
+      },
     });
 
     return successResponse({
-      message: 'UTR submitted successfully. Your subscription will be activated upon admin verification.',
+      message: 'Payment reference submitted successfully. Your subscription will be activated upon verification.',
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown';

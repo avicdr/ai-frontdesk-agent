@@ -1,9 +1,11 @@
 'use client';
 
 // src/app/dashboard/billing/page.tsx
-// Clinic Billing & Usage Dashboard — Real plan details, quota meters, UPI renewal, UTR submission, payment history
+// Clinic Billing & Usage Dashboard — Plan details, quota meters, Crypto / UPI renewal, payment history
 
 import React, { useState, useEffect } from 'react';
+import { PRICING_PLANS, PLATFORM_UPI_VPA, isInternationalClient, getCryptoExplorerUrl } from '@/lib/constants/billing';
+import { CryptoPaymentWidget } from '@/components/billing/CryptoPaymentWidget';
 
 interface SubscriptionData {
   id: string;
@@ -33,6 +35,7 @@ interface PaymentOrderData {
   currency: string;
   status: string;
   utr_number: string | null;
+  metadata?: any;
   created_at: string;
   subscription_plans: {
     name: string;
@@ -42,10 +45,12 @@ interface PaymentOrderData {
 
 export default function BillingPage() {
   const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'growth'>('pro');
+  const [isInternational, setIsInternational] = useState<boolean>(false);
   const [utrNumber, setUtrNumber] = useState('');
   const [isSubmittingUtr, setIsSubmittingUtr] = useState(false);
-  const [utrSuccess, setUtrSuccess] = useState(false);
+  const [paymentSuccessMessage, setPaymentSuccessMessage] = useState<string | null>(null);
   const [showUpiModal, setShowUpiModal] = useState(false);
+  const [showCryptoModal, setShowCryptoModal] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -53,13 +58,18 @@ export default function BillingPage() {
   const [orders, setOrders] = useState<PaymentOrderData[]>([]);
   const [orgName, setOrgName] = useState<string>('');
 
-  const upiVpa = process.env.NEXT_PUBLIC_PLATFORM_UPI_ID || process.env.NEXT_PUBLIC_UPI_VPA || 'aviwasasleep@ptaxis';
+  const upiVpa = PLATFORM_UPI_VPA;
 
-  const plans = [
-    { id: 'starter', name: 'Starter Practice', price: '₹999', chatsQuota: 500, priceVal: 999 },
-    { id: 'pro', name: 'Pro Clinic (Recommended)', price: '₹1,599', chatsQuota: 2000, priceVal: 1599, popular: true },
-    { id: 'growth', name: 'Growth & Multi-Doctor', price: '₹2,999', chatsQuota: 5000, priceVal: 2999 },
-  ];
+  const currentPlans = PRICING_PLANS.map(p => ({
+    id: p.id,
+    name: p.name,
+    price: isInternational ? p.priceUsdDisplay : p.priceInrDisplay,
+    priceVal: isInternational ? p.priceUsd : p.priceInr,
+    chatsQuota: p.chatsQuota,
+    popular: p.id === 'pro',
+    description: p.description,
+    features: p.features,
+  }));
 
   const fetchBillingData = async () => {
     try {
@@ -71,6 +81,13 @@ export default function BillingPage() {
         if (json.data.organization?.name) {
           setOrgName(json.data.organization.name);
         }
+
+        // Detect if org is international
+        const orgCountry = json.data.organization?.country;
+        const orgTimezone = json.data.organization?.timezone;
+        const isIntl = isInternationalClient(orgCountry, orgTimezone);
+        setIsInternational(isIntl);
+
         if (json.data.subscription?.subscription_plans?.slug) {
           const currentSlug = json.data.subscription.subscription_plans.slug;
           if (['starter', 'pro', 'growth'].includes(currentSlug)) {
@@ -87,6 +104,16 @@ export default function BillingPage() {
 
   useEffect(() => {
     fetchBillingData();
+
+    // Check geo IP as fallback
+    fetch('/api/v1/geo')
+      .then(r => r.json())
+      .then(geo => {
+        if (geo?.data?.isInternational) {
+          setIsInternational(true);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleUtrSubmit = async (e: React.FormEvent) => {
@@ -102,6 +129,8 @@ export default function BillingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           planId: selectedPlan,
+          currency: 'INR',
+          provider: 'manual',
         }),
       });
       const orderJson = await orderRes.json();
@@ -125,7 +154,7 @@ export default function BillingPage() {
         throw new Error(payJson.error?.message || 'Failed to submit UTR reference.');
       }
 
-      setUtrSuccess(true);
+      setPaymentSuccessMessage('UPI payment reference submitted successfully! Pending verification.');
       setShowUpiModal(false);
       setUtrNumber('');
       fetchBillingData();
@@ -142,7 +171,18 @@ export default function BillingPage() {
       case 'active':
         return <span className="badge badge-success">Active Plan</span>;
       case 'trial':
-        return <span className="badge badge-info" style={{ background: 'hsl(199 89% 48% / 0.15)', color: 'hsl(199 89% 65%)', border: '1px solid hsl(199 89% 48% / 0.3)' }}>Free Trial</span>;
+        return (
+          <span
+            className="badge badge-info"
+            style={{
+              background: 'hsl(199 89% 48% / 0.15)',
+              color: 'hsl(199 89% 65%)',
+              border: '1px solid hsl(199 89% 48% / 0.3)',
+            }}
+          >
+            Free Trial
+          </span>
+        );
       case 'grace_period':
         return <span className="badge badge-warning">Grace Period</span>;
       case 'expired':
@@ -152,9 +192,15 @@ export default function BillingPage() {
     }
   };
 
-  const quotaLimit = subscription?.subscription_plans?.included_ai_requests || subscription?.subscription_plans?.included_inbound_messages || 500;
+  const quotaLimit =
+    subscription?.subscription_plans?.included_ai_requests ||
+    subscription?.subscription_plans?.included_inbound_messages ||
+    500;
   const quotaUsed = Math.max(subscription?.ai_requests_used || 0, subscription?.messages_used_inbound || 0);
   const quotaPercent = quotaLimit > 0 ? Math.min(100, Math.round((quotaUsed / quotaLimit) * 100)) : 0;
+
+  const selectedPlanDetails = currentPlans.find(p => p.id === selectedPlan) || currentPlans[1];
+  const selectedPlanConfig = PRICING_PLANS.find(p => p.id === selectedPlan) || PRICING_PLANS[1];
 
   return (
     <div>
@@ -165,20 +211,82 @@ export default function BillingPage() {
             💳 Subscription, Usage & Billing
           </h1>
           <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>
-            {orgName ? `${orgName} • ` : ''}Monitor real-time AI usage quotas, renew monthly via UPI, or upgrade your plan.
+            {orgName ? `${orgName} • ` : ''}
+            {isInternational
+              ? 'International client billing via Web3 Crypto (USDT, USDC, BTC, ETH).'
+              : 'Domestic client billing via Instant UPI.'}
           </p>
         </div>
 
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => setShowUpiModal(true)}
-        >
-          ⚡ Renew / Upgrade Subscription (UPI)
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {/* Currency Switcher */}
+          <div style={{
+            display: 'inline-flex',
+            background: 'hsl(var(--color-surface-2))',
+            padding: '0.2rem',
+            borderRadius: '9999px',
+            border: '1px solid hsl(var(--color-border))',
+          }}>
+            <button
+              type="button"
+              onClick={() => setIsInternational(false)}
+              style={{
+                padding: '0.3rem 0.75rem',
+                borderRadius: '9999px',
+                fontSize: '0.72rem',
+                fontWeight: !isInternational ? 700 : 500,
+                background: !isInternational ? 'hsla(221, 83%, 58%, 0.2)' : 'transparent',
+                color: !isInternational ? '#93c5fd' : 'hsl(var(--color-text-muted))',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              🇮🇳 INR (UPI)
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsInternational(true)}
+              style={{
+                padding: '0.3rem 0.75rem',
+                borderRadius: '9999px',
+                fontSize: '0.72rem',
+                fontWeight: isInternational ? 700 : 500,
+                background: isInternational ? 'linear-gradient(135deg, hsla(263, 70%, 50%, 0.25), hsla(221, 83%, 58%, 0.25))' : 'transparent',
+                color: isInternational ? '#c084fc' : 'hsl(var(--color-text-muted))',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              🌐 USD (Crypto)
+            </button>
+          </div>
+
+          {isInternational ? (
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{
+                background: 'linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(221 83% 58%) 100%)',
+                boxShadow: '0 4px 14px hsla(263, 70%, 50%, 0.35)',
+                fontWeight: 700,
+              }}
+              onClick={() => setShowCryptoModal(true)}
+            >
+              🪙 Pay & Renew via Crypto
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setShowUpiModal(true)}
+            >
+              ⚡ Renew / Upgrade Subscription (UPI)
+            </button>
+          )}
+        </div>
       </div>
 
-      {utrSuccess && (
+      {paymentSuccessMessage && (
         <div style={{
           marginBottom: '1.5rem',
           padding: '1rem 1.25rem',
@@ -193,7 +301,7 @@ export default function BillingPage() {
           gap: '0.5rem',
         }}>
           <span>✅</span>
-          <span>Payment reference (UTR) submitted successfully! Pending admin verification and activation.</span>
+          <span>{paymentSuccessMessage}</span>
         </div>
       )}
 
@@ -213,7 +321,9 @@ export default function BillingPage() {
                   subscription.status === 'trial' ? (
                     `3-Day Free Trial • ${subscription.daysRemaining != null ? `${subscription.daysRemaining} days left` : 'Active'}`
                   ) : (
-                    `₹${(subscription.subscription_plans?.price_inr || 0).toLocaleString('en-IN')} / month • ${subscription.expires_at ? `Renews on ${new Date(subscription.expires_at).toLocaleDateString('en-IN')}` : 'Monthly'}`
+                    isInternational
+                      ? `${selectedPlanConfig.priceUsdDisplay} USD / month • ${subscription.expires_at ? `Renews on ${new Date(subscription.expires_at).toLocaleDateString()}` : 'Monthly'}`
+                      : `₹${(subscription.subscription_plans?.price_inr || 0).toLocaleString('en-IN')} / month • ${subscription.expires_at ? `Renews on ${new Date(subscription.expires_at).toLocaleDateString('en-IN')}` : 'Monthly'}`
                   )
                 ) : (
                   'Choose a plan below to activate your AI front desk'
@@ -268,7 +378,7 @@ export default function BillingPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: 'hsl(var(--color-text-muted))' }}>Estimated AI Cost this Month</span>
               <span style={{ fontWeight: 700, color: 'hsl(142 71% 45%)' }}>
-                ₹{Number(subscription?.ai_cost_used_inr ?? 0).toFixed(2)}
+                {isInternational ? `$${(Number(subscription?.ai_cost_used_inr ?? 0) / 85).toFixed(2)} USD` : `₹${Number(subscription?.ai_cost_used_inr ?? 0).toFixed(2)}`}
               </span>
             </div>
           </div>
@@ -276,9 +386,11 @@ export default function BillingPage() {
       </div>
 
       {/* Available Plans */}
-      <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem' }}>Upgrade Your Front Desk</h2>
+      <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem' }}>
+        {isInternational ? 'International Subscription Tiers (Crypto)' : 'Upgrade Your Front Desk (UPI)'}
+      </h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
-        {plans.map(p => {
+        {currentPlans.map(p => {
           const isCurrentPlan = subscription?.subscription_plans?.slug === p.id;
           return (
             <div
@@ -288,7 +400,7 @@ export default function BillingPage() {
                 padding: '1.75rem 1.5rem 1.5rem',
                 border: isCurrentPlan
                   ? '2px solid hsl(var(--color-primary))'
-                  : (p.popular ? '1px solid hsl(var(--color-primary) / 0.5)' : '1px solid hsl(var(--color-border))'),
+                  : (p.popular ? (isInternational ? '1.5px solid rgba(192, 132, 252, 0.6)' : '1px solid hsl(var(--color-primary) / 0.5)') : '1px solid hsl(var(--color-border))'),
                 position: 'relative',
                 overflow: 'visible',
                 marginTop: '0.75rem',
@@ -299,7 +411,7 @@ export default function BillingPage() {
                   position: 'absolute',
                   top: -12,
                   right: 20,
-                  background: 'var(--gradient-brand)',
+                  background: isInternational ? 'linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(221 83% 58%) 100%)' : 'var(--gradient-brand)',
                   color: 'white',
                   fontSize: '0.72rem',
                   fontWeight: 700,
@@ -313,22 +425,33 @@ export default function BillingPage() {
                 </span>
               )}
               <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{p.name}</div>
-              <div style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem', color: isInternational ? '#c084fc' : undefined }}>
                 {p.price}<span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>/month</span>
               </div>
-              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-primary))', fontWeight: 600, marginBottom: '1rem' }}>
+              <div style={{ fontSize: '0.8rem', color: isInternational ? '#93c5fd' : 'hsl(var(--color-primary))', fontWeight: 600, marginBottom: '1rem' }}>
                 {p.chatsQuota.toLocaleString()} AI Patient Conversations
               </div>
               <button
                 type="button"
                 className={`btn ${isCurrentPlan ? 'btn-secondary' : 'btn-primary'}`}
-                style={{ width: '100%' }}
+                style={{
+                  width: '100%',
+                  background: isInternational && !isCurrentPlan
+                    ? 'linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(221 83% 58%) 100%)'
+                    : undefined,
+                }}
                 onClick={() => {
                   setSelectedPlan(p.id as any);
-                  setShowUpiModal(true);
+                  if (isInternational) {
+                    setShowCryptoModal(true);
+                  } else {
+                    setShowUpiModal(true);
+                  }
                 }}
               >
-                {isCurrentPlan ? `Renew ${p.name}` : `Switch to ${p.name}`}
+                {isInternational
+                  ? (isCurrentPlan ? `Renew via Crypto (${p.price})` : `Pay with Crypto (${p.price})`)
+                  : (isCurrentPlan ? `Renew ${p.name}` : `Switch to ${p.name}`)}
               </button>
             </div>
           );
@@ -346,7 +469,7 @@ export default function BillingPage() {
               <th>Amount</th>
               <th>Method</th>
               <th>Status</th>
-              <th>Receipt</th>
+              <th>Reference / TxID</th>
             </tr>
           </thead>
           <tbody>
@@ -356,55 +479,91 @@ export default function BillingPage() {
                   <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>🧾</div>
                   <div style={{ fontWeight: 600 }}>No payment transactions yet</div>
                   <div style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                    When you renew or subscribe via UPI/Cashfree, your payments and receipts will be logged here.
+                    When you renew or subscribe via Crypto or UPI, your payments and receipts will be logged here.
                   </div>
                 </td>
               </tr>
             ) : (
-              orders.map(order => (
-                <tr key={order.id}>
-                  <td>{new Date(order.created_at).toLocaleDateString('en-IN')}</td>
-                  <td style={{ fontWeight: 600 }}>
-                    {order.subscription_plans?.name || 'Clinic Subscription'}
-                  </td>
-                  <td style={{ fontWeight: 700 }}>
-                    ₹{Number(order.amount_inr).toLocaleString('en-IN')}
-                  </td>
-                  <td>
-                    {order.provider === 'manual'
-                      ? (order.utr_number ? `UPI (UTR: ${order.utr_number})` : 'UPI Manual')
-                      : 'Cashfree / Online'}
-                  </td>
-                  <td>
-                    <span className={`badge ${
-                      order.status === 'completed'
-                        ? 'badge-success'
-                        : order.status === 'pending' || order.status === 'processing'
-                        ? 'badge-warning'
-                        : 'badge-danger'
-                    }`}>
-                      {order.status}
-                    </span>
-                  </td>
-                  <td>
-                    {order.status === 'completed' ? (
-                      <button
-                        type="button"
-                        style={{ background: 'none', border: 'none', color: 'hsl(var(--color-primary))', fontSize: '0.75rem', cursor: 'pointer' }}
-                        onClick={() => alert(`Receipt #${order.id.slice(0, 8)}: Verified and active.`)}
-                      >
-                        View Receipt
-                      </button>
-                    ) : (
-                      <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.75rem' }}>—</span>
-                    )}
-                  </td>
-                </tr>
-              ))
+              orders.map(order => {
+                const isOrderCrypto = order.currency === 'USD' || order.provider === 'crypto';
+                const explorerUrl = isOrderCrypto && order.utr_number
+                  ? getCryptoExplorerUrl(order.metadata?.crypto_network || 'usdt_trc20', order.utr_number)
+                  : null;
+
+                return (
+                  <tr key={order.id}>
+                    <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                    <td style={{ fontWeight: 600 }}>
+                      {order.subscription_plans?.name || 'Clinic Subscription'}
+                    </td>
+                    <td style={{ fontWeight: 700, color: isOrderCrypto ? '#4ade80' : 'white' }}>
+                      {isOrderCrypto
+                        ? `$${order.metadata?.amount_usd || 100} USD`
+                        : `₹${Number(order.amount_inr).toLocaleString('en-IN')}`}
+                    </td>
+                    <td>
+                      {isOrderCrypto ? (
+                        <span className="badge" style={{ background: 'hsla(263, 70%, 50%, 0.15)', color: '#c084fc', border: '1px solid rgba(192, 132, 252, 0.4)', fontSize: '0.75rem' }}>
+                          🪙 Crypto ({order.metadata?.crypto_network?.toUpperCase() || 'USDT'})
+                        </span>
+                      ) : (
+                        <span className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>
+                          🇮🇳 UPI
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <span className={`badge ${
+                        order.status === 'completed' || order.status === 'success'
+                          ? 'badge-success'
+                          : order.status === 'pending' || order.status === 'processing'
+                          ? 'badge-warning'
+                          : 'badge-danger'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td>
+                      {order.utr_number ? (
+                        explorerUrl ? (
+                          <a
+                            href={explorerUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#93c5fd', textDecoration: 'underline', fontFamily: 'monospace', fontSize: '0.75rem' }}
+                            title="Verify on Blockchain Explorer"
+                          >
+                            {order.utr_number.slice(0, 8)}...{order.utr_number.slice(-6)} ↗
+                          </a>
+                        ) : (
+                          <span style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{order.utr_number}</span>
+                        )
+                      ) : (
+                        <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.75rem' }}>—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Crypto Payment Modal */}
+      {showCryptoModal && (
+        <CryptoPaymentWidget
+          planId={selectedPlan}
+          planName={selectedPlanDetails.name}
+          amountUsd={selectedPlanConfig.priceUsd}
+          onSuccess={() => {
+            setPaymentSuccessMessage('Crypto transaction hash submitted! Your plan will activate upon network confirmation.');
+            setShowCryptoModal(false);
+            fetchBillingData();
+          }}
+          onCancel={() => setShowCryptoModal(false)}
+        />
+      )}
 
       {/* UPI QR & Manual UTR Modal */}
       {showUpiModal && (
@@ -435,8 +594,8 @@ export default function BillingPage() {
 
             <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
               <div style={{
-                width: 160,
-                height: 160,
+                width: 140,
+                height: 140,
                 margin: '0 auto 1rem auto',
                 background: 'white',
                 borderRadius: '12px',
@@ -447,13 +606,29 @@ export default function BillingPage() {
                 fontWeight: 800,
                 fontSize: '0.8rem',
               }}>
-                UPI QR CODE
+                <svg viewBox="0 0 100 100" width="120" height="120" fill="#0f172a">
+                  <rect x="0" y="0" width="30" height="30" rx="3" fill="#0f172a"/>
+                  <rect x="5" y="5" width="20" height="20" rx="2" fill="#ffffff"/>
+                  <rect x="9" y="9" width="12" height="12" rx="1" fill="#0f172a"/>
+                  <rect x="70" y="0" width="30" height="30" rx="3" fill="#0f172a"/>
+                  <rect x="75" y="5" width="20" height="20" rx="2" fill="#ffffff"/>
+                  <rect x="79" y="9" width="12" height="12" rx="1" fill="#0f172a"/>
+                  <rect x="0" y="70" width="30" height="30" rx="3" fill="#0f172a"/>
+                  <rect x="5" y="75" width="20" height="20" rx="2" fill="#ffffff"/>
+                  <rect x="9" y="79" width="12" height="12" rx="1" fill="#0f172a"/>
+                  <rect x="40" y="10" width="8" height="20" fill="#0f172a"/>
+                  <rect x="10" y="40" width="20" height="8" fill="#0f172a"/>
+                  <rect x="40" y="40" width="20" height="20" rx="2" fill="#0f172a"/>
+                  <rect x="65" y="45" width="25" height="8" fill="#0f172a"/>
+                  <rect x="45" y="70" width="10" height="25" fill="#0f172a"/>
+                  <rect x="70" y="70" width="25" height="25" rx="2" fill="#0f172a"/>
+                </svg>
               </div>
               <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white' }}>
-                {plans.find(p => p.id === selectedPlan)?.price || '₹1,599'}
+                {PRICING_PLANS.find(p => p.id === selectedPlan)?.priceInrDisplay || '₹1,599'}
               </div>
               <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'hsl(var(--color-primary))', marginTop: '0.25rem' }}>
-                {plans.find(p => p.id === selectedPlan)?.name || 'Pro Clinic'}
+                {PRICING_PLANS.find(p => p.id === selectedPlan)?.name || 'Pro Clinic'}
               </div>
               <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.25rem' }}>
                 VPA: <span style={{ color: 'hsl(var(--color-primary))', fontWeight: 700 }}>{upiVpa}</span>

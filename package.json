@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test tests/unit/core.test.ts"
+    "test": "tsx --test tests/unit/core.test.ts tests/unit/crypto-billing.test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

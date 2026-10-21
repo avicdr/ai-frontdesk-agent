@@ -5,10 +5,17 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { nanoid } from 'nanoid';
 import { addMonths, endOfMonth, setDate } from 'date-fns';
+import { CRYPTO_NETWORKS, PRICING_PLANS, PLATFORM_UPI_VPA, CryptoNetworkOption } from '@/lib/constants/billing';
 
 const CASHFREE_BASE_URL = process.env.PAYMENT_PROVIDER_ENV === 'production'
   ? 'https://api.cashfree.com/pg'
   : 'https://sandbox.cashfree.com/pg';
+
+export interface CreatePaymentOrderOptions {
+  currency?: 'INR' | 'USD';
+  provider?: 'cashfree' | 'manual' | 'crypto';
+  cryptoNetwork?: string;
+}
 
 // ============================================================
 // Create a payment order
@@ -18,22 +25,27 @@ export async function createPaymentOrder(
   planId: string,
   organizationName: string,
   customerEmail: string,
-  customerPhone: string
+  customerPhone: string,
+  options?: CreatePaymentOrderOptions
 ): Promise<{
   success: boolean;
   orderId?: string;
   paymentUrl?: string;
   upiId?: string;
+  currency?: 'INR' | 'USD';
   amount?: number;
+  cryptoNetworks?: CryptoNetworkOption[];
+  selectedNetwork?: CryptoNetworkOption;
   error?: string;
 }> {
   const admin = createSupabaseAdminClient();
+  const isUsd = options?.currency === 'USD' || options?.provider === 'crypto';
 
   // Get plan details (support both UUID and slug)
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(planId);
   const planQuery = admin
     .from('subscription_plans')
-    .select('id, price_inr, name')
+    .select('id, price_inr, name, slug')
     .eq('is_active', true);
 
   const { data: plan } = await (isUuid ? planQuery.eq('id', planId) : planQuery.eq('slug', planId)).maybeSingle();
@@ -42,8 +54,18 @@ export async function createPaymentOrder(
     return { success: false, error: 'Plan not found or not active.' };
   }
 
+  // Determine pricing based on currency (INR vs USD)
+  const planSlug = (plan.slug || 'pro').toLowerCase();
+  const pricingConfig = PRICING_PLANS.find(p => p.id === planSlug) || PRICING_PLANS[1];
+  const finalCurrency: 'INR' | 'USD' = isUsd ? 'USD' : 'INR';
+  const finalAmount = isUsd ? pricingConfig.priceUsd : plan.price_inr;
+
   const idempotencyKey = `order:${organizationId}:${plan.id}:${Date.now()}`;
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  // Crypto network setup if international / crypto
+  const networkId = options?.cryptoNetwork || 'usdt_trc20';
+  const selectedNetwork = CRYPTO_NETWORKS.find(n => n.id === networkId) || CRYPTO_NETWORKS[0];
 
   // Create payment order record first
   const { data: order, error: orderError } = await admin
@@ -51,21 +73,41 @@ export async function createPaymentOrder(
     .insert({
       organization_id: organizationId,
       plan_id: plan.id,
-      provider: process.env.PAYMENT_PROVIDER ?? 'manual',
-      amount_inr: plan.price_inr,
-      currency: 'INR',
+      provider: isUsd ? 'crypto' : (process.env.PAYMENT_PROVIDER ?? 'manual'),
+      amount_inr: isUsd ? Math.round(finalAmount * 85) : plan.price_inr,
+      currency: finalCurrency,
       status: 'pending',
       idempotency_key: idempotencyKey,
       expires_at: expiresAt.toISOString(),
+      metadata: {
+        currency: finalCurrency,
+        amount_usd: isUsd ? finalAmount : null,
+        crypto_network: isUsd ? selectedNetwork.id : null,
+        crypto_address: isUsd ? selectedNetwork.address : null,
+        crypto_symbol: isUsd ? selectedNetwork.symbol : null,
+      },
     })
     .select('id')
     .single();
 
   if (orderError || !order) {
+    console.error('Order creation error:', orderError);
     return { success: false, error: 'Unable to create payment order.' };
   }
 
-  // Try Cashfree integration if configured
+  // If USD / Crypto, return crypto payment gateway info immediately
+  if (isUsd) {
+    return {
+      success: true,
+      orderId: order.id,
+      currency: 'USD',
+      amount: finalAmount,
+      cryptoNetworks: CRYPTO_NETWORKS,
+      selectedNetwork,
+    };
+  }
+
+  // Try Cashfree integration if configured for INR
   if (
     process.env.PAYMENT_PROVIDER === 'cashfree' &&
     process.env.CASHFREE_APP_ID &&
@@ -95,6 +137,7 @@ export async function createPaymentOrder(
         success: true,
         orderId: order.id,
         paymentUrl: cfOrder.payment_url,
+        currency: 'INR',
         amount: plan.price_inr,
       };
     } catch (err) {
@@ -107,10 +150,12 @@ export async function createPaymentOrder(
   return {
     success: true,
     orderId: order.id,
-    upiId: process.env.PLATFORM_UPI_ID,
+    upiId: PLATFORM_UPI_VPA,
+    currency: 'INR',
     amount: plan.price_inr,
   };
 }
+
 
 // ============================================================
 // Cashfree API (Sandbox/Production)
@@ -322,20 +367,47 @@ export async function activateSubscription(
 }
 
 // ============================================================
-// Submit manual UTR number (pending admin approval)
+// Submit manual payment reference (UPI UTR or Crypto Tx Hash)
 // ============================================================
-export async function submitManualUtr(
+export async function submitManualPaymentProof(
   orderId: string,
   organizationId: string,
-  utrNumber: string
+  referenceNumber: string,
+  options?: {
+    cryptoNetwork?: string;
+    senderWallet?: string;
+  }
 ): Promise<{ success: boolean; error?: string }> {
   const admin = createSupabaseAdminClient();
+
+  // Fetch current order to preserve/augment metadata
+  const { data: order } = await admin
+    .from('payment_orders')
+    .select('metadata, currency, provider')
+    .eq('id', orderId)
+    .single();
+
+  const isCrypto = order?.currency === 'USD' || order?.provider === 'crypto';
+  const updatedMetadata = {
+    ...(order?.metadata || {}),
+    reference_number: referenceNumber,
+    ...(isCrypto ? {
+      tx_hash: referenceNumber,
+      crypto_network: options?.cryptoNetwork || order?.metadata?.crypto_network || 'usdt_trc20',
+      sender_wallet: options?.senderWallet || null,
+      submitted_at: new Date().toISOString(),
+    } : {
+      utr_number: referenceNumber,
+      submitted_at: new Date().toISOString(),
+    }),
+  };
 
   const { error } = await admin
     .from('payment_orders')
     .update({
-      utr_number: utrNumber,
+      utr_number: referenceNumber,
       status: 'processing',
+      metadata: updatedMetadata,
       updated_at: new Date().toISOString(),
     })
     .eq('id', orderId)
@@ -343,10 +415,24 @@ export async function submitManualUtr(
     .eq('status', 'pending');
 
   if (error) {
+    console.error('Failed to update payment order proof:', error);
     return { success: false, error: 'Unable to update payment order.' };
   }
 
   return { success: true };
+}
+
+// Backward-compatible alias
+export async function submitManualUtr(
+  orderId: string,
+  organizationId: string,
+  utrNumber: string,
+  options?: {
+    cryptoNetwork?: string;
+    senderWallet?: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  return submitManualPaymentProof(orderId, organizationId, utrNumber, options);
 }
 
 // ============================================================

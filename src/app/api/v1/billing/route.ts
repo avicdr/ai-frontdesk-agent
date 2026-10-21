@@ -1,5 +1,5 @@
 // src/app/api/v1/billing/route.ts
-// Clinic billing overview: real subscription status, quota usage, and payment transaction history
+// Clinic billing overview: real subscription status, quota usage, and payment transaction history (supports UPI and Crypto)
 
 import { NextRequest } from 'next/server';
 import { successResponse, Errors } from '@/lib/api/response';
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     // 2. Fetch subscription, plans, and payment orders in parallel
     const [orgRes, subRes, ordersRes] = await Promise.all([
-      admin.from('organizations').select('id, name, slug, status').eq('id', orgId).maybeSingle(),
+      admin.from('organizations').select('id, name, slug, status, country, timezone').eq('id', orgId).maybeSingle(),
       admin
         .from('subscriptions')
         .select(`
@@ -62,6 +62,7 @@ export async function GET(request: NextRequest) {
           currency,
           status,
           utr_number,
+          metadata,
           created_at,
           subscription_plans (
             name,

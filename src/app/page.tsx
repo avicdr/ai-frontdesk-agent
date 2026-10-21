@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LandingNavbar } from '@/components/navigation/LandingNavbar';
+import { LandingPricing } from '@/components/landing/LandingPricing';
 
 export const metadata: Metadata = {
   title: 'AI Front Desk — AI Receptionist for Dental Clinics & Appointment Businesses',
@@ -29,9 +30,9 @@ const features = [
     description: 'Each clinic gets its own isolated environment, configuration, knowledge base, and conversation history.',
   },
   {
-    icon: '💳',
-    title: 'Simple UPI Payments',
-    description: 'Monthly subscriptions via UPI. No complicated payment setup — start in minutes.',
+    icon: '🪙',
+    title: 'UPI & Global Crypto Payments',
+    description: 'Instant UPI in India and Web3 Crypto (USDT, USDC, BTC, ETH) for international clients. Start in minutes.',
   },
   {
     icon: '🛡️',
@@ -296,88 +297,7 @@ export default function LandingPage() {
       </section>
 
       {/* ============ PRICING ============ */}
-      <section id="pricing" style={{ padding: 'clamp(3.5rem, 8vw, 6rem) clamp(1rem, 4vw, 2rem)', maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 3rem)', marginBottom: '0.75rem' }}>
-            Simple, Transparent Pricing
-          </h2>
-          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: 'clamp(0.9rem, 2vw, 1.1rem)' }}>
-            Monthly subscriptions via UPI. Cancel anytime.
-          </p>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-          gap: '1.25rem',
-          alignItems: 'stretch',
-        }}>
-          {plans.map(plan => (
-            <div
-              key={plan.name}
-              className={plan.highlighted ? 'card glow-border' : 'card'}
-              style={{
-                padding: 'clamp(1.5rem, 4vw, 2.25rem) clamp(1.25rem, 3vw, 2rem) 1.75rem',
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'visible',
-                marginTop: '0.75rem',
-              }}
-            >
-              {plan.highlighted && (
-                <div
-                  className="badge badge-info"
-                  style={{
-                    position: 'absolute',
-                    top: '-13px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    whiteSpace: 'nowrap',
-                    zIndex: 10,
-                    boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
-                    padding: '0.3rem 0.9rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                  }}
-                >
-                  ⭐ Most Popular
-                </div>
-              )}
-              <div style={{ marginBottom: '1.25rem' }}>
-                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.25rem' }}>{plan.name}</h3>
-                <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.8rem', marginBottom: '1rem' }}>{plan.description}</p>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-                  <span style={{ fontSize: '2.25rem', fontWeight: 900, letterSpacing: '-0.04em', fontFamily: 'Plus Jakarta Sans, sans-serif' }} className={plan.highlighted ? 'text-gradient' : ''}>{plan.price}</span>
-                  <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>{plan.period}</span>
-                </div>
-              </div>
-
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1.75rem', flex: 1 }}>
-                {plan.features.map(f => (
-                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>
-                    <span style={{ color: 'hsl(142, 71%, 55%)', flexShrink: 0, marginTop: '0.1rem' }}>✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                href="/register"
-                className={plan.highlighted ? 'btn btn-primary' : 'btn btn-secondary'}
-                style={{ textAlign: 'center' }}
-              >
-                {plan.cta}
-              </Link>
-            </div>
-          ))}
-        </div>
-
-        <p style={{ textAlign: 'center', marginTop: '2rem', color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>
-          All plans include a 3-day free trial. No credit card required to start.
-          UPI payments accepted.
-        </p>
-      </section>
+      <LandingPricing />
 
       {/* ============ CTA ============ */}
       <section style={{
