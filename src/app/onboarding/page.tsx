@@ -1929,35 +1929,30 @@ export default function OnboardingPage() {
                     borderRadius: '12px',
                     border: '1px solid hsl(var(--color-border))',
                   }}>
-                    {/* SVG QR */}
+                    {/* Real Crypto QR Image */}
                     <div style={{
                       background: 'white',
-                      borderRadius: '10px',
+                      borderRadius: '12px',
                       padding: '0.75rem',
                       textAlign: 'center',
                       width: 130,
                       margin: '0 auto',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
                     }}>
                       <div style={{ width: 110, height: 110, background: '#f8fafc', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg viewBox="0 0 100 100" width="100" height="100" fill="#0f172a">
-                          <rect x="0" y="0" width="28" height="28" rx="3" fill="#0f172a"/>
-                          <rect x="4" y="4" width="20" height="20" rx="2" fill="#ffffff"/>
-                          <rect x="8" y="8" width="12" height="12" rx="1" fill="#0f172a"/>
-                          <rect x="72" y="0" width="28" height="28" rx="3" fill="#0f172a"/>
-                          <rect x="76" y="4" width="20" height="20" rx="2" fill="#ffffff"/>
-                          <rect x="80" y="8" width="12" height="12" rx="1" fill="#0f172a"/>
-                          <rect x="0" y="72" width="28" height="28" rx="3" fill="#0f172a"/>
-                          <rect x="4" y="76" width="20" height="20" rx="2" fill="#ffffff"/>
-                          <rect x="8" y="80" width="12" height="12" rx="1" fill="#0f172a"/>
-                          <rect x="38" y="8" width="10" height="20" fill="#0f172a"/>
-                          <rect x="8" y="38" width="20" height="10" fill="#0f172a"/>
-                          <rect x="36" y="36" width="28" height="28" rx="2" fill="#0f172a"/>
-                          <rect x="70" y="42" width="22" height="10" fill="#0f172a"/>
-                          <rect x="42" y="72" width="12" height="22" fill="#0f172a"/>
-                          <rect x="72" y="72" width="22" height="22" rx="2" fill="#0f172a"/>
-                        </svg>
+                        <img
+                          src={selectedCryptoNetwork.qrImagePath}
+                          alt={`${selectedCryptoNetwork.name} Deposit QR`}
+                          style={{
+                            width: 102,
+                            height: 102,
+                            objectFit: 'contain',
+                            borderRadius: '4px',
+                            display: 'block',
+                          }}
+                        />
                       </div>
-                      <div style={{ color: '#0f172a', fontSize: '0.68rem', fontWeight: 700, marginTop: '0.25rem' }}>
+                      <div style={{ color: '#0f172a', fontSize: '0.68rem', fontWeight: 700, marginTop: '0.35rem' }}>
                         {selectedCryptoNetwork.symbol} Deposit
                       </div>
                     </div>

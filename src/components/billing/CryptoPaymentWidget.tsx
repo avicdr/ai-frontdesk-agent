@@ -251,25 +251,20 @@ export function CryptoPaymentWidget({
               textAlign: 'center',
               boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
               margin: '0 auto',
+              maxWidth: 160,
             }}>
-              <div style={{ width: 130, height: 130, background: '#f8fafc', padding: 6, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg viewBox="0 0 100 100" width="118" height="118" fill="#0f172a">
-                  <rect x="0" y="0" width="28" height="28" rx="3" fill="#0f172a"/>
-                  <rect x="4" y="4" width="20" height="20" rx="2" fill="#ffffff"/>
-                  <rect x="8" y="8" width="12" height="12" rx="1" fill="#0f172a"/>
-                  <rect x="72" y="0" width="28" height="28" rx="3" fill="#0f172a"/>
-                  <rect x="76" y="4" width="20" height="20" rx="2" fill="#ffffff"/>
-                  <rect x="80" y="8" width="12" height="12" rx="1" fill="#0f172a"/>
-                  <rect x="0" y="72" width="28" height="28" rx="3" fill="#0f172a"/>
-                  <rect x="4" y="76" width="20" height="20" rx="2" fill="#ffffff"/>
-                  <rect x="8" y="80" width="12" height="12" rx="1" fill="#0f172a"/>
-                  <rect x="38" y="8" width="10" height="20" fill="#0f172a"/>
-                  <rect x="8" y="38" width="20" height="10" fill="#0f172a"/>
-                  <rect x="36" y="36" width="28" height="28" rx="2" fill="#0f172a"/>
-                  <rect x="70" y="42" width="22" height="10" fill="#0f172a"/>
-                  <rect x="42" y="72" width="12" height="22" fill="#0f172a"/>
-                  <rect x="72" y="72" width="22" height="22" rx="2" fill="#0f172a"/>
-                </svg>
+              <div style={{ width: 130, height: 130, background: '#f8fafc', padding: 4, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img
+                  src={selectedNetwork.qrImagePath}
+                  alt={`${selectedNetwork.name} Deposit QR`}
+                  style={{
+                    width: 122,
+                    height: 122,
+                    objectFit: 'contain',
+                    borderRadius: '4px',
+                    display: 'block',
+                  }}
+                />
               </div>
               <div style={{ color: '#0f172a', fontSize: '0.72rem', fontWeight: 700, marginTop: '0.4rem' }}>
                 {selectedNetwork.symbol} Deposit

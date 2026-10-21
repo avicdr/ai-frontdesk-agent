@@ -93,6 +93,7 @@ export interface CryptoNetworkOption {
   symbol: string;
   networkName: string;
   address: string;
+  qrImagePath: string;
   explorerTxBaseUrl: string;
   recommended?: boolean;
   memoOrTagRequired?: boolean;
@@ -105,7 +106,8 @@ export const CRYPTO_NETWORKS: CryptoNetworkOption[] = [
     name: 'USDT (TRC-20)',
     symbol: 'USDT',
     networkName: 'TRON Network',
-    address: process.env.NEXT_PUBLIC_CRYPTO_USDT_TRC20_ADDRESS || 'TG3XX5ExBkPp9nzdajDZGeTSHgLnTnn5A1',
+    address: process.env.NEXT_PUBLIC_CRYPTO_USDT_TRC20_ADDRESS || 'TXNJHRA162tdaWXyxxeAKiQFbxbVjbPYqv',
+    qrImagePath: '/crypto/usdt-trc20-qr.png',
     explorerTxBaseUrl: 'https://tronscan.org/#/transaction/',
     recommended: true,
     instructions: 'Send exact USDT amount on the TRON (TRC-20) network. Lowest network fees & fastest confirmation.',
@@ -115,7 +117,8 @@ export const CRYPTO_NETWORKS: CryptoNetworkOption[] = [
     name: 'USDT (ERC-20)',
     symbol: 'USDT',
     networkName: 'Ethereum Mainnet',
-    address: process.env.NEXT_PUBLIC_CRYPTO_USDT_ERC20_ADDRESS || '0x71C836e641Ac8093E114a8069a5a7FeDF804797B',
+    address: process.env.NEXT_PUBLIC_CRYPTO_USDT_ERC20_ADDRESS || '0x2ade95F507c75C86f22c97427361DE49dfE60Ffd',
+    qrImagePath: '/crypto/usdt-erc20-qr.png',
     explorerTxBaseUrl: 'https://etherscan.io/tx/',
     instructions: 'Send exact USDT amount on Ethereum network (ERC-20). Please ensure sufficient gas for the transfer.',
   },
@@ -124,7 +127,8 @@ export const CRYPTO_NETWORKS: CryptoNetworkOption[] = [
     name: 'USDC (Polygon)',
     symbol: 'USDC',
     networkName: 'Polygon POS',
-    address: process.env.NEXT_PUBLIC_CRYPTO_USDC_POLYGON_ADDRESS || '0x71C836e641Ac8093E114a8069a5a7FeDF804797B',
+    address: process.env.NEXT_PUBLIC_CRYPTO_USDC_POLYGON_ADDRESS || '0x2ade95F507c75C86f22c97427361DE49dfE60Ffd',
+    qrImagePath: '/crypto/usdc-polygon-qr.png',
     explorerTxBaseUrl: 'https://polygonscan.com/tx/',
     instructions: 'Send exact USDC amount on the Polygon network (low transaction gas fee).',
   },
@@ -133,7 +137,8 @@ export const CRYPTO_NETWORKS: CryptoNetworkOption[] = [
     name: 'ETH (Ethereum)',
     symbol: 'ETH',
     networkName: 'Ethereum Mainnet',
-    address: process.env.NEXT_PUBLIC_CRYPTO_ETH_ADDRESS || '0x71C836e641Ac8093E114a8069a5a7FeDF804797B',
+    address: process.env.NEXT_PUBLIC_CRYPTO_ETH_ADDRESS || '0x2ade95F507c75C86f22c97427361DE49dfE60Ffd',
+    qrImagePath: '/crypto/eth-qr.png',
     explorerTxBaseUrl: 'https://etherscan.io/tx/',
     instructions: 'Send equivalent ETH to our Ethereum deposit address.',
   },
@@ -142,7 +147,8 @@ export const CRYPTO_NETWORKS: CryptoNetworkOption[] = [
     name: 'Bitcoin (BTC)',
     symbol: 'BTC',
     networkName: 'Bitcoin Native',
-    address: process.env.NEXT_PUBLIC_CRYPTO_BTC_ADDRESS || 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    address: process.env.NEXT_PUBLIC_CRYPTO_BTC_ADDRESS || 'bc1qnup4m5thpp3nja582cql4yngunzcx0h3ekny2f',
+    qrImagePath: '/crypto/btc-qr.png',
     explorerTxBaseUrl: 'https://mempool.space/tx/',
     instructions: 'Send equivalent BTC to our Native SegWit Bitcoin address. Usually takes 1–3 network confirmations.',
   },

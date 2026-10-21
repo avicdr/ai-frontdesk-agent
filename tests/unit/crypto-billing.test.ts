@@ -54,18 +54,30 @@ describe('International Crypto Billing & Pricing Tiers', () => {
     const trc20 = CRYPTO_NETWORKS.find(n => n.id === 'usdt_trc20');
     const erc20 = CRYPTO_NETWORKS.find(n => n.id === 'usdt_erc20');
     const polygon = CRYPTO_NETWORKS.find(n => n.id === 'usdc_polygon');
+    const eth = CRYPTO_NETWORKS.find(n => n.id === 'eth');
     const btc = CRYPTO_NETWORKS.find(n => n.id === 'btc');
 
     assert.ok(trc20);
     assert.ok(erc20);
     assert.ok(polygon);
+    assert.ok(eth);
     assert.ok(btc);
 
     assert.equal(trc20.symbol, 'USDT');
-    assert.ok(trc20.address.length > 10);
-    assert.ok(erc20.address.startsWith('0x'));
-    assert.ok(polygon.address.startsWith('0x'));
-    assert.ok(btc.address.startsWith('bc1'));
+    assert.equal(trc20.address, 'TXNJHRA162tdaWXyxxeAKiQFbxbVjbPYqv');
+    assert.equal(trc20.qrImagePath, '/crypto/usdt-trc20-qr.png');
+
+    assert.equal(erc20.address, '0x2ade95F507c75C86f22c97427361DE49dfE60Ffd');
+    assert.equal(erc20.qrImagePath, '/crypto/usdt-erc20-qr.png');
+
+    assert.equal(polygon.address, '0x2ade95F507c75C86f22c97427361DE49dfE60Ffd');
+    assert.equal(polygon.qrImagePath, '/crypto/usdc-polygon-qr.png');
+
+    assert.equal(eth.address, '0x2ade95F507c75C86f22c97427361DE49dfE60Ffd');
+    assert.equal(eth.qrImagePath, '/crypto/eth-qr.png');
+
+    assert.equal(btc.address, 'bc1qnup4m5thpp3nja582cql4yngunzcx0h3ekny2f');
+    assert.equal(btc.qrImagePath, '/crypto/btc-qr.png');
   });
 
   it('should generate valid blockchain explorer links for TxIDs', () => {
