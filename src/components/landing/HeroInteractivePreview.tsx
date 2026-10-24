@@ -50,7 +50,7 @@ export function HeroInteractivePreview() {
         style={{
           position: 'absolute',
           top: '-16px',
-          left: '-24px',
+          left: '24px',
           zIndex: 10,
           background: 'var(--color-surface-elevated)',
           border: '1px solid var(--color-border-amber)',
@@ -89,8 +89,8 @@ export function HeroInteractivePreview() {
         className="hide-on-mobile"
         style={{
           position: 'absolute',
-          bottom: '24px',
-          right: '-24px',
+          bottom: '-16px',
+          right: '24px',
           zIndex: 10,
           background: 'var(--color-surface-elevated)',
           border: '1px solid var(--color-border-standard)',
@@ -381,13 +381,18 @@ export function HeroInteractivePreview() {
             </span>
           </div>
 
-          <a
-            href="/register"
-            className="btn btn-primary btn-sm"
-            style={{ fontSize: '0.8rem', padding: '0.42rem 0.95rem' }}
-          >
-            Deploy For Your Clinic →
-          </a>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            fontSize: '0.75rem',
+            color: 'var(--color-success)',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 500,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#63C7A2', display: 'inline-block' }} />
+            2-Way Google Sync Active
+          </div>
         </div>
       </div>
     </div>
