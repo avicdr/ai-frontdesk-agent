@@ -69,7 +69,7 @@ export function getAppBaseUrl(request?: NextRequest | Request | null): string {
 
   // 5. Hardcoded production fallback for this deployment
   if (process.env.NODE_ENV === 'production') {
-    return 'https://ai-frontdesk-agent.onrender.com';
+    return 'https://frontdesk.arenova.in';
   }
 
   return 'http://localhost:3000';

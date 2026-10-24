@@ -813,27 +813,54 @@ export async function autoResumeAllActiveBaileysSessions(): Promise<void> {
   }
 }
 
-// Keep-alive heartbeat: ping external URL every 10 minutes to prevent Render free-tier idle spin down
+// Keep-alive heartbeat: ping URL every 10 minutes to prevent Render free-tier idle spin down
 const KEEP_ALIVE_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes (Render spins down at 15 mins)
 const globalKeepAlive = globalThis as unknown as { __renderKeepAliveTimer?: NodeJS.Timeout };
 
+function getKeepAliveTargetUrls(): string[] {
+  const urls: string[] = [];
+
+  // 1. Local loopback ping (always succeeds within container, zero external latency/routing)
+  const port = process.env.PORT || '3000';
+  urls.push(`http://127.0.0.1:${port}/api/health`);
+
+  // 2. Custom domain (https://frontdesk.arenova.in) or NEXT_PUBLIC_APP_URL
+  const customAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://frontdesk.arenova.in';
+  if (customAppUrl && !customAppUrl.includes('onrender.com')) {
+    urls.push(`${customAppUrl.replace(/\/$/, '')}/api/health`);
+  }
+
+  // 3. Render external URL (only if valid and not a blocked onrender.com subdomain)
+  if (process.env.RENDER_EXTERNAL_URL && !process.env.RENDER_EXTERNAL_URL.includes('onrender.com')) {
+    urls.push(`${process.env.RENDER_EXTERNAL_URL.replace(/\/$/, '')}/api/health`);
+  }
+
+  return urls;
+}
+
 function initRenderKeepAlive() {
   if (globalKeepAlive.__renderKeepAliveTimer) return;
-  const targetUrl = process.env.RENDER_EXTERNAL_URL
-    ? `${process.env.RENDER_EXTERNAL_URL}/api/health`
-    : (process.env.NODE_ENV === 'production' ? 'https://ai-frontdesk-agent.onrender.com/api/health' : null);
 
-  if (!targetUrl) return;
+  const targetUrls = getKeepAliveTargetUrls();
+  if (targetUrls.length === 0) return;
 
   globalKeepAlive.__renderKeepAliveTimer = setInterval(async () => {
-    try {
-      const res = await fetch(targetUrl, {
-        method: 'HEAD',
-        headers: { 'user-agent': 'ai-front-desk-keepalive' },
-      });
-      console.log(`[KeepAlive] Heartbeat ping to ${targetUrl} returned ${res.status}`);
-    } catch (err: any) {
-      console.warn('[KeepAlive] Heartbeat ping error:', err?.message || err);
+    for (const targetUrl of targetUrls) {
+      try {
+        const res = await fetch(targetUrl, {
+          method: 'GET',
+          headers: { 'user-agent': 'ai-front-desk-keepalive' },
+        });
+        if (res.ok) {
+          console.log(`[KeepAlive] Heartbeat ping to ${targetUrl} succeeded (${res.status})`);
+          break; // One successful ping is sufficient to keep server warm
+        } else {
+          console.warn(`[KeepAlive] Heartbeat ping to ${targetUrl} returned ${res.status}`);
+        }
+      } catch (err: any) {
+        // Silently continue to next fallback URL if local or external ping fails
+        console.warn(`[KeepAlive] Heartbeat ping to ${targetUrl} failed:`, err?.message || err);
+      }
     }
   }, KEEP_ALIVE_INTERVAL_MS);
 }
