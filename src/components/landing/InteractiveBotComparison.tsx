@@ -507,9 +507,9 @@ export function InteractiveBotComparison() {
                       maxWidth: '90%',
                       padding: '0.8rem 1.05rem',
                       borderRadius: '16px 16px 16px 4px',
-                      background: reply.status === 'lost' ? 'rgba(232, 75, 44, 0.12)' : 'var(--color-surface-secondary)',
+                      background: reply.status === 'lost' ? 'rgba(232, 75, 44, 0.10)' : 'var(--color-surface-secondary)',
                       border: reply.status === 'lost' ? '1px solid rgba(232, 75, 44, 0.35)' : '1px solid var(--color-border-subtle)',
-                      color: reply.status === 'lost' ? 'var(--color-flame)' : 'var(--color-text-muted)',
+                      color: reply.status === 'lost' ? 'var(--color-flame)' : 'var(--color-text-primary)',
                       fontSize: '0.825rem',
                       lineHeight: 1.55,
                       whiteSpace: 'pre-line',
@@ -553,9 +553,12 @@ export function InteractiveBotComparison() {
           {/* Executive Summary Card */}
           <div className="card" style={{
             padding: '1.5rem',
-            background: isWithAi ? 'linear-gradient(135deg, rgba(23, 22, 20, 0.95), rgba(28, 25, 22, 0.95))' : 'rgba(23, 22, 20, 0.95)',
-            border: isWithAi ? '1px solid var(--color-border-amber)' : '1px solid var(--color-border-subtle)',
+            background: isWithAi
+              ? 'linear-gradient(135deg, var(--color-surface-elevated), var(--color-surface-secondary))'
+              : 'var(--color-surface-elevated)',
+            border: isWithAi ? '1px solid var(--color-border-amber)' : '1px solid rgba(232, 75, 44, 0.3)',
             borderRadius: '16px',
+            boxShadow: 'var(--shadow-card)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
               <span style={{ fontSize: '1.25rem' }}>{isWithAi ? '💎' : '⚠️'}</span>

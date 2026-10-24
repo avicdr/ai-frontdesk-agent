@@ -273,20 +273,20 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-12">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#F3F0E8]/08 pb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[var(--color-border-subtle)] pb-6">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#E84B2C] shadow-[0_0_8px_#E84B2C]" />
-            <span className="text-[11px] font-mono tracking-widest text-[#E87A38] uppercase">
+            <span className="w-2 h-2 rounded-full bg-[#E84B2C] shadow-[0_0_8px_#E84B2C]" />
+            <span className="text-[11px] font-mono tracking-widest text-[#E87A38] uppercase font-semibold">
               Identity &amp; Access Governance
             </span>
           </div>
-          <h1 className="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-[#F3F0E8] flex items-center gap-2">
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text-primary)] flex items-center gap-2">
             <span>Users &amp; Staff Console</span>
           </h1>
-          <p className="text-sm text-[#9E9B93] mt-1">
+          <p className="text-sm text-[var(--color-text-muted)] mt-1">
             Global directory of clinic owners, reception staff, and platform super-administrators.
           </p>
         </div>
@@ -294,15 +294,15 @@ export default function AdminUsersPage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="btn btn-secondary text-xs"
+            className="btn btn-secondary text-xs font-mono"
             onClick={fetchUsers}
             disabled={loading}
           >
-            🔄 Refresh
+            {loading ? 'Refreshing...' : '🔄 Refresh'}
           </button>
           <button
             type="button"
-            className="btn btn-primary text-xs"
+            className="btn btn-primary text-xs font-medium"
             onClick={() => setShowAddModal(true)}
           >
             + Create New User
@@ -334,29 +334,34 @@ export default function AdminUsersPage() {
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div className="card p-4">
-          <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Total Accounts</div>
-          <div className="font-mono text-2xl font-bold text-[#F3F0E8] mt-1">{stats.total}</div>
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Total Accounts</div>
+          <div className="font-mono text-2xl font-bold text-[var(--color-text-primary)] mt-1">{stats.total}</div>
         </div>
 
-        <div className="card p-4 border-[#D4AF37]/30 bg-[#171614]">
-          <div className="text-[10px] font-mono uppercase text-[#D4AF37]">Super Admins</div>
+        <div className="card p-4 border-[#D4AF37]/35 bg-[var(--color-surface-elevated)] shadow-[0_0_14px_rgba(212,175,55,0.08)]">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[#D4AF37] font-semibold flex items-center justify-between">
+            <span>Super Admins</span>
+            <span>👑</span>
+          </div>
           <div className="font-mono text-2xl font-bold text-[#D4AF37] mt-1">{stats.superAdmins}</div>
         </div>
 
         <div className="card p-4">
-          <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Clinic Owners</div>
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Clinic Owners</div>
           <div className="font-mono text-2xl font-bold text-[#E87A38] mt-1">{stats.owners}</div>
         </div>
 
         <div className="card p-4">
-          <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Clinic Staff</div>
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Clinic Staff</div>
           <div className="font-mono text-2xl font-bold text-[#63C7A2] mt-1">{stats.staff}</div>
         </div>
 
-        <div className="card p-4">
-          <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Pending Onboarding</div>
+        <div className={`card p-4 transition-all ${
+          stats.unassigned > 0 ? 'border-[#E84B2C]/40 bg-[#E84B2C]/05' : ''
+        }`}>
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Pending Onboarding</div>
           <div className={`font-mono text-2xl font-bold mt-1 ${
-            stats.unassigned > 0 ? 'text-[#E84B2C]' : 'text-[#9E9B93]'
+            stats.unassigned > 0 ? 'text-[#E84B2C]' : 'text-[var(--color-text-muted)]'
           }`}>
             {stats.unassigned}
           </div>
@@ -364,43 +369,82 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="card p-4 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+      <div className="card p-4 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
         <div className="relative flex-1 max-w-md">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[#9E9B93]">
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-[var(--color-text-muted)]">
             🔍
           </span>
           <input
             type="text"
-            className="input pl-8 text-xs w-full"
+            className="input text-xs w-full"
+            style={{ paddingLeft: '2.25rem' }}
             placeholder="Search by name, email, phone, or clinic slug..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
-        {/* Role Pills */}
-        <div className="flex gap-1.5 flex-wrap">
+        {/* Role Pills (Fixed styling) */}
+        <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {[
-            { id: 'all', label: `All (${users.length})` },
-            { id: 'super_admin', label: `Super Admin (${stats.superAdmins})` },
-            { id: 'owner', label: `Owners (${stats.owners})` },
-            { id: 'staff', label: `Staff (${stats.staff})` },
-            { id: 'no_clinic', label: `No Clinic (${stats.unassigned})` },
-            { id: 'banned', label: `Banned (${stats.banned})` },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setRoleFilter(tab.id as any)}
-              className={`px-3 py-1.5 rounded-full text-xs font-mono transition-all ${
-                roleFilter === tab.id
-                  ? 'bg-[#E84B2C] text-[#F3F0E8] shadow-[0_0_8px_rgba(232,75,44,0.4)]'
-                  : 'bg-[#111110] text-[#9E9B93] border border-[#F3F0E8]/08 hover:border-[#F3F0E8]/16'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+            { id: 'all', name: 'All', count: users.length },
+            { id: 'super_admin', name: 'Super Admin', count: stats.superAdmins },
+            { id: 'owner', name: 'Owners', count: stats.owners },
+            { id: 'staff', name: 'Staff', count: stats.staff },
+            { id: 'no_clinic', name: 'No Clinic', count: stats.unassigned },
+            { id: 'banned', name: 'Banned', count: stats.banned },
+          ].map(tab => {
+            const isActive = roleFilter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setRoleFilter(tab.id as any)}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.75rem',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  background: isActive
+                    ? 'linear-gradient(135deg, #E84B2C, #C86938)'
+                    : 'var(--color-surface-secondary, #1C1916)',
+                  color: isActive ? '#FFFFFF' : 'var(--color-text-muted, #9E9B93)',
+                  border: isActive
+                    ? '1px solid rgba(232, 75, 44, 0.5)'
+                    : '1px solid var(--color-border-standard)',
+                  boxShadow: isActive ? '0 0 12px rgba(232, 75, 44, 0.35)' : 'none',
+                }}
+              >
+                <span>{tab.name}</span>
+                <span
+                  style={{
+                    fontSize: '0.65rem',
+                    padding: '0.05rem 0.4rem',
+                    borderRadius: '9999px',
+                    background: isActive ? 'rgba(255, 255, 255, 0.25)' : 'var(--color-surface-raised, #211B17)',
+                    color: isActive ? '#FFFFFF' : 'var(--color-text-secondary)',
+                  }}
+                >
+                  ({tab.count})
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -422,17 +466,17 @@ export default function AdminUsersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-[#9E9B93]">
+                  <td colSpan={7} className="text-center py-12 text-[var(--color-text-muted)]">
                     <div className="text-2xl mb-1">⏳</div>
-                    <div className="text-xs">Querying multi-tenant directory...</div>
+                    <div className="text-xs font-mono">Querying multi-tenant directory...</div>
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-[#9E9B93]">
+                  <td colSpan={7} className="text-center py-12 text-[var(--color-text-muted)]">
                     <div className="text-2xl mb-1">👥</div>
-                    <div className="text-sm font-medium text-[#F3F0E8]">No user accounts found</div>
-                    <div className="text-xs mt-1 text-[#9E9B93]">
+                    <div className="text-sm font-medium text-[var(--color-text-primary)]">No user accounts found</div>
+                    <div className="text-xs mt-1 text-[var(--color-text-muted)]">
                       {searchQuery ? 'Adjust your search terms to match active accounts.' : 'No users match this role filter.'}
                     </div>
                   </td>
@@ -442,30 +486,45 @@ export default function AdminUsersPage() {
                   const primaryOrg = user.memberships[0];
 
                   return (
-                    <tr key={user.id} className="hover:bg-[#F3F0E8]/03 transition-colors">
-                      {/* Identity */}
+                    <tr key={user.id} className="hover:bg-[var(--color-surface-hover,#26201B)] transition-colors">
+                      {/* Identity - Fixed Avatar Layout */}
                       <td>
-                        <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs uppercase shrink-0 ${
-                            user.isSuperAdmin
-                              ? 'bg-gradient-to-br from-[#E84B2C] to-[#C86938] text-[#F3F0E8] border border-[#D4AF37]'
-                              : 'bg-[#1C1916] text-[#D0CBC1] border border-[#F3F0E8]/10'
-                          }`}>
-                            {user.fullName ? user.fullName.charAt(0) : user.email.charAt(0)}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div
+                            style={{
+                              width: '38px',
+                              height: '38px',
+                              minWidth: '38px',
+                              borderRadius: '10px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 700,
+                              fontSize: '0.875rem',
+                              flexShrink: 0,
+                              background: user.isSuperAdmin
+                                ? 'linear-gradient(135deg, #E84B2C, #C86938)'
+                                : 'var(--color-surface-raised, #211B17)',
+                              color: user.isSuperAdmin ? '#FFFFFF' : 'var(--color-text-primary, #F3F0E8)',
+                              border: user.isSuperAdmin ? '1px solid #D4AF37' : '1px solid var(--color-border-standard)',
+                              boxShadow: user.isSuperAdmin ? '0 0 12px rgba(232, 75, 44, 0.3)' : 'none',
+                            }}
+                          >
+                            {user.fullName ? user.fullName.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
                           </div>
-                          <div>
-                            <div className="font-medium text-sm text-[#F3F0E8] flex items-center gap-1.5">
-                              <span>{user.fullName || 'Anonymous User'}</span>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                              <span className="truncate">{user.fullName || 'Anonymous User'}</span>
                               {user.isSuperAdmin && (
-                                <span title="Super Admin Privilege" className="text-xs">👑</span>
+                                <span title="Super Admin Privilege" style={{ fontSize: '0.8rem' }}>👑</span>
                               )}
                             </div>
-                            <div className="text-[11px] font-mono text-[#9E9B93] flex items-center gap-1.5">
-                              <span>{user.email}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}>
+                              <span className="truncate">{user.email}</span>
                               {user.emailConfirmed ? (
-                                <span title="Verified" className="text-[#63C7A2] text-xs">✓</span>
+                                <span title="Verified Email" style={{ color: '#63C7A2' }}>✓</span>
                               ) : (
-                                <span title="Unverified" className="text-[#E87A38] text-[10px]">• unverified</span>
+                                <span title="Unverified" style={{ color: '#E87A38', fontSize: '0.65rem' }}>• unverified</span>
                               )}
                             </div>
                           </div>
@@ -499,21 +558,21 @@ export default function AdminUsersPage() {
                       <td>
                         {primaryOrg ? (
                           <div>
-                            <div className="font-medium text-xs text-[#F3F0E8]">{primaryOrg.organizationName}</div>
-                            <div className="text-[10px] font-mono text-[#9E9B93]">
+                            <div className="font-medium text-xs text-[var(--color-text-primary)]">{primaryOrg.organizationName}</div>
+                            <div className="text-[10px] font-mono text-[var(--color-text-muted)]">
                               slug: {primaryOrg.organizationSlug}
                             </div>
                           </div>
                         ) : (
-                          <span className="text-xs font-mono text-[#9E9B93] italic">
+                          <span className="text-xs font-mono text-[var(--color-text-muted)] italic">
                             Pending Onboarding
                           </span>
                         )}
                       </td>
 
                       {/* Phone */}
-                      <td className="font-mono text-xs text-[#D0CBC1]">
-                        {user.phone ? user.phone : <span className="text-[#9E9B93]">—</span>}
+                      <td className="font-mono text-xs text-[var(--color-text-secondary)]">
+                        {user.phone ? user.phone : <span className="text-[var(--color-text-muted)]">—</span>}
                       </td>
 
                       {/* Status */}
@@ -527,10 +586,10 @@ export default function AdminUsersPage() {
 
                       {/* Joined Date */}
                       <td>
-                        <div className="font-mono text-xs text-[#D0CBC1]">
+                        <div className="font-mono text-xs text-[var(--color-text-secondary)]">
                           {new Date(user.createdAt).toLocaleDateString('en-IN')}
                         </div>
-                        <div className="text-[10px] font-mono text-[#9E9B93]">
+                        <div className="text-[10px] font-mono text-[var(--color-text-muted)]">
                           {user.lastSignInAt
                             ? `Active ${new Date(user.lastSignInAt).toLocaleDateString('en-IN')}`
                             : 'Never signed in'}
@@ -539,17 +598,19 @@ export default function AdminUsersPage() {
 
                       {/* Actions */}
                       <td>
-                        <div className="flex items-center gap-2">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                           <button
                             type="button"
-                            className="btn btn-secondary text-xs px-2.5 py-1"
+                            className="btn btn-secondary btn-sm"
+                            style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
                             onClick={() => handleOpenEdit(user)}
                           >
-                            ✏️ Manage
+                            <span>✏️</span>
+                            <span>Manage</span>
                           </button>
                           <button
                             type="button"
-                            className="text-[#E84B2C] hover:text-[#E87A38] transition-colors text-sm p-1"
+                            className="text-[#E84B2C] hover:text-[#E87A38] transition-colors p-1.5 rounded hover:bg-[#E84B2C]/10"
                             title="Delete user"
                             onClick={() => setDeletingUser(user)}
                           >

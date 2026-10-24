@@ -185,9 +185,9 @@ export default function AppointmentsPage() {
               style={{
                 padding: '0.45rem 0.95rem',
                 borderRadius: '8px',
-                border: `1px solid ${isActive ? 'rgba(232, 75, 44, 0.35)' : 'rgba(243, 240, 232, 0.08)'}`,
-                background: isActive ? 'rgba(232, 75, 44, 0.12)' : '#171614',
-                color: isActive ? '#E87A38' : '#9E9B93',
+                border: `1px solid ${isActive ? 'rgba(232, 75, 44, 0.35)' : 'var(--color-border-standard)'}`,
+                background: isActive ? 'rgba(232, 75, 44, 0.12)' : 'var(--color-surface-elevated)',
+                color: isActive ? 'var(--color-amber)' : 'var(--color-text-muted)',
                 fontSize: '0.8125rem',
                 fontWeight: isActive ? 600 : 500,
                 cursor: 'pointer',

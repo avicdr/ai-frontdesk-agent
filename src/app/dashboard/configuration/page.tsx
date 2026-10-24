@@ -394,7 +394,8 @@ export default function ConfigurationPage() {
                 style={{
                   cursor: 'pointer',
                   fontWeight: 600,
-                  background: '#171614',
+                  background: 'var(--color-surface-elevated)',
+                  color: 'var(--color-text-primary)',
                 }}
               >
                 {CLINIC_TYPES.map(t => (
@@ -606,10 +607,10 @@ export default function ConfigurationPage() {
 
           {/* Services Table */}
           <div className="table-responsive" style={{
-            border: '1px solid rgba(243, 240, 232, 0.08)',
+            border: '1px solid var(--color-border-subtle)',
             borderRadius: '12px',
             overflowX: 'auto',
-            background: '#171614',
+            background: 'var(--color-surface-elevated)',
           }}>
             <table>
               <thead>
@@ -835,17 +836,17 @@ export default function ConfigurationPage() {
                             fontSize: '0.85rem',
                             fontWeight: 600,
                             borderRadius: '8px',
-                            background: '#171614',
-                            border: '1px solid rgba(243, 240, 232, 0.12)',
-                            color: '#F3F0E8',
+                            background: 'var(--color-surface-secondary)',
+                            border: '1px solid var(--color-border-standard)',
+                            color: 'var(--color-text-primary)',
                           }}
                         />
                       </div>
 
-                      <span style={{ color: '#9E9B93', fontSize: '0.85rem' }}>to</span>
+                      <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>to</span>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#9E9B93', fontWeight: 500 }}>Closes:</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>Closes:</span>
                         <input
                           type="time"
                           value={dayConfig.closeTime}
@@ -855,9 +856,9 @@ export default function ConfigurationPage() {
                             fontSize: '0.85rem',
                             fontWeight: 600,
                             borderRadius: '8px',
-                            background: '#171614',
-                            border: '1px solid rgba(243, 240, 232, 0.12)',
-                            color: '#F3F0E8',
+                            background: 'var(--color-surface-secondary)',
+                            border: '1px solid var(--color-border-standard)',
+                            color: 'var(--color-text-primary)',
                           }}
                         />
                       </div>
@@ -865,12 +866,12 @@ export default function ConfigurationPage() {
                       {/* Formatted Badge */}
                       <span style={{
                         fontSize: '0.75rem',
-                        background: '#171614',
-                        color: '#D0CBC1',
+                        background: 'var(--color-surface-raised)',
+                        color: 'var(--color-text-secondary)',
                         padding: '0.3rem 0.65rem',
                         borderRadius: '6px',
                         fontWeight: 600,
-                        border: '1px solid rgba(243, 240, 232, 0.08)',
+                        border: '1px solid var(--color-border-subtle)',
                         whiteSpace: 'nowrap',
                       }}>
                         {formatTime12h(dayConfig.openTime)} – {formatTime12h(dayConfig.closeTime)} ({durationLabel})
@@ -879,12 +880,12 @@ export default function ConfigurationPage() {
                   ) : (
                     <div style={{
                       fontSize: '0.8rem',
-                      color: '#9E9B93',
+                      color: 'var(--color-text-muted)',
                       fontStyle: 'italic',
                       padding: '0.35rem 0.75rem',
-                      background: '#171614',
+                      background: 'var(--color-surface-secondary)',
                       borderRadius: '6px',
-                      border: '1px dashed rgba(243, 240, 232, 0.08)',
+                      border: '1px dashed var(--color-border-standard)',
                     }}>
                       No bookings accepted • Clinic marked as closed
                     </div>

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { LandingNavbar } from '@/components/navigation/LandingNavbar';
 import { LandingPricing } from '@/components/landing/LandingPricing';
 import { InteractiveBotComparison } from '@/components/landing/InteractiveBotComparison';
+import { HeroInteractivePreview } from '@/components/landing/HeroInteractivePreview';
 
 export const metadata: Metadata = {
   title: 'AI Front Desk — Premium AI Receptionist for Clinics & Practices',
@@ -169,12 +170,11 @@ export default function LandingPage() {
 
       {/* ============ HERO SECTION ============ */}
       <section style={{
-        minHeight: '92vh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 'clamp(7.5rem, 14vw, 10.5rem) clamp(1rem, 5vw, 3rem) clamp(3.5rem, 6vw, 5rem)',
+        padding: 'clamp(6.5rem, 11vw, 8.5rem) clamp(1rem, 5vw, 3rem) clamp(2.5rem, 5vw, 4rem)',
         textAlign: 'center',
         position: 'relative',
         zIndex: 1,
@@ -192,7 +192,7 @@ export default function LandingPage() {
           fontFamily: 'var(--font-mono)',
           fontWeight: 600,
           color: 'var(--color-amber)',
-          marginBottom: '1.75rem',
+          marginBottom: '1.5rem',
           letterSpacing: '0.04em',
           boxShadow: '0 0 20px rgba(232, 75, 44, 0.18)',
         }}>
@@ -203,11 +203,11 @@ export default function LandingPage() {
         {/* Editorial Headline */}
         <h1 style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(2.5rem, 7vw, 5.25rem)',
+          fontSize: 'clamp(2.5rem, 6.5vw, 5rem)',
           fontWeight: 500,
-          lineHeight: 1.05,
+          lineHeight: 1.06,
           maxWidth: '920px',
-          marginBottom: '1.5rem',
+          marginBottom: '1.25rem',
           letterSpacing: '-0.03em',
           color: 'var(--color-text-primary)',
         }}>
@@ -217,10 +217,10 @@ export default function LandingPage() {
         </h1>
 
         <p style={{
-          fontSize: 'clamp(1rem, 2.2vw, 1.25rem)',
+          fontSize: 'clamp(1rem, 2vw, 1.2rem)',
           color: 'var(--color-text-secondary)',
           maxWidth: '680px',
-          marginBottom: '2.5rem',
+          marginBottom: '2rem',
           lineHeight: 1.65,
           fontWeight: 400,
         }}>
@@ -229,7 +229,7 @@ export default function LandingPage() {
         </p>
 
         {/* Hero CTAs */}
-        <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', justifyContent: 'center', width: '100%', maxWidth: '520px', marginBottom: '3.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', justifyContent: 'center', width: '100%', maxWidth: '520px', marginBottom: '1.5rem' }}>
           <Link href="/register" className="btn btn-primary btn-lg" style={{ flex: '1 1 210px', textAlign: 'center', height: '52px', fontSize: '1rem', fontWeight: 600 }}>
             Start Free Trial →
           </Link>
@@ -238,18 +238,46 @@ export default function LandingPage() {
           </Link>
         </div>
 
+        {/* Micro Trust Pills */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '1.25rem',
+          flexWrap: 'wrap',
+          fontSize: '0.78rem',
+          color: 'var(--color-text-muted)',
+          marginBottom: '2.75rem',
+        }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+            ✓ No Meta API required
+          </span>
+          <span>&bull;</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+            ✓ 60-second QR setup
+          </span>
+          <span>&bull;</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+            ✓ Free 3-day full operational trial
+          </span>
+        </div>
+
+        {/* Cinematic Live WhatsApp Demonstration Widget */}
+        <HeroInteractivePreview />
+
         {/* Live Operational Stats Bar */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
           gap: '1rem',
           width: '100%',
-          maxWidth: '820px',
+          maxWidth: '860px',
           padding: '1.25rem 1.75rem',
-          background: 'var(--color-surface-secondary)',
+          background: 'var(--color-surface-elevated)',
           border: '1px solid var(--color-border-standard)',
           borderRadius: '18px',
           boxShadow: 'var(--shadow-card)',
+          marginBottom: '2.5rem',
         }}>
           {[
             { value: '24/7', label: 'Always Available', note: 'Zero night dropoff' },
@@ -275,6 +303,42 @@ export default function LandingPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Social Proof Specialty Logos Ticker */}
+        <div style={{
+          width: '100%',
+          maxWidth: '860px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '0.75rem',
+        }}>
+          <div style={{
+            fontSize: '0.7rem',
+            fontFamily: 'var(--font-mono)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color: 'var(--color-text-muted)',
+          }}>
+            Specially Calibrated For Medical & Dental Practices
+          </div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1.5rem',
+            flexWrap: 'wrap',
+            color: 'var(--color-text-secondary)',
+            fontSize: '0.85rem',
+            fontWeight: 500,
+          }}>
+            <span>🦷 Dental & Orthodontics</span>
+            <span>✨ Dermatology & Aesthetics</span>
+            <span>🩺 General Practice OPD</span>
+            <span>🏃 Physio & Sports Rehab</span>
+            <span>🧠 Psychiatry & Therapy</span>
+          </div>
         </div>
       </section>
 
@@ -721,50 +785,7 @@ export default function LandingPage() {
       </section>
 
       {/* ============ PRICING SECTION ============ */}
-      <section id="pricing" style={{
-        padding: 'clamp(4.5rem, 8vw, 6.5rem) clamp(1rem, 5vw, 3rem)',
-        background: 'var(--color-surface-secondary)',
-        borderTop: '1px solid var(--color-border-subtle)',
-        borderBottom: '1px solid var(--color-border-subtle)',
-      }}>
-        <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.28rem 0.85rem',
-              borderRadius: '9999px',
-              background: 'rgba(232, 75, 44, 0.12)',
-              border: '1px solid rgba(232, 75, 44, 0.25)',
-              fontSize: '0.72rem',
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 600,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: 'var(--color-amber)',
-              marginBottom: '0.85rem',
-            }}>
-              Transparent Investment
-            </div>
-            <h2 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(2rem, 4vw, 3.25rem)',
-              fontWeight: 500,
-              color: 'var(--color-text-primary)',
-              letterSpacing: '-0.025em',
-              marginBottom: '0.65rem',
-            }}>
-              Simple plans for growing practices
-            </h2>
-            <p style={{ color: 'var(--color-text-muted)', fontSize: 'clamp(0.95rem, 1.8vw, 1.05rem)', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
-              All tiers include unlimited incoming message triage, 2-way Google Calendar synchronization, and human staff takeover.
-            </p>
-          </div>
-
-          <LandingPricing />
-        </div>
-      </section>
+      <LandingPricing />
 
       {/* ============ FAQ ACCORDION ============ */}
       <section style={{

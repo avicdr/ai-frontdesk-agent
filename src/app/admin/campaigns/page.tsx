@@ -64,6 +64,13 @@ export default function AdminCampaignsPage() {
     return campaigns.find(c => c.id === selectedCampaignId) || null;
   }, [campaigns, selectedCampaignId]);
 
+  const handleLaunchPreset = (name: string, template: string, threshold: number) => {
+    setNewCampaignName(name);
+    setNewCampaignTemplate(template);
+    setNewCampaignThreshold(threshold);
+    setShowCreateModal(true);
+  };
+
   // Load campaigns & senders list
   const loadCampaigns = async (silent: boolean = false) => {
     if (!silent) setLoading(true);
@@ -609,17 +616,134 @@ export default function AdminCampaignsPage() {
           </div>
         </div>
       ) : (
-        <div className="card p-12 text-center">
-          <div className="text-3xl mb-2">✦</div>
-          <h2 className="font-heading text-lg font-semibold text-[#F3F0E8] mb-1">
-            No Active Campaigns Found
-          </h2>
-          <p className="text-xs text-[#9E9B93] max-w-md mx-auto mb-5 leading-relaxed">
-            Create your first cold outreach campaign to ingest clinic leads, deploy templated WhatsApp checks, and automatically classify manual receptionists.
-          </p>
-          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary text-xs">
-            Create First Campaign
-          </button>
+        <div className="space-y-6">
+          {/* Main Empty State Banner */}
+          <div className="card p-8 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] relative overflow-hidden">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div className="max-w-xl">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-[#E84B2C]/10 text-[#E87A38] border border-[#E84B2C]/25 mb-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#E84B2C] animate-pulse" />
+                  LEAD QUALIFICATION PIPELINE
+                </div>
+                <h2 className="font-heading text-xl sm:text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">
+                  No Active Campaigns Found
+                </h2>
+                <p className="text-xs text-[var(--color-text-secondary)] mt-2 leading-relaxed">
+                  Cold outreach scans target dental clinics on WhatsApp, tracking response latency down to the millisecond. Clinics that reply in over 60 seconds are identified as <strong className="text-[#63C7A2]">Manual Receptionists (Hot Sales Targets)</strong>, while instant responders are classified as existing AI bots.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(true)}
+                  className="btn btn-primary text-xs font-medium"
+                >
+                  + Create Custom Campaign
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Outreach Presets */}
+          <div>
+            <div className="text-xs font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-3 flex items-center gap-2">
+              <span className="text-[#E87A38]">✦</span> One-Click Campaign Presets
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                {
+                  title: 'Dental Clinic Reception Audit',
+                  badge: 'Recommended',
+                  badgeColor: 'badge-primary',
+                  desc: 'Inquires about slot availability for new patients this week.',
+                  template: 'Hi {{name}}, are you currently taking new patient appointments for {{clinic_name}} this week?',
+                  threshold: 60,
+                  icon: '🦷',
+                },
+                {
+                  title: 'Cosmetic & Orthodontics Check',
+                  badge: 'High Value',
+                  badgeColor: 'badge-warning',
+                  desc: 'Tests reception response for high-ticket smile makeover consultations.',
+                  template: 'Hello {{clinic_name}}, do you provide free smile consultations or clear aligner scans on Saturday?',
+                  threshold: 45,
+                  icon: '✨',
+                },
+                {
+                  title: 'Emergency Toothache Intake Test',
+                  badge: 'Urgent',
+                  badgeColor: 'badge-danger',
+                  desc: 'Assesses emergency responsiveness during peak or evening clinic hours.',
+                  template: 'Hi, do you have an on-call dentist available for severe toothache treatment today at {{clinic_name}}?',
+                  threshold: 90,
+                  icon: '🚨',
+                },
+              ].map(preset => (
+                <div
+                  key={preset.title}
+                  className="card p-5 bg-[var(--color-surface-secondary,#1C1916)] border border-[var(--color-border-standard)] hover:border-[var(--color-border-hover)] transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{preset.icon}</span>
+                        <h3 className="font-heading font-semibold text-sm text-[var(--color-text-primary)]">
+                          {preset.title}
+                        </h3>
+                      </div>
+                      <span className={`badge ${preset.badgeColor} font-mono text-[9px]`}>
+                        {preset.badge}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[var(--color-text-secondary)] mb-3">
+                      {preset.desc}
+                    </p>
+                    <div className="p-2.5 rounded-lg bg-[var(--color-surface-raised,#211B17)] border border-[var(--color-border-subtle)] text-[11px] font-mono text-[var(--color-text-muted)] italic mb-4">
+                      &quot;{preset.template}&quot;
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleLaunchPreset(preset.title, preset.template, preset.threshold)}
+                    className="btn btn-secondary text-xs w-full font-mono flex items-center justify-center gap-1.5"
+                  >
+                    <span>Launch Preset →</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Qualification Funnel Flow Infographic */}
+          <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)]">
+            <div className="text-xs font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-3 flex items-center gap-2">
+              <span className="text-[#E87A38]">✦</span> How AI Qualification Engine Works
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary,#1C1916)] border border-[var(--color-border-subtle)]">
+                <div className="text-xs font-mono text-[#E87A38] font-semibold mb-1">01 / INGEST</div>
+                <div className="font-heading text-sm font-semibold text-[var(--color-text-primary)] mb-1">Upload Clinic Leads</div>
+                <div className="text-xs text-[var(--color-text-muted)]">Import CSV or paste direct phone lines of local dental clinics.</div>
+              </div>
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary,#1C1916)] border border-[var(--color-border-subtle)]">
+                <div className="text-xs font-mono text-[#E87A38] font-semibold mb-1">02 / OUTREACH</div>
+                <div className="font-heading text-sm font-semibold text-[var(--color-text-primary)] mb-1">WhatsApp Dispatch</div>
+                <div className="text-xs text-[var(--color-text-muted)]">Automated human-paced patient inquiries sent via connected sender node.</div>
+              </div>
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary,#1C1916)] border border-[var(--color-border-subtle)]">
+                <div className="text-xs font-mono text-[#63C7A2] font-semibold mb-1">03 / TELEMETRY</div>
+                <div className="font-heading text-sm font-semibold text-[var(--color-text-primary)] mb-1">Latency Classification</div>
+                <div className="text-xs text-[var(--color-text-muted)]">&gt;60s response = Manual Staff (Hot Lead). &lt;60s = Existing AI bot.</div>
+              </div>
+              <div className="p-4 rounded-xl bg-[var(--color-surface-secondary,#1C1916)] border border-[var(--color-border-subtle)]">
+                <div className="text-xs font-mono text-[#63C7A2] font-semibold mb-1">04 / CONVERT</div>
+                <div className="font-heading text-sm font-semibold text-[var(--color-text-primary)] mb-1">Export Hot Leads</div>
+                <div className="text-xs text-[var(--color-text-muted)]">Download qualified clinic targets and pitch automated 24/7 AI front desk.</div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

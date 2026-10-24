@@ -213,7 +213,7 @@ export default function AgentTestPage() {
             height: 440,
             overflowY: 'auto',
             padding: '1.5rem',
-            background: '#0D0D0C',
+            background: 'var(--color-obsidian)',
             display: 'flex',
             flexDirection: 'column',
             gap: '1.25rem',
@@ -233,16 +233,16 @@ export default function AgentTestPage() {
                     maxWidth: '85%',
                     padding: '0.85rem 1.15rem',
                     borderRadius: isAssistant ? '14px 14px 14px 4px' : '14px 14px 4px 14px',
-                    background: isAssistant ? '#171614' : 'linear-gradient(135deg, #E84B2C, #C86938)',
-                    border: isAssistant ? '1px solid rgba(243, 240, 232, 0.08)' : '1px solid rgba(243, 240, 232, 0.15)',
-                    color: '#F3F0E8',
+                    background: isAssistant ? 'var(--color-surface-elevated)' : 'linear-gradient(135deg, #E84B2C, #C86938)',
+                    border: isAssistant ? '1px solid var(--color-border-standard)' : '1px solid rgba(243, 240, 232, 0.15)',
+                    color: isAssistant ? 'var(--color-text-primary)' : '#FFFFFF',
                     fontSize: '0.875rem',
                     lineHeight: 1.6,
-                    boxShadow: isAssistant ? '0 2px 8px rgba(0, 0, 0, 0.3)' : '0 2px 10px rgba(232, 75, 44, 0.3)',
+                    boxShadow: isAssistant ? 'var(--shadow-card)' : '0 2px 10px rgba(232, 75, 44, 0.3)',
                   }}>
                     {m.content}
                   </div>
-                  <div style={{ fontSize: '0.6875rem', color: '#9E9B93', marginTop: '0.3rem', padding: '0 0.25rem' }}>
+                  <div style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)', marginTop: '0.3rem', padding: '0 0.25rem' }}>
                     {isAssistant ? 'AI Receptionist' : 'Patient'}
                   </div>
                 </div>
@@ -250,7 +250,7 @@ export default function AgentTestPage() {
             })}
 
             {loading && (
-              <div style={{ alignSelf: 'flex-start', background: '#171614', border: '1px solid rgba(243, 240, 232, 0.08)', padding: '0.65rem 1rem', borderRadius: '12px', fontSize: '0.8rem', color: '#D0CBC1', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <div style={{ alignSelf: 'flex-start', background: 'var(--color-surface-elevated)', border: '1px solid var(--color-border-standard)', padding: '0.65rem 1rem', borderRadius: '12px', fontSize: '0.8rem', color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                 <span style={{ color: '#E87A38' }}>✦</span>
                 Formulating response & inspecting clinic schedule...
               </div>
@@ -260,8 +260,8 @@ export default function AgentTestPage() {
           {/* Chat Composer */}
           <div style={{
             padding: '1rem 1.25rem',
-            borderTop: '1px solid rgba(243, 240, 232, 0.08)',
-            background: '#171614',
+            borderTop: '1px solid var(--color-border-subtle)',
+            background: 'var(--color-surface-elevated)',
             display: 'flex',
             gap: '0.65rem',
           }}>
@@ -341,8 +341,8 @@ export default function AgentTestPage() {
                     style={{
                       padding: '0.75rem',
                       borderRadius: '8px',
-                      background: '#1C1916',
-                      border: '1px solid rgba(243, 240, 232, 0.08)',
+                      background: 'var(--color-surface-secondary)',
+                      border: '1px solid var(--color-border-subtle)',
                       fontSize: '0.75rem',
                       fontFamily: 'var(--font-mono)',
                     }}
@@ -351,10 +351,10 @@ export default function AgentTestPage() {
                       <span>▶ {ex.tool}</span>
                       <span className="badge badge-success" style={{ fontSize: '0.65rem' }}>SUCCESS</span>
                     </div>
-                    <div style={{ color: '#9E9B93', marginBottom: '0.25rem' }}>
+                    <div style={{ color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
                       Args: {JSON.stringify(ex.args)}
                     </div>
-                    <div style={{ color: '#F3F0E8', whiteSpace: 'pre-wrap', maxHeight: 100, overflowY: 'auto', background: '#0D0D0C', padding: '0.45rem', borderRadius: '4px', border: '1px solid rgba(243, 240, 232, 0.06)' }}>
+                    <div style={{ color: 'var(--color-text-primary)', whiteSpace: 'pre-wrap', maxHeight: 100, overflowY: 'auto', background: 'var(--color-surface-elevated)', padding: '0.45rem', borderRadius: '4px', border: '1px solid var(--color-border-subtle)' }}>
                       {JSON.stringify(ex.result, null, 2)}
                     </div>
                   </div>

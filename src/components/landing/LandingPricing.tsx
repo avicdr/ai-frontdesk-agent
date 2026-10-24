@@ -2,7 +2,7 @@
 
 // src/components/landing/LandingPricing.tsx
 // Dynamic pricing section with auto-detected currency for Domestic (India / UPI) and International (USD / Crypto)
-// Redesigned with Cinematic Obsidian × Phoenix Ember visual language
+// Fully theme-adaptive (Dark Obsidian & Warm Ivory Light)
 
 import React from 'react';
 import Link from 'next/link';
@@ -13,49 +13,50 @@ export function LandingPricing() {
 
   return (
     <section id="pricing" style={{
-      padding: 'clamp(4.5rem, 10vw, 7.5rem) clamp(1rem, 5vw, 3rem)',
-      maxWidth: '1160px',
+      padding: 'clamp(4rem, 8vw, 6.5rem) clamp(1rem, 5vw, 3rem)',
+      maxWidth: '1200px',
       margin: '0 auto',
       position: 'relative',
     }}>
-      <div style={{ textAlign: 'center', marginBottom: 'clamp(2.5rem, 5vw, 4rem)' }}>
+      <div style={{ textAlign: 'center', marginBottom: 'clamp(2.5rem, 5vw, 3.5rem)' }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
           gap: '0.4rem',
           padding: '0.28rem 0.85rem',
           borderRadius: '9999px',
-          background: 'rgba(232, 75, 44, 0.1)',
+          background: 'rgba(232, 75, 44, 0.12)',
           border: '1px solid rgba(232, 75, 44, 0.25)',
           fontSize: '0.72rem',
           fontWeight: 600,
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
-          color: '#E87A38',
+          color: 'var(--color-amber)',
           marginBottom: '1rem',
+          fontFamily: 'var(--font-mono)',
         }}>
-          Pricing & Plans
+          Pricing &amp; Plans
         </div>
         <h2 style={{
           fontFamily: 'var(--font-display)',
           fontSize: 'clamp(2rem, 4.5vw, 3.25rem)',
           fontWeight: 500,
           marginBottom: '0.85rem',
-          color: '#F3F0E8',
+          color: 'var(--color-text-primary)',
           letterSpacing: '-0.025em',
         }}>
-          Simple, transparent pricing
+          Simple plans for growing practices
         </h2>
         <p style={{
-          color: '#9E9B93',
+          color: 'var(--color-text-muted)',
           fontSize: 'clamp(0.95rem, 2vw, 1.1rem)',
-          maxWidth: '560px',
+          maxWidth: '580px',
           margin: '0 auto',
           lineHeight: 1.6,
         }}>
           {isInternational
-            ? 'Monthly subscriptions via Crypto (USDT, USDC, BTC, ETH). No hidden fees. Cancel anytime.'
-            : 'Monthly subscriptions via Instant UPI. No lock-in. Cancel anytime.'}
+            ? 'Monthly subscriptions via Crypto (USDT, USDC, BTC, ETH). All tiers include 2-way Google Calendar sync & human takeover.'
+            : 'Monthly subscriptions via Instant UPI. All tiers include 2-way Google Calendar sync & human takeover.'}
         </p>
       </div>
 
@@ -76,11 +77,11 @@ export function LandingPricing() {
                 display: 'flex',
                 flexDirection: 'column',
                 borderRadius: '18px',
-                background: isHighlighted ? 'linear-gradient(180deg, #1C1916 0%, #171614 100%)' : '#171614',
-                border: isHighlighted ? '1.5px solid rgba(232, 75, 44, 0.4)' : '1px solid rgba(243, 240, 232, 0.08)',
-                boxShadow: isHighlighted
-                  ? '0 0 35px rgba(232, 75, 44, 0.16), 0 20px 48px -10px rgba(0, 0, 0, 0.7)'
-                  : '0 4px 20px rgba(0, 0, 0, 0.4)',
+                background: isHighlighted
+                  ? 'linear-gradient(180deg, var(--color-surface-secondary) 0%, var(--color-surface-elevated) 100%)'
+                  : 'var(--color-surface-elevated)',
+                border: isHighlighted ? '1.5px solid var(--color-border-active)' : '1px solid var(--color-border-standard)',
+                boxShadow: isHighlighted ? 'var(--shadow-hero)' : 'var(--shadow-card)',
                 transition: 'border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease',
               }}
             >
@@ -94,22 +95,24 @@ export function LandingPricing() {
                     whiteSpace: 'nowrap',
                     zIndex: 10,
                     background: 'linear-gradient(135deg, #E84B2C, #C86938)',
-                    color: '#F3F0E8',
+                    color: '#FFFFFF',
                     padding: '0.35rem 1.15rem',
                     fontSize: '0.72rem',
                     fontWeight: 700,
                     borderRadius: '9999px',
                     letterSpacing: '0.04em',
                     boxShadow: '0 4px 14px rgba(232, 75, 44, 0.45)',
-                    border: '1px solid rgba(243, 240, 232, 0.2)',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
                   }}
                 >
                   ⭐ Most Popular
                 </div>
               )}
               <div style={{ marginBottom: '1.75rem' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.35rem', color: '#F3F0E8' }}>{plan.name}</h3>
-                <p style={{ color: '#9E9B93', fontSize: '0.825rem', marginBottom: '1.5rem', lineHeight: 1.55 }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.35rem', color: 'var(--color-text-primary)' }}>
+                  {plan.name}
+                </h3>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.825rem', marginBottom: '1.5rem', lineHeight: 1.55 }}>
                   {plan.description}
                 </p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
@@ -119,28 +122,28 @@ export function LandingPricing() {
                       fontWeight: 700,
                       letterSpacing: '-0.04em',
                       fontFamily: 'var(--font-sans)',
-                      color: isHighlighted ? '#E87A38' : '#F3F0E8',
+                      color: isHighlighted ? 'var(--color-amber)' : 'var(--color-text-primary)',
                     }}
                   >
                     {plan.price}
                   </span>
-                  <span style={{ color: '#9E9B93', fontSize: '0.875rem' }}>/ month</span>
+                  <span style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>/ month</span>
                 </div>
                 <div style={{
                   fontSize: '0.8125rem',
                   fontWeight: 600,
-                  color: '#C86938',
+                  color: 'var(--color-amber)',
                   marginTop: '0.45rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.35rem',
                 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#E87A38' }} />
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-flame)' }} />
                   {plan.chatsDisplay}
                 </div>
               </div>
 
-              <div className="divider" style={{ marginBottom: '1.5rem', background: 'rgba(243, 240, 232, 0.08)' }} />
+              <div style={{ marginBottom: '1.5rem', borderTop: '1px solid var(--color-border-subtle)' }} />
 
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {plan.features.map(f => (
@@ -151,12 +154,12 @@ export function LandingPricing() {
                       alignItems: 'flex-start',
                       gap: '0.65rem',
                       fontSize: '0.875rem',
-                      color: '#D0CBC1',
+                      color: 'var(--color-text-secondary)',
                       lineHeight: 1.5,
                     }}
                   >
                     <span style={{
-                      color: '#63C7A2',
+                      color: 'var(--color-success)',
                       flexShrink: 0,
                       marginTop: '0.15rem',
                       fontSize: '0.8rem',
@@ -166,7 +169,7 @@ export function LandingPricing() {
                   </li>
                 ))}
                 {isInternational && (
-                  <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', fontSize: '0.875rem', color: '#E87A38' }}>
+                  <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', fontSize: '0.875rem', color: 'var(--color-amber)' }}>
                     <span style={{ flexShrink: 0, marginTop: '0.1rem' }}>🪙</span>
                     Pay via USDT (TRC-20/ERC-20), USDC, or BTC
                   </li>

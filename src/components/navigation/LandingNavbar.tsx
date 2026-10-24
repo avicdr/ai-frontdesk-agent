@@ -78,8 +78,8 @@ export function LandingNavbar() {
           justifyContent: 'space-between',
           backdropFilter: scrolled ? 'blur(16px) saturate(1.2)' : 'none',
           WebkitBackdropFilter: scrolled ? 'blur(16px) saturate(1.2)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(243, 240, 232, 0.08)' : '1px solid transparent',
-          background: scrolled ? 'rgba(17, 17, 16, 0.88)' : 'transparent',
+          borderBottom: scrolled ? '1px solid var(--color-border-subtle)' : '1px solid transparent',
+          background: scrolled ? 'var(--glass-bg)' : 'transparent',
           transition: 'all 0.3s ease',
         }}
       >
@@ -125,10 +125,10 @@ export function LandingNavbar() {
           <span
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 500,
+              fontWeight: 600,
               fontSize: '1.25rem',
               letterSpacing: '-0.02em',
-              color: '#F3F0E8',
+              color: 'var(--color-text-primary)',
             }}
           >
             AI Front Desk
@@ -149,7 +149,7 @@ export function LandingNavbar() {
               key={item.label}
               href={item.href}
               style={{
-                color: '#9E9B93',
+                color: 'var(--color-text-secondary)',
                 textDecoration: 'none',
                 fontSize: '0.875rem',
                 fontWeight: 500,
@@ -157,10 +157,10 @@ export function LandingNavbar() {
                 letterSpacing: '-0.01em',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#F3F0E8';
+                e.currentTarget.style.color = 'var(--color-text-primary)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#9E9B93';
+                e.currentTarget.style.color = 'var(--color-text-secondary)';
               }}
             >
               {item.label}
@@ -178,7 +178,7 @@ export function LandingNavbar() {
             <Link
               href="/login"
               className="btn btn-ghost btn-sm"
-              style={{ fontSize: '0.85rem', padding: '0.45rem 0.95rem' }}
+              style={{ fontSize: '0.85rem', padding: '0.45rem 0.95rem', color: 'var(--color-text-secondary)' }}
             >
               Sign In
             </Link>
@@ -213,10 +213,10 @@ export function LandingNavbar() {
             aria-expanded={mobileMenuOpen}
             className="show-on-mobile"
             style={{
-              background: '#171614',
-              border: '1px solid rgba(243, 240, 232, 0.12)',
+              background: 'var(--color-surface-elevated)',
+              border: '1px solid var(--color-border-standard)',
               borderRadius: '8px',
-              color: '#F3F0E8',
+              color: 'var(--color-text-primary)',
               width: '40px',
               height: '40px',
               cursor: 'pointer',
@@ -255,15 +255,15 @@ export function LandingNavbar() {
         className={`landing-drawer ${mobileMenuOpen ? 'open' : ''}`}
         aria-label="Mobile navigation menu"
         style={{
-          background: '#0D0D0C',
-          borderLeft: '1px solid rgba(243, 240, 232, 0.08)',
+          background: 'var(--color-surface-elevated)',
+          borderLeft: '1px solid var(--color-border-standard)',
         }}
       >
         {/* Drawer Header */}
         <div
           style={{
             padding: '1.25rem',
-            borderBottom: '1px solid rgba(243, 240, 232, 0.08)',
+            borderBottom: '1px solid var(--color-border-subtle)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -285,9 +285,9 @@ export function LandingNavbar() {
             <span
               style={{
                 fontFamily: 'var(--font-display)',
-                fontWeight: 500,
+                fontWeight: 600,
                 fontSize: '1.1rem',
-                color: '#F3F0E8',
+                color: 'var(--color-text-primary)',
               }}
             >
               AI Front Desk
@@ -299,10 +299,10 @@ export function LandingNavbar() {
             onClick={() => setMobileMenuOpen(false)}
             aria-label="Close menu"
             style={{
-              background: '#171614',
-              border: '1px solid rgba(243, 240, 232, 0.1)',
+              background: 'var(--color-surface-secondary)',
+              border: '1px solid var(--color-border-standard)',
               borderRadius: '6px',
-              color: '#9E9B93',
+              color: 'var(--color-text-secondary)',
               width: '32px',
               height: '32px',
               cursor: 'pointer',
@@ -330,12 +330,12 @@ export function LandingNavbar() {
                 borderRadius: '8px',
                 fontSize: '0.95rem',
                 fontWeight: 500,
-                color: '#F3F0E8',
+                color: 'var(--color-text-primary)',
                 textDecoration: 'none',
                 transition: 'background 0.15s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(243, 240, 232, 0.05)';
+                e.currentTarget.style.background = 'var(--color-surface-hover)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = 'transparent';
@@ -367,8 +367,8 @@ export function LandingNavbar() {
         </div>
 
         {/* Drawer Footer */}
-        <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid rgba(243, 240, 232, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '0.8rem', color: '#9E9B93' }}>Interface Theme</span>
+        <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--color-border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Interface Theme</span>
           <ThemeToggle showLabel size="sm" />
         </div>
       </aside>

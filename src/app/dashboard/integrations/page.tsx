@@ -614,9 +614,9 @@ export default function IntegrationsPage() {
                       </div>
                       <div style={{
                         fontSize: '0.75rem',
-                        color: '#D0CBC1',
-                        background: '#171614',
-                        border: '1px solid rgba(243, 240, 232, 0.08)',
+                        color: 'var(--color-text-secondary)',
+                        background: 'var(--color-surface-secondary)',
+                        border: '1px solid var(--color-border-standard)',
                         padding: '0.5rem 0.75rem',
                         borderRadius: '6px',
                         display: 'flex',
