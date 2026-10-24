@@ -32,7 +32,7 @@ export default async function AdminRevenuePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         <div className="card p-5 bg-[#171614] border-[#E84B2C]/30 shadow-[0_0_16px_rgba(232,75,44,0.08)]">
           <div className="text-[10px] font-mono uppercase tracking-wider text-[#9E9B93] mb-1">
             Total Collected Revenue

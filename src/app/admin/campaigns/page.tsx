@@ -709,7 +709,7 @@ export default function AdminCampaignsPage() {
           </div>
 
           {/* KPI Stat Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
             <div className="card p-3.5">
               <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Total Leads</div>
               <div className="font-mono text-2xl font-bold text-[#F3F0E8] mt-1">{selectedCampaign.stats.totalLeads}</div>

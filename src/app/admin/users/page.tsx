@@ -570,8 +570,8 @@ export default function AdminUsersPage() {
       {/* MANAGE / EDIT USER MODAL */}
       {/* ============================================================ */}
       {editingUser && (
-        <div className="fixed inset-0 bg-[#080505]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 bg-[#171614] border border-[#F3F0E8]/12 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scale-in">
+        <div className="fixed inset-0 bg-[#080505]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 bg-[#171614] border border-[#F3F0E8]/12 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scale-in" style={{ maxWidth: '520px', width: '100%' }}>
             <div className="flex justify-between items-center mb-5 pb-3 border-b border-[#F3F0E8]/08">
               <div>
                 <h2 className="font-heading text-lg font-semibold text-[#F3F0E8]">Manage Account</h2>
@@ -754,8 +754,8 @@ export default function AdminUsersPage() {
       {/* CREATE NEW USER MODAL */}
       {/* ============================================================ */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-[#080505]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 bg-[#171614] border border-[#F3F0E8]/12 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scale-in">
+        <div className="fixed inset-0 bg-[#080505]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 bg-[#171614] border border-[#F3F0E8]/12 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scale-in" style={{ maxWidth: '480px', width: '100%' }}>
             <div className="flex justify-between items-center mb-5 pb-3 border-b border-[#F3F0E8]/08">
               <div>
                 <h2 className="font-heading text-lg font-semibold text-[#F3F0E8]">Create Platform User</h2>

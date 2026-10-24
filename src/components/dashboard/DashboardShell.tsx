@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { SidebarNav, NavItem } from '@/components/dashboard/SidebarNav';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 interface DashboardShellProps {
   org: { name?: string; slug?: string } | null;
@@ -117,21 +118,24 @@ export function DashboardShell({
           </div>
         </div>
 
-        <div style={{
-          width: 32,
-          height: 32,
-          borderRadius: '50%',
-          background: '#1C1916',
-          border: '1px solid rgba(243, 240, 232, 0.12)',
-          color: '#F3F0E8',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '0.75rem',
-          fontWeight: 600,
-          flexShrink: 0,
-        }}>
-          {profile?.full_name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? '?'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <ThemeToggle size="sm" />
+          <div style={{
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            background: '#1C1916',
+            border: '1px solid rgba(243, 240, 232, 0.12)',
+            color: '#F3F0E8',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            flexShrink: 0,
+          }}>
+            {profile?.full_name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? '?'}
+          </div>
         </div>
       </header>
 
@@ -266,6 +270,10 @@ export function DashboardShell({
                 {user.email}
               </div>
             </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem', padding: '0 0.25rem' }}>
+            <span style={{ fontSize: '0.72rem', color: '#9E9B93', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Theme</span>
+            <ThemeToggle size="sm" showLabel />
           </div>
           <form action="/api/v1/auth/signout" method="POST">
             <button

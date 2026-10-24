@@ -128,7 +128,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Top Telemetry Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.85rem' }}>
         <StatCard value={stats.totalUsers} label="Registered Users" />
         <StatCard value={stats.totalOrgs} label="Organizations" />
         <StatCard value={stats.activeSubscribers} label="Active Clinics" isHighlight />
@@ -142,16 +142,16 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Infrastructure Node Health */}
-      <div className="card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-heading text-xs font-semibold uppercase tracking-wider text-[#F3F0E8] flex items-center gap-2">
+      <div className="card" style={{ padding: '1.25rem' }}>
+        <div className="flex items-center justify-between mb-4" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 className="font-heading text-xs font-semibold uppercase tracking-wider text-[#F3F0E8] flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
             <span className="text-[#E87A38]">✦</span> Real-Time Service Health
           </h2>
-          <span className="text-[10px] font-mono text-[#63C7A2] bg-[#63C7A2]/10 border border-[#63C7A2]/20 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] font-mono text-[#63C7A2] bg-[#63C7A2]/10 border border-[#63C7A2]/20 px-2 py-0.5 rounded-full" style={{ padding: '0.2rem 0.5rem', borderRadius: '9999px' }}>
             ALL SYSTEMS NOMINAL
           </span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.75rem', fontSize: '0.75rem' }}>
           {[
             { label: 'WhatsApp Webhooks', status: 'healthy', latency: '42ms' },
             { label: 'Google Calendar API', status: 'healthy', latency: '68ms' },

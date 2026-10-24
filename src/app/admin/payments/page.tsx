@@ -174,7 +174,7 @@ export default function AdminPaymentsPage() {
           Instantly provision or extend clinic subscriptions without requiring an online checkout flow.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
           <div>
             <label className="label text-xs">Target Practice</label>
             <select

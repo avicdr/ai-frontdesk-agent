@@ -1,27 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Syne, Plus_Jakarta_Sans, Cinzel } from "next/font/google";
 import "./globals.css";
-
-const syne = Syne({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-display",
-  weight: ["400", "500", "600", "700", "800"],
-});
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-sans",
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-const cinzel = Cinzel({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-cinzel",
-  weight: ["400", "600", "700"],
-});
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -70,10 +49,26 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${syne.variable} ${plusJakartaSans.variable} ${cinzel.variable} dark`}
+      data-theme="dark"
+      className="dark"
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('aifd_theme');var t=(s==='light')?'light':'dark';document.documentElement.setAttribute('data-theme',t);if(t==='light'){document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');}else{document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="antialiased">
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { usePathname } from 'next/navigation';
 
 interface NavLinkItem {
@@ -169,6 +170,9 @@ export function LandingNavbar() {
 
         {/* Right CTA Actions & Hamburger Toggle */}
         <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
+          {/* Theme Toggle Button */}
+          <ThemeToggle size="sm" />
+
           {/* Desktop Auth CTAs */}
           <div className="hide-on-mobile" style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
             <Link
@@ -363,8 +367,9 @@ export function LandingNavbar() {
         </div>
 
         {/* Drawer Footer */}
-        <div style={{ padding: '1.25rem', borderTop: '1px solid rgba(243, 240, 232, 0.08)', fontSize: '0.75rem', color: '#9E9B93', textAlign: 'center' }}>
-          Intelligent AI Front Desk Platform
+        <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid rgba(243, 240, 232, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '0.8rem', color: '#9E9B93' }}>Interface Theme</span>
+          <ThemeToggle showLabel size="sm" />
         </div>
       </aside>
     </>

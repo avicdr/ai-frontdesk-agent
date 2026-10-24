@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 interface AdminNavItem {
   href: string;
@@ -118,13 +119,16 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
           </div>
         </div>
 
-        <Link
-          href="/dashboard"
-          className="btn btn-secondary btn-sm"
-          style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
-        >
-          Clinic →
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <ThemeToggle size="sm" />
+          <Link
+            href="/dashboard"
+            className="btn btn-secondary btn-sm"
+            style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+          >
+            Clinic →
+          </Link>
+        </div>
       </header>
 
       {/* Backdrop scrim */}
@@ -298,6 +302,10 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
                 Super Admin
               </div>
             </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.85rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(243, 240, 232, 0.08)' }}>
+            <span style={{ fontSize: '0.72rem', color: '#9E9B93', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Theme</span>
+            <ThemeToggle size="sm" showLabel />
           </div>
         </div>
       </aside>

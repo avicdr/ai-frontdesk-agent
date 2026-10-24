@@ -160,7 +160,7 @@ export default async function AdminSubscriberDetailPage({ params }: PageProps) {
       </div>
 
       {/* Key Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.85rem' }}>
         <div className="card p-4">
           <div className="text-[10px] font-mono uppercase tracking-wider text-[#9E9B93] mb-1">
             Subscription Tier

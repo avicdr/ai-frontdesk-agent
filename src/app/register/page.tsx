@@ -132,7 +132,7 @@ export default function RegisterPage() {
       <div className="absolute top-0 right-0 w-96 h-96 bg-[radial-gradient(ellipse_at_top_right,rgba(232,75,44,0.15),transparent_70%)] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-[radial-gradient(ellipse_at_bottom_left,rgba(200,105,56,0.1),transparent_70%)] pointer-events-none" />
 
-      <div className="w-full max-w-lg relative z-10">
+      <div className="w-full max-w-lg relative z-10" style={{ width: '100%', maxWidth: '520px', margin: '0 auto' }}>
         {/* Brand Logo Header */}
         <div className="text-center mb-6">
           <Link href="/" className="inline-flex items-center gap-2.5 text-decoration-none group">

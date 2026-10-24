@@ -3,64 +3,163 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { LandingNavbar } from '@/components/navigation/LandingNavbar';
 import { LandingPricing } from '@/components/landing/LandingPricing';
+import { InteractiveBotComparison } from '@/components/landing/InteractiveBotComparison';
 
 export const metadata: Metadata = {
   title: 'AI Front Desk — Premium AI Receptionist for Clinics & Practices',
   description: 'Deploy a cinematic, intelligent AI receptionist on WhatsApp for your practice. Answers queries, coordinates availability, and books appointments 24/7.',
 };
 
-const features = [
+const featureBento = [
   {
     icon: '💬',
-    title: '24/7 WhatsApp Receptionist',
-    description: 'Answer patient queries, share clinic info, and book appointments automatically via WhatsApp — even while you sleep.',
+    tag: 'AUTONOMOUS RECEPTION',
+    title: '24/7 WhatsApp Conversational Receptionist',
+    description: 'Empathetic, context-aware AI that answers patient questions, explains clinic procedures, quotes standard pricing, and confirms operational hours — day or night.',
+    highlight: 'Instant 1.2s response time',
   },
   {
     icon: '📅',
-    title: 'Google Calendar Integration',
-    description: 'Checks your real calendar availability, books appointments, and handles cancellations with zero double bookings.',
+    tag: 'SCHEDULE ORCHESTRATION',
+    title: 'Zero-Conflict Google Calendar 2-Way Sync',
+    description: 'Reads your real doctor schedule in real time. Offers open consultation slots, books confirmed appointments directly, and frees cancelled slots automatically.',
+    highlight: 'Zero double bookings',
   },
   {
-    icon: '🤖',
-    title: 'Powered by Gemini AI',
-    description: 'State-of-the-art AI that understands context, handles complex multilingual queries, and knows when to escalate to a human.',
+    icon: '🏷️',
+    tag: 'CLINICAL TRIAGE',
+    title: 'Custom Service Catalog & Pricing Calculator',
+    description: 'Configure doctor consultation fees, procedure durations, and preparation guidelines. The AI accurately quotes treatments according to your clinic rules.',
+    highlight: 'Accurate treatment quoting',
   },
   {
-    icon: '🏥',
-    title: 'Multi-Clinic Isolated Tenancy',
-    description: 'Each clinic gets its own isolated environment, configuration, knowledge base, and full conversation telemetry.',
+    icon: '🚨',
+    tag: 'CLINICAL SAFETY',
+    title: 'Medical Emergency Safety Sentinel',
+    description: 'Trained to recognize acute red flag symptoms. Immediately provides local emergency dispatch numbers (112 / 911) and alerts clinic staff for urgent intervention.',
+    highlight: 'Patient safety protocols',
+  },
+  {
+    icon: '👥',
+    tag: 'HUMAN TAKEOVER',
+    title: 'Instant Human Staff Takeover',
+    description: 'Your clinic team can pause the AI and chat directly with any patient from the inbox canvas at any moment. Seamless handover with zero patient disruption.',
+    highlight: '1-click manual override',
   },
   {
     icon: '⚡',
-    title: 'Instant Automated Billing',
-    description: 'Hassle-free subscription activation and seamless renewals via Instant UPI or Crypto (USDT, USDC, BTC, ETH).',
+    tag: 'FINANCIAL SETTLEMENT',
+    title: 'Domestic UPI & Global Web3 Crypto Billing',
+    description: 'Activate your clinic tier instantly via UPI QR or international cryptocurrency settlement (USDT, USDC on Polygon/TRON/Ethereum) with zero payment friction.',
+    highlight: 'Automated instant activation',
+  },
+];
+
+const specialties = [
+  {
+    name: 'Dental & Orthodontics',
+    icon: '🦷',
+    commonQueries: 'Root canals, teeth cleaning, aligner pricing, toothache emergencies',
+    metric: '+38% bookings',
   },
   {
-    icon: '🛡️',
-    title: 'Privacy & Security First',
-    description: 'Patient data stays strictly isolated. Full audit logs. Instant human takeover anytime with medical safety rails.',
+    name: 'Dermatology & Aesthetics',
+    icon: '✨',
+    commonQueries: 'Acne triage, chemical peels, hydrafacial sessions, laser consultation',
+    metric: '+45% new patients',
+  },
+  {
+    name: 'General Medicine & Paediatrics',
+    icon: '🩺',
+    commonQueries: 'Viral fevers, routine vaccination schedules, doctor OPD timing',
+    metric: '-80% phone hold time',
+  },
+  {
+    name: 'Physiotherapy & Sports Rehab',
+    icon: '🏃',
+    commonQueries: 'Back pain assessment, post-surgery rehabilitation, session packages',
+    metric: '94% slot occupancy',
+  },
+  {
+    name: 'Psychiatry & Therapy',
+    icon: '🧠',
+    commonQueries: 'Confidential 1-on-1 sessions, anxiety management, weekend slots',
+    metric: '100% private triage',
+  },
+  {
+    name: 'Speciality Surgery & Consultations',
+    icon: '🏥',
+    commonQueries: 'Second opinions, pre-operative instructions, doctor roster inquiry',
+    metric: '0 missed inquiries',
   },
 ];
 
 const steps = [
-  { number: '01', title: 'Register & Configure', description: 'Enter clinic details, services, hours, and customized AI persona in our guided onboarding.' },
-  { number: '02', title: 'Connect Integrations', description: 'Pair your WhatsApp Business number and sync Google Calendar in a single click.' },
-  { number: '03', title: 'Test in Playground', description: 'Chat with your AI receptionist in the live test sandbox. Verify tool calls and schedules.' },
-  { number: '04', title: 'Activate & Go Live', description: 'Subscribe and activate. Your AI receptionist immediately starts managing real patients.' },
+  {
+    number: '01',
+    tag: 'CLINIC ONBOARDING',
+    title: 'Register & Calibrate AI Persona',
+    description: 'Enter your clinic name, doctors, operating hours, treatment catalog, and tone of voice in our guided 8-step console.',
+  },
+  {
+    number: '02',
+    tag: 'CHANNELS',
+    title: 'Connect WhatsApp & Google Calendar',
+    description: 'Pair your clinic WhatsApp number just like WhatsApp Web, and authorize Google Calendar with 1-click OAuth sync.',
+  },
+  {
+    number: '03',
+    tag: 'SANDBOX TESTING',
+    title: 'Verify in Live Testing Playground',
+    description: 'Simulate patient inquiries in the built-in test sandbox. Verify procedure quotes, emergency escalations, and schedule booking.',
+  },
+  {
+    number: '04',
+    tag: 'AUTONOMOUS RECEPTION',
+    title: 'Go Live with 24/7 Coverage',
+    description: 'Activate your subscription. Your AI receptionist immediately handles incoming patient chats and synchronizes doctor appointments.',
+  },
+];
+
+const faqs = [
+  {
+    q: 'Does AI Front Desk replace my existing human receptionist?',
+    a: 'No. AI Front Desk acts as an autonomous co-pilot that handles high-volume routine inquiries, pricing questions, after-hours messages, and calendar scheduling. Your staff is freed from answering the same questions all day and can focus entirely on in-person patient hospitality.',
+  },
+  {
+    q: 'How does WhatsApp pairing work? Do I need Meta developer credentials?',
+    a: 'No Meta developer account or API approval is required. You can connect any existing clinic phone number directly using WhatsApp Linked Devices (scanning a QR code or entering an 8-character code), exactly like WhatsApp Web. It takes less than 60 seconds.',
+  },
+  {
+    q: 'How does it prevent double-bookings on Google Calendar?',
+    a: 'Before offering any slot to a patient on WhatsApp, the AI makes a live real-time query to the doctor’s Google Calendar. It only suggests confirmed free openings between clinic operating hours and accounts for appointment buffer times.',
+  },
+  {
+    q: 'Can the AI speak in Hindi or regional languages?',
+    a: 'Yes. Powered by Google Gemini AI, the receptionist fluently understands and responds in English, Hindi, Hinglish, Spanish, French, and over 10 other languages, adapting naturally to the patient’s phrasing.',
+  },
+  {
+    q: 'What happens if a patient has a medical emergency?',
+    a: 'AI Front Desk is strictly an administrative coordination platform. It has built-in safety rails that immediately detect emergency red-flag symptoms (chest pain, shortness of breath, heavy trauma) and instructs the patient to call emergency services (112 / 911) or proceed to the nearest emergency room.',
+  },
+  {
+    q: 'What payment methods do you support for clinic subscriptions?',
+    a: 'We support instant domestic UPI (Google Pay, PhonePe, Paytm, BHIM) with transaction reference verification for Indian clinics, as well as multi-network Web3 cryptocurrency settlement (USDT TRC-20, USDT ERC-20, USDC Polygon, ETH, BTC) for international practices.',
+  },
 ];
 
 export default function LandingPage() {
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', background: '#111110', color: '#F3F0E8' }}>
+    <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-obsidian)', color: 'var(--color-text-primary)' }}>
       {/* Ambient background glows */}
       <div style={{
         position: 'absolute',
         top: '-15%',
         left: '50%',
         transform: 'translateX(-50%)',
-        width: '900px',
-        height: '700px',
-        background: 'radial-gradient(ellipse, rgba(232, 75, 44, 0.1) 0%, transparent 70%)',
+        width: '1000px',
+        height: '750px',
+        background: 'radial-gradient(ellipse, rgba(232, 75, 44, 0.12) 0%, transparent 70%)',
         pointerEvents: 'none',
         zIndex: 0,
       }} />
@@ -68,14 +167,14 @@ export default function LandingPage() {
       {/* ============ NAVBAR ============ */}
       <LandingNavbar />
 
-      {/* ============ HERO ============ */}
+      {/* ============ HERO SECTION ============ */}
       <section style={{
-        minHeight: '100vh',
+        minHeight: '92vh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 'clamp(7rem, 15vw, 10rem) clamp(1rem, 5vw, 3rem) clamp(4rem, 7vw, 6rem)',
+        padding: 'clamp(7.5rem, 14vw, 10.5rem) clamp(1rem, 5vw, 3rem) clamp(3.5rem, 6vw, 5rem)',
         textAlign: 'center',
         position: 'relative',
         zIndex: 1,
@@ -84,443 +183,780 @@ export default function LandingPage() {
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '0.45rem',
-          padding: '0.35rem 0.95rem',
+          gap: '0.5rem',
+          padding: '0.35rem 1rem',
           borderRadius: '9999px',
-          background: 'rgba(232, 75, 44, 0.1)',
-          border: '1px solid rgba(232, 75, 44, 0.25)',
+          background: 'rgba(232, 75, 44, 0.12)',
+          border: '1px solid rgba(232, 75, 44, 0.3)',
           fontSize: '0.78rem',
+          fontFamily: 'var(--font-mono)',
           fontWeight: 600,
-          color: '#E87A38',
-          marginBottom: '2rem',
+          color: 'var(--color-amber)',
+          marginBottom: '1.75rem',
           letterSpacing: '0.04em',
-          boxShadow: '0 0 20px rgba(232, 75, 44, 0.15)',
+          boxShadow: '0 0 20px rgba(232, 75, 44, 0.18)',
         }}>
-          <span style={{ fontSize: '0.9rem' }}>✦</span> Powered by Google Gemini AI
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-flame)', boxShadow: '0 0 8px var(--color-flame)' }} />
+          Autonomous Healthcare Front Desk &bull; Powered by Google Gemini
         </div>
 
         {/* Editorial Headline */}
         <h1 style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(2.5rem, 7.5vw, 5rem)',
+          fontSize: 'clamp(2.5rem, 7vw, 5.25rem)',
           fontWeight: 500,
-          lineHeight: 1.06,
-          maxWidth: '860px',
-          marginBottom: '1.75rem',
+          lineHeight: 1.05,
+          maxWidth: '920px',
+          marginBottom: '1.5rem',
           letterSpacing: '-0.03em',
-          color: '#F3F0E8',
+          color: 'var(--color-text-primary)',
         }}>
-          Your front desk.{' '}
+          Your clinic&apos;s front desk.{' '}
           <br />
           <span className="text-gradient-flame">Always one step ahead.</span>
         </h1>
 
         <p style={{
           fontSize: 'clamp(1rem, 2.2vw, 1.25rem)',
-          color: '#D0CBC1',
-          maxWidth: '620px',
+          color: 'var(--color-text-secondary)',
+          maxWidth: '680px',
           marginBottom: '2.5rem',
           lineHeight: 1.65,
           fontWeight: 400,
         }}>
-          A cinematic AI receptionist for your clinic that answers patient queries, checks real-time
-          calendar availability, and books appointments 24/7 on WhatsApp.
+          Deploy an intelligent, 24/7 AI receptionist on WhatsApp for your practice.
+          Answers patient inquiries, checks real-time doctor availability, quotes procedure fees, and locks appointments directly into Google Calendar.
         </p>
 
-        {/* CTAs */}
-        <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', justifyContent: 'center', width: '100%', maxWidth: '480px' }}>
-          <Link href="/register" className="btn btn-primary btn-lg" style={{ flex: '1 1 200px', textAlign: 'center' }}>
+        {/* Hero CTAs */}
+        <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', justifyContent: 'center', width: '100%', maxWidth: '520px', marginBottom: '3.5rem' }}>
+          <Link href="/register" className="btn btn-primary btn-lg" style={{ flex: '1 1 210px', textAlign: 'center', height: '52px', fontSize: '1rem', fontWeight: 600 }}>
             Start Free Trial →
           </Link>
-          <Link href="#how-it-works" className="btn btn-secondary btn-lg" style={{ flex: '1 1 170px', textAlign: 'center' }}>
-            See How It Works
+          <Link href="#bot-comparison" className="btn btn-secondary btn-lg" style={{ flex: '1 1 190px', textAlign: 'center', height: '52px', fontSize: '0.95rem' }}>
+            Compare With / Without AI
           </Link>
         </div>
 
-        {/* Operational Stats Grid */}
+        {/* Live Operational Stats Bar */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 'clamp(1rem, 3vw, 2.5rem)',
-          marginTop: 'clamp(3.5rem, 8vw, 5.5rem)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+          gap: '1rem',
           width: '100%',
-          maxWidth: '640px',
-          padding: '1.5rem',
-          background: 'rgba(23, 22, 20, 0.65)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(243, 240, 232, 0.08)',
-          borderRadius: '16px',
+          maxWidth: '820px',
+          padding: '1.25rem 1.75rem',
+          background: 'var(--color-surface-secondary)',
+          border: '1px solid var(--color-border-standard)',
+          borderRadius: '18px',
+          boxShadow: 'var(--shadow-card)',
         }}>
           {[
-            { value: '24/7', label: 'Always Available' },
-            { value: '< 2s', label: 'Response Time' },
-            { value: '10+', label: 'Languages' },
-            { value: '0', label: 'Missed Queries' },
+            { value: '24/7', label: 'Always Available', note: 'Zero night dropoff' },
+            { value: '1.2s', label: 'Response Latency', note: 'Instant WhatsApp reply' },
+            { value: '100%', label: 'Calendar Accuracy', note: '2-way Google sync' },
+            { value: '₹45k+', label: 'Monthly ROI', note: 'Recaptured lost leads' },
           ].map(stat => (
             <div key={stat.label} style={{ textAlign: 'center' }}>
               <div style={{
-                fontSize: 'clamp(1.5rem, 4vw, 2.1rem)',
+                fontSize: 'clamp(1.5rem, 3.5vw, 2.1rem)',
                 fontWeight: 700,
                 letterSpacing: '-0.03em',
-                color: '#E87A38',
-                fontFamily: 'var(--font-sans)',
+                color: 'var(--color-amber)',
+                fontFamily: 'var(--font-mono)',
               }}>
                 {stat.value}
               </div>
-              <div style={{ fontSize: '0.68rem', color: '#9E9B93', marginTop: '0.25rem', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 600 }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--color-text-primary)', marginTop: '0.15rem', fontWeight: 600 }}>
                 {stat.label}
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Demo Chat Mockup Canvas */}
-        <div id="demo" style={{
-          marginTop: 'clamp(3.5rem, 8vw, 5.5rem)',
-          background: '#171614',
-          border: '1px solid rgba(243, 240, 232, 0.1)',
-          borderRadius: '20px',
-          padding: 'clamp(1.25rem, 3vw, 1.75rem)',
-          maxWidth: '460px',
-          width: '100%',
-          textAlign: 'left',
-          boxShadow: '0 24px 60px -12px rgba(0, 0, 0, 0.8), 0 0 35px rgba(232, 75, 44, 0.1)',
-          position: 'relative',
-        }}>
-          {/* Warm ember accent border glow */}
-          <div style={{
-            position: 'absolute',
-            inset: '-1px',
-            borderRadius: '21px',
-            background: 'linear-gradient(135deg, rgba(232, 75, 44, 0.25), rgba(200, 105, 56, 0.08), transparent)',
-            zIndex: -1,
-            pointerEvents: 'none',
-          }} />
-
-          {/* Chat Window Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem', paddingBottom: '0.875rem', borderBottom: '1px solid rgba(243, 240, 232, 0.08)' }}>
-            <Image
-              src="/arenova.png"
-              alt="Aria"
-              width={40}
-              height={40}
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                flexShrink: 0,
-                border: '1px solid rgba(232, 75, 44, 0.4)',
-              }}
-            />
-            <div>
-              <div style={{ fontWeight: 600, fontSize: '0.92rem', color: '#F3F0E8' }}>Aria — BrightSmile Dental</div>
-              <div style={{ fontSize: '0.72rem', color: '#63C7A2', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#63C7A2', display: 'inline-block', boxShadow: '0 0 8px rgba(99, 199, 162, 0.6)' }} />
-                Online &bull; WhatsApp Verified
-              </div>
-            </div>
-          </div>
-
-          {[
-            { role: 'patient', text: 'Hi! I need to book a tooth cleaning for tomorrow' },
-            { role: 'ai', text: "Hi! I'm Aria 😊 I'd be happy to help you book a cleaning. Let me check tomorrow's availability for you..." },
-            { role: 'ai', text: "I found 3 available slots tomorrow:\n• 10:00 AM (45 min)\n• 2:30 PM (45 min)\n• 4:00 PM (45 min)\n\nWhich works best for you?" },
-            { role: 'patient', text: '10 AM please! My name is Priya' },
-            { role: 'ai', text: "Perfect! ✅ I've reserved Dental Cleaning on Monday at 10:00 AM. A calendar invitation & confirmation is sent to your phone. Can I help with anything else?" },
-          ].map((msg, i) => (
-            <div key={i} style={{
-              display: 'flex',
-              justifyContent: msg.role === 'patient' ? 'flex-end' : 'flex-start',
-              marginBottom: '0.65rem',
-            }}>
-              <div style={{
-                maxWidth: '85%',
-                padding: '0.65rem 0.95rem',
-                borderRadius: msg.role === 'patient' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                background: msg.role === 'patient' ? '#E84B2C' : '#1C1916',
-                border: msg.role === 'patient' ? '1px solid rgba(243, 240, 232, 0.15)' : '1px solid rgba(243, 240, 232, 0.08)',
-                color: '#F3F0E8',
-                fontSize: '0.8125rem',
-                lineHeight: 1.5,
-                whiteSpace: 'pre-line',
-                boxShadow: msg.role === 'patient' ? '0 2px 10px rgba(232, 75, 44, 0.3)' : '0 1px 4px rgba(0, 0, 0, 0.4)',
-              }}>
-                {msg.text}
+              <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginTop: '0.1rem' }}>
+                {stat.note}
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ============ FEATURES ============ */}
-      <section id="features" style={{
-        padding: 'clamp(4.5rem, 10vw, 7.5rem) clamp(1rem, 5vw, 3rem)',
+      {/* ============ INTERACTIVE BOT COMPARISON (WITH VS WITHOUT AI) ============ */}
+      <section id="bot-comparison" style={{
+        padding: 'clamp(4.5rem, 9vw, 7rem) clamp(1rem, 5vw, 3rem)',
+        background: 'linear-gradient(180deg, transparent 0%, rgba(232, 75, 44, 0.04) 50%, transparent 100%)',
+        position: 'relative',
+        zIndex: 2,
+      }}>
+        <InteractiveBotComparison />
+      </section>
+
+      {/* ============ WHY CLINICS ARE SWITCHING (4 PAIN POINT CONTRAST CARDS) ============ */}
+      <section style={{
+        padding: 'clamp(4rem, 8vw, 6.5rem) clamp(1rem, 5vw, 3rem)',
         maxWidth: '1240px',
         margin: '0 auto',
       }}>
-        <div style={{ textAlign: 'center', marginBottom: 'clamp(2.5rem, 5vw, 4rem)' }}>
+        <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '0.4rem',
             padding: '0.28rem 0.85rem',
             borderRadius: '9999px',
-            background: 'rgba(232, 75, 44, 0.1)',
+            background: 'rgba(232, 75, 44, 0.12)',
             border: '1px solid rgba(232, 75, 44, 0.25)',
             fontSize: '0.72rem',
+            fontFamily: 'var(--font-mono)',
             fontWeight: 600,
-            letterSpacing: '0.12em',
+            letterSpacing: '0.08em',
             textTransform: 'uppercase',
-            color: '#E87A38',
-            marginBottom: '1rem',
+            color: 'var(--color-amber)',
+            marginBottom: '0.85rem',
           }}>
-            Platform Capabilities
+            Front Desk Economics
+          </div>
+          <h2 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(2rem, 4vw, 3.25rem)',
+            fontWeight: 500,
+            marginBottom: '0.65rem',
+            color: 'var(--color-text-primary)',
+            letterSpacing: '-0.025em',
+          }}>
+            The real cost of missed clinic inquiries
+          </h2>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'clamp(0.95rem, 1.8vw, 1.1rem)', maxWidth: '580px', margin: '0 auto', lineHeight: 1.6 }}>
+            Modern patients expect instant answers on WhatsApp. When your front desk phone is busy or closed, patients book the next clinic on Google.
+          </p>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: '1.25rem',
+        }}>
+          {[
+            {
+              stat: '42%',
+              badge: 'AFTER-HOURS LOSS',
+              title: 'Searches Happen Late at Night',
+              desc: 'Toothaches, acute rashes, and pediatric fevers peak between 8 PM and 7 AM when clinics are shut. Unanswered texts go straight to 24/7 hospitals.',
+            },
+            {
+              stat: '3.5 hrs',
+              badge: 'STAFF DRAIN',
+              title: 'Daily Telephone Hold Overhead',
+              desc: 'Front desk staff spend hours repeating driving directions, consultation fees, and doctor timings instead of comforting in-clinic patients.',
+            },
+            {
+              stat: '14%',
+              badge: 'ROSTER CHAOS',
+              title: 'Manual Double-Booked Chairs',
+              desc: 'Paper registers and disconnected WhatsApp notes cause schedule collisions. Doctor time is wasted while overlapping patients sit frustrated.',
+            },
+            {
+              stat: '₹60,000+',
+              badge: 'REVENUE LEAK',
+              title: 'Lost Patient Lifetime Value',
+              desc: 'Every lost routine cleaning or skin consultation inquiry represents missed follow-on procedures, treatments, and family referrals.',
+            },
+          ].map((card, i) => (
+            <div
+              key={i}
+              className="card"
+              style={{
+                padding: '1.75rem',
+                borderRadius: '16px',
+                background: 'var(--color-surface-elevated)',
+                border: '1px solid var(--color-border-standard)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div>
+                <div style={{
+                  fontSize: '0.68rem',
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--color-amber)',
+                  fontWeight: 600,
+                  letterSpacing: '0.06em',
+                  marginBottom: '0.45rem',
+                }}>
+                  {card.badge}
+                </div>
+                <div style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '2.5rem',
+                  fontWeight: 700,
+                  color: 'var(--color-flame)',
+                  letterSpacing: '-0.03em',
+                  marginBottom: '0.65rem',
+                }}>
+                  {card.stat}
+                </div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '0.5rem' }}>
+                  {card.title}
+                </h3>
+                <p style={{ fontSize: '0.825rem', color: 'var(--color-text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                  {card.desc}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ============ FEATURE BENTO GRID (6 RICH CARDS) ============ */}
+      <section id="features" style={{
+        padding: 'clamp(4.5rem, 9vw, 7.5rem) clamp(1rem, 5vw, 3rem)',
+        maxWidth: '1240px',
+        margin: '0 auto',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.28rem 0.85rem',
+            borderRadius: '9999px',
+            background: 'rgba(232, 75, 44, 0.12)',
+            border: '1px solid rgba(232, 75, 44, 0.25)',
+            fontSize: '0.72rem',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 600,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--color-amber)',
+            marginBottom: '0.85rem',
+          }}>
+            Engineered Capabilities
           </div>
           <h2 style={{
             fontFamily: 'var(--font-display)',
             fontSize: 'clamp(2rem, 4.5vw, 3.25rem)',
             fontWeight: 500,
-            marginBottom: '0.85rem',
-            color: '#F3F0E8',
+            marginBottom: '0.65rem',
+            color: 'var(--color-text-primary)',
             letterSpacing: '-0.025em',
           }}>
-            Everything your clinic needs
+            Everything modern clinics need to scale
           </h2>
-          <p style={{ color: '#9E9B93', fontSize: 'clamp(0.95rem, 2vw, 1.1rem)', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'clamp(0.95rem, 1.8vw, 1.1rem)', maxWidth: '560px', margin: '0 auto', lineHeight: 1.6 }}>
             A complete AI operations platform engineered for patient trust, scheduling speed, and medical front-desk clarity.
           </p>
         </div>
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
-          gap: '1px',
-          background: 'rgba(243, 240, 232, 0.08)',
-          borderRadius: '20px',
-          overflow: 'hidden',
-          border: '1px solid rgba(243, 240, 232, 0.08)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '1.25rem',
         }}>
-          {features.map((feature, idx) => (
-            <div key={feature.title} style={{
-              padding: 'clamp(1.75rem, 3.5vw, 2.5rem)',
-              background: '#171614',
-              position: 'relative',
-              transition: 'background 0.2s ease',
-            }}>
+          {featureBento.map((item, i) => (
+            <div
+              key={i}
+              className="card"
+              style={{
+                padding: '2rem',
+                borderRadius: '18px',
+                background: 'var(--color-surface-elevated)',
+                border: '1px solid var(--color-border-standard)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                transition: 'all 0.25s ease',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                  <div style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '12px',
+                    background: 'var(--color-surface-secondary)',
+                    border: '1px solid var(--color-border-standard)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.5rem',
+                  }}>
+                    {item.icon}
+                  </div>
+                  <span style={{
+                    fontSize: '0.68rem',
+                    fontFamily: 'var(--font-mono)',
+                    color: 'var(--color-amber)',
+                    fontWeight: 600,
+                    letterSpacing: '0.06em',
+                  }}>
+                    {item.tag}
+                  </span>
+                </div>
+
+                <h3 style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '1.2rem',
+                  fontWeight: 600,
+                  color: 'var(--color-text-primary)',
+                  marginBottom: '0.65rem',
+                  letterSpacing: '-0.015em',
+                }}>
+                  {item.title}
+                </h3>
+
+                <p style={{
+                  fontSize: '0.85rem',
+                  color: 'var(--color-text-secondary)',
+                  lineHeight: 1.65,
+                  margin: 0,
+                }}>
+                  {item.description}
+                </p>
+              </div>
+
               <div style={{
-                width: 48,
-                height: 48,
-                borderRadius: '12px',
-                background: idx === 0 ? 'rgba(232, 75, 44, 0.15)' : '#1C1916',
+                marginTop: '1.5rem',
+                paddingTop: '0.85rem',
+                borderTop: '1px solid var(--color-border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.4rem',
-                marginBottom: '1.25rem',
-                border: idx === 0 ? '1px solid rgba(232, 75, 44, 0.35)' : '1px solid rgba(243, 240, 232, 0.08)',
-                boxShadow: idx === 0 ? '0 0 20px rgba(232, 75, 44, 0.2)' : 'none',
-              }}>
-                {feature.icon}
-              </div>
-              <h3 style={{
-                fontSize: '1.1rem',
+                gap: '0.45rem',
+                fontSize: '0.75rem',
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--color-success)',
                 fontWeight: 600,
-                marginBottom: '0.5rem',
-                color: '#F3F0E8',
-                letterSpacing: '-0.01em',
               }}>
-                {feature.title}
-              </h3>
-              <p style={{ color: '#9E9B93', fontSize: '0.875rem', lineHeight: 1.65 }}>
-                {feature.description}
-              </p>
+                <span>✓</span>
+                <span>{item.highlight}</span>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ============ HOW IT WORKS ============ */}
-      <section id="how-it-works" style={{
-        padding: 'clamp(4.5rem, 10vw, 7.5rem) clamp(1rem, 5vw, 3rem)',
-        background: '#0D0D0C',
-        borderTop: '1px solid rgba(243, 240, 232, 0.08)',
-        borderBottom: '1px solid rgba(243, 240, 232, 0.08)',
+      {/* ============ PRACTICE SPECIALTIES (6 CLINIC TYPES) ============ */}
+      <section style={{
+        padding: 'clamp(4.5rem, 8vw, 6.5rem) clamp(1rem, 5vw, 3rem)',
+        background: 'var(--color-surface-secondary)',
+        borderTop: '1px solid var(--color-border-subtle)',
+        borderBottom: '1px solid var(--color-border-subtle)',
       }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 'clamp(2.5rem, 5vw, 4rem)' }}>
+        <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.4rem',
               padding: '0.28rem 0.85rem',
               borderRadius: '9999px',
-              background: 'rgba(232, 75, 44, 0.1)',
+              background: 'rgba(232, 75, 44, 0.12)',
               border: '1px solid rgba(232, 75, 44, 0.25)',
               fontSize: '0.72rem',
+              fontFamily: 'var(--font-mono)',
               fontWeight: 600,
-              letterSpacing: '0.12em',
+              letterSpacing: '0.08em',
               textTransform: 'uppercase',
-              color: '#E87A38',
-              marginBottom: '1rem',
+              color: 'var(--color-amber)',
+              marginBottom: '0.85rem',
             }}>
-              Seamless Deployment
+              Practice Specialization
             </div>
             <h2 style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(2rem, 4.5vw, 3.25rem)',
+              fontSize: 'clamp(2rem, 4vw, 3rem)',
               fontWeight: 500,
-              marginBottom: '0.85rem',
-              color: '#F3F0E8',
+              color: 'var(--color-text-primary)',
               letterSpacing: '-0.025em',
+              marginBottom: '0.65rem',
             }}>
-              Live in four simple steps
+              Calibrated for your clinical domain
             </h2>
-            <p style={{ color: '#9E9B93', fontSize: 'clamp(0.95rem, 2vw, 1.1rem)' }}>
-              No complex setup. From sign-up to automated WhatsApp receptionist in under 15 minutes.
+            <p style={{ color: 'var(--color-text-muted)', fontSize: 'clamp(0.95rem, 1.8vw, 1.05rem)', maxWidth: '580px', margin: '0 auto', lineHeight: 1.6 }}>
+              Whether you manage an orthodontic clinic, medical dermatology suite, or multi-doctor polyclinic, the AI adopts your specialized clinical language.
             </p>
           </div>
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
-            gap: 'clamp(1.75rem, 3.5vw, 2.75rem)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '1.25rem',
           }}>
-            {steps.map((step, idx) => (
-              <div key={step.number} style={{ position: 'relative' }}>
-                <div style={{
-                  fontFamily: 'var(--font-display)',
-                  fontSize: 'clamp(2.75rem, 5vw, 3.75rem)',
-                  fontWeight: 500,
-                  color: idx === 0 ? '#E84B2C' : 'rgba(232, 75, 44, 0.25)',
-                  lineHeight: 1,
-                  marginBottom: '1rem',
-                  letterSpacing: '-0.02em',
-                }}>
-                  {step.number}
+            {specialties.map((spec, i) => (
+              <div
+                key={i}
+                className="card"
+                style={{
+                  padding: '1.75rem',
+                  borderRadius: '16px',
+                  background: 'var(--color-surface-elevated)',
+                  border: '1px solid var(--color-border-standard)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+                    <span style={{ fontSize: '1.75rem' }}>{spec.icon}</span>
+                    <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>
+                      {spec.metric}
+                    </span>
+                  </div>
+                  <h3 style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: '1.15rem',
+                    fontWeight: 600,
+                    color: 'var(--color-text-primary)',
+                    marginBottom: '0.45rem',
+                  }}>
+                    {spec.name}
+                  </h3>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Trained Patient Inquiries:
+                  </div>
+                  <p style={{ fontSize: '0.825rem', color: 'var(--color-text-secondary)', lineHeight: 1.55, margin: 0 }}>
+                    {spec.commonQueries}
+                  </p>
                 </div>
-                <h3 style={{
-                  fontSize: '1.05rem',
-                  fontWeight: 600,
-                  marginBottom: '0.5rem',
-                  color: '#F3F0E8',
-                }}>
-                  {step.title}
-                </h3>
-                <p style={{ color: '#9E9B93', fontSize: '0.875rem', lineHeight: 1.6 }}>
-                  {step.description}
-                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ============ PRICING ============ */}
-      <LandingPricing />
-
-      {/* ============ CTA ============ */}
-      <section style={{
-        padding: 'clamp(4.5rem, 10vw, 7.5rem) clamp(1rem, 5vw, 3rem)',
-        textAlign: 'center',
-        background: '#080505',
-        position: 'relative',
-        overflow: 'hidden',
-        borderTop: '1px solid rgba(243, 240, 232, 0.08)',
+      {/* ============ 4-STEP ONBOARDING & DEPLOYMENT FLOW ============ */}
+      <section id="how-it-works" style={{
+        padding: 'clamp(4.5rem, 9vw, 7.5rem) clamp(1rem, 5vw, 3rem)',
+        maxWidth: '1240px',
+        margin: '0 auto',
       }}>
-        {/* Ambient Phoenix glow */}
-        <div style={{
-          position: 'absolute',
-          top: '-50%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '700px',
-          height: '700px',
-          background: 'radial-gradient(ellipse, rgba(232, 75, 44, 0.16) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: '640px', margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.28rem 0.85rem',
+            borderRadius: '9999px',
+            background: 'rgba(232, 75, 44, 0.12)',
+            border: '1px solid rgba(232, 75, 44, 0.25)',
+            fontSize: '0.72rem',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 600,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--color-amber)',
+            marginBottom: '0.85rem',
+          }}>
+            Zero Engineering Overhead
+          </div>
           <h2 style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(2rem, 4.5vw, 3.25rem)',
+            fontSize: 'clamp(2rem, 4vw, 3.25rem)',
             fontWeight: 500,
-            marginBottom: '1.25rem',
-            color: '#F3F0E8',
+            marginBottom: '0.65rem',
+            color: 'var(--color-text-primary)',
             letterSpacing: '-0.025em',
           }}>
-            Ready to transform your clinic?
+            From zero to live receptionist in 4 minutes
           </h2>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: 'clamp(0.95rem, 1.8vw, 1.1rem)', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
+            No coding, no server maintenance, and no Meta developer verification needed.
+          </p>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: '1.25rem',
+        }}>
+          {steps.map((step) => (
+            <div
+              key={step.number}
+              className="card"
+              style={{
+                padding: '1.75rem',
+                borderRadius: '16px',
+                background: 'var(--color-surface-elevated)',
+                border: '1px solid var(--color-border-standard)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <div style={{
+                    fontSize: '1.75rem',
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700,
+                    color: 'var(--color-flame)',
+                    letterSpacing: '-0.03em',
+                  }}>
+                    {step.number}
+                  </div>
+                  <span style={{
+                    fontSize: '0.65rem',
+                    fontFamily: 'var(--font-mono)',
+                    color: 'var(--color-amber)',
+                    fontWeight: 600,
+                    letterSpacing: '0.05em',
+                  }}>
+                    {step.tag}
+                  </span>
+                </div>
+                <h3 style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '1.15rem',
+                  fontWeight: 600,
+                  color: 'var(--color-text-primary)',
+                  marginBottom: '0.5rem',
+                }}>
+                  {step.title}
+                </h3>
+                <p style={{ fontSize: '0.825rem', color: 'var(--color-text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                  {step.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ============ PRICING SECTION ============ */}
+      <section id="pricing" style={{
+        padding: 'clamp(4.5rem, 8vw, 6.5rem) clamp(1rem, 5vw, 3rem)',
+        background: 'var(--color-surface-secondary)',
+        borderTop: '1px solid var(--color-border-subtle)',
+        borderBottom: '1px solid var(--color-border-subtle)',
+      }}>
+        <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.28rem 0.85rem',
+              borderRadius: '9999px',
+              background: 'rgba(232, 75, 44, 0.12)',
+              border: '1px solid rgba(232, 75, 44, 0.25)',
+              fontSize: '0.72rem',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--color-amber)',
+              marginBottom: '0.85rem',
+            }}>
+              Transparent Investment
+            </div>
+            <h2 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(2rem, 4vw, 3.25rem)',
+              fontWeight: 500,
+              color: 'var(--color-text-primary)',
+              letterSpacing: '-0.025em',
+              marginBottom: '0.65rem',
+            }}>
+              Simple plans for growing practices
+            </h2>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: 'clamp(0.95rem, 1.8vw, 1.05rem)', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
+              All tiers include unlimited incoming message triage, 2-way Google Calendar synchronization, and human staff takeover.
+            </p>
+          </div>
+
+          <LandingPricing />
+        </div>
+      </section>
+
+      {/* ============ FAQ ACCORDION ============ */}
+      <section style={{
+        padding: 'clamp(4.5rem, 9vw, 7.5rem) clamp(1rem, 5vw, 3rem)',
+        maxWidth: '860px',
+        margin: '0 auto',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            padding: '0.28rem 0.85rem',
+            borderRadius: '9999px',
+            background: 'rgba(232, 75, 44, 0.12)',
+            border: '1px solid rgba(232, 75, 44, 0.25)',
+            fontSize: '0.72rem',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 600,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--color-amber)',
+            marginBottom: '0.85rem',
+          }}>
+            Got Questions?
+          </div>
+          <h2 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(2rem, 4vw, 3rem)',
+            fontWeight: 500,
+            color: 'var(--color-text-primary)',
+            letterSpacing: '-0.025em',
+          }}>
+            Frequently asked questions
+          </h2>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {faqs.map((faq, i) => (
+            <div
+              key={i}
+              className="card"
+              style={{
+                padding: '1.5rem',
+                borderRadius: '14px',
+                background: 'var(--color-surface-elevated)',
+                border: '1px solid var(--color-border-standard)',
+              }}
+            >
+              <h3 style={{
+                fontSize: '1.05rem',
+                fontWeight: 600,
+                color: 'var(--color-text-primary)',
+                marginBottom: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}>
+                <span style={{ color: 'var(--color-amber)', fontSize: '0.85rem' }}>✦</span>
+                {faq.q}
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.65, margin: 0, paddingLeft: '1.35rem' }}>
+                {faq.a}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ============ FINAL CALL TO ACTION ============ */}
+      <section style={{
+        padding: 'clamp(4.5rem, 8vw, 7rem) clamp(1rem, 5vw, 3rem)',
+        textAlign: 'center',
+        background: 'linear-gradient(180deg, transparent 0%, rgba(232, 75, 44, 0.08) 100%)',
+        borderTop: '1px solid var(--color-border-subtle)',
+        position: 'relative',
+      }}>
+        <div style={{ maxWidth: '680px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            padding: '0.35rem 0.95rem',
+            borderRadius: '9999px',
+            background: 'rgba(232, 75, 44, 0.12)',
+            border: '1px solid rgba(232, 75, 44, 0.3)',
+            color: 'var(--color-amber)',
+            fontSize: '0.75rem',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 600,
+            marginBottom: '1.5rem',
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-flame)' }} />
+            Start in 4 Minutes &bull; 3-Day Operational Trial
+          </div>
+
+          <h2 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(2.2rem, 5vw, 3.8rem)',
+            fontWeight: 500,
+            lineHeight: 1.12,
+            letterSpacing: '-0.025em',
+            marginBottom: '1.25rem',
+            color: 'var(--color-text-primary)',
+          }}>
+            Ready to give your clinic a 24/7 AI front desk?
+          </h2>
+
           <p style={{
-            color: '#D0CBC1',
-            fontSize: 'clamp(0.95rem, 2vw, 1.15rem)',
-            marginBottom: '2.25rem',
+            fontSize: 'clamp(1rem, 2vw, 1.15rem)',
+            color: 'var(--color-text-secondary)',
+            marginBottom: '2.5rem',
             lineHeight: 1.6,
           }}>
-            Join forward-thinking practices already saving hours of reception overhead every single day.
+            Join modern clinics capturing appointments while they sleep. No credit card required.
           </p>
-          <Link href="/register" className="btn btn-primary btn-lg" style={{
-            fontSize: '1rem',
-            padding: '0.95rem 2.5rem',
-          }}>
-            Start Your Free Trial →
-          </Link>
+
+          <div style={{ display: 'flex', gap: '0.85rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link
+              href="/register"
+              className="btn btn-primary btn-lg"
+              style={{ padding: '0.85rem 2.25rem', fontSize: '1rem', fontWeight: 600 }}
+            >
+              Deploy Your Receptionist Now →
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* ============ FOOTER ============ */}
       <footer style={{
-        padding: 'clamp(2.5rem, 5vw, 3.5rem) clamp(1rem, 5vw, 3rem)',
-        background: '#080505',
-        color: '#9E9B93',
-        fontSize: '0.8125rem',
-        borderTop: '1px solid rgba(243, 240, 232, 0.08)',
+        padding: '3rem clamp(1rem, 5vw, 3rem) 2rem',
+        borderTop: '1px solid var(--color-border-subtle)',
+        background: 'var(--color-charcoal)',
+        color: 'var(--color-text-muted)',
+        fontSize: '0.825rem',
       }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '1rem',
-            marginBottom: '1.5rem',
-            paddingBottom: '1.5rem',
-            borderBottom: '1px solid rgba(243, 240, 232, 0.06)',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <Image
-                src="/arenova.png"
-                alt="Arenova"
-                width={28}
-                height={28}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '7px',
-                  objectFit: 'contain',
-                  flexShrink: 0,
-                }}
-              />
-              <span style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: '1.15rem',
-                fontWeight: 500,
-                color: '#F3F0E8',
-                letterSpacing: '-0.01em',
-              }}>AI Front Desk</span>
-            </div>
-            <div style={{ display: 'flex', gap: 'clamp(1rem, 3vw, 2rem)', flexWrap: 'wrap' }}>
-              <Link href="/privacy" style={{ color: '#9E9B93', textDecoration: 'none', transition: 'color 0.15s ease' }}>Privacy Policy</Link>
-              <Link href="/tos" style={{ color: '#9E9B93', textDecoration: 'none', transition: 'color 0.15s ease' }}>Terms of Service</Link>
-              <Link href="/login" style={{ color: '#9E9B93', textDecoration: 'none', transition: 'color 0.15s ease' }}>Sign In</Link>
-              <Link href="/register" style={{ color: '#9E9B93', textDecoration: 'none', transition: 'color 0.15s ease' }}>Free Trial</Link>
-            </div>
+        <div style={{
+          maxWidth: '1240px',
+          margin: '0 auto',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1.5rem',
+          marginBottom: '2rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Image
+              src="/arenova.png"
+              alt="Arenova"
+              width={28}
+              height={28}
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '7px',
+                objectFit: 'contain',
+              }}
+            />
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', color: 'var(--color-text-primary)', fontWeight: 500 }}>
+              AI Front Desk
+            </span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <p style={{ margin: 0 }}>© {new Date().getFullYear()} AI Front Desk. Inspired by Arenova Design System.</p>
-            <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>SANDBOX</span>
-              Active Production Architecture
-            </p>
+
+          <div style={{ display: 'flex', gap: '1.75rem', flexWrap: 'wrap' }}>
+            <Link href="#features" style={{ color: 'var(--color-text-muted)', textDecoration: 'none' }}>Features</Link>
+            <Link href="#bot-comparison" style={{ color: 'var(--color-text-muted)', textDecoration: 'none' }}>Comparison</Link>
+            <Link href="#pricing" style={{ color: 'var(--color-text-muted)', textDecoration: 'none' }}>Pricing</Link>
+            <Link href="/privacy" style={{ color: 'var(--color-text-muted)', textDecoration: 'none' }}>Privacy Policy</Link>
+            <Link href="/tos" style={{ color: 'var(--color-text-muted)', textDecoration: 'none' }}>Terms of Service</Link>
+            <Link href="/login" style={{ color: 'var(--color-amber)', textDecoration: 'none', fontWeight: 600 }}>Sign In</Link>
+          </div>
+        </div>
+
+        <div style={{
+          maxWidth: '1240px',
+          margin: '0 auto',
+          paddingTop: '1.5rem',
+          borderTop: '1px solid var(--color-border-subtle)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          fontSize: '0.75rem',
+        }}>
+          <div>
+            &copy; {new Date().getFullYear()} Arenova AI Front Desk. All rights reserved.
+          </div>
+          <div>
+            Google Calendar API Limited Use Compliant &bull; Meta WhatsApp Multi-Device Direct
           </div>
         </div>
       </footer>
