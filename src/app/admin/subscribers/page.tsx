@@ -69,9 +69,10 @@ export default async function AdminSubscribersPage() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="card p-4">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
-            Total Clinics
+        <div className="card p-4 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] relative overflow-hidden">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] flex items-center justify-between">
+            <span>Total Clinics</span>
+            <span className="text-sm">🏥</span>
           </div>
           <div className="font-mono text-2xl font-bold text-[var(--color-text-primary)] mt-1.5">
             {organizations.length}
@@ -81,33 +82,37 @@ export default async function AdminSubscribersPage() {
           </div>
         </div>
 
-        <div className="card p-4 border-[#E84B2C]/40 bg-[var(--color-surface-elevated)] shadow-[0_0_12px_rgba(232,75,44,0.1)]">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[#E87A38] font-semibold">
-            Active Subscriptions
+        <div className="card p-4 border-[#E84B2C]/40 bg-[var(--color-surface-elevated)] shadow-[0_0_14px_rgba(232,75,44,0.1)] relative overflow-hidden">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[#E87A38] font-semibold flex items-center justify-between">
+            <span>Active Desks</span>
+            <span className="text-sm">⚡</span>
           </div>
           <div className="font-mono text-2xl font-bold text-[#E87A38] mt-1.5">
             {activeCount}
           </div>
-          <div className="text-[10px] font-mono text-[#63C7A2] mt-1">
-            Live automated desks
+          <div className="text-[10px] font-mono text-[#63C7A2] mt-1 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#63C7A2] animate-pulse" />
+            <span>Live automated desks</span>
           </div>
         </div>
 
-        <div className="card p-4">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
-            Onboarding
+        <div className="card p-4 border-[var(--color-border-standard)] bg-[var(--color-surface-elevated)] relative overflow-hidden">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] flex items-center justify-between">
+            <span>Onboarding</span>
+            <span className="text-sm">⚙️</span>
           </div>
           <div className="font-mono text-2xl font-bold text-[var(--color-text-primary)] mt-1.5">
             {onboardingCount}
           </div>
           <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-1">
-            Pending setup
+            Pending config setup
           </div>
         </div>
 
-        <div className="card p-4">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
-            Expired Tiers
+        <div className="card p-4 border-[var(--color-border-standard)] bg-[var(--color-surface-elevated)] relative overflow-hidden">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] flex items-center justify-between">
+            <span>Expired Tiers</span>
+            <span className="text-sm">⏸️</span>
           </div>
           <div className="font-mono text-2xl font-bold text-[var(--color-text-muted)] mt-1.5">
             {expiredCount}

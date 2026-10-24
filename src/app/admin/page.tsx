@@ -118,63 +118,92 @@ export default async function AdminDashboard() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* MRR Card */}
-          <div className="card p-5 bg-[var(--color-surface-elevated)] border-[#E84B2C]/30 shadow-[0_0_20px_rgba(232,75,44,0.08)] relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-radial from-[#E84B2C]/10 to-transparent pointer-events-none" />
-            <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-              <span>Est. Platform MRR</span>
-              <span className="text-[#E87A38] text-xs">₹ / mo</span>
+          <div className="card p-5 bg-[var(--color-surface-elevated)] border-[#E84B2C]/40 shadow-[0_0_24px_rgba(232,75,44,0.08)] relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-28 h-28 bg-radial from-[#E84B2C]/15 to-transparent pointer-events-none" />
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm">📈</span>
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                  Est. Platform MRR
+                </span>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#E84B2C]/15 text-[#E87A38] font-semibold border border-[#E84B2C]/30">
+                ₹ / month
+              </span>
             </div>
             <div className="font-mono text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">
               ₹{stats.mrr.toLocaleString('en-IN')}
             </div>
-            <div className="text-xs text-[#63C7A2] font-mono mt-2 flex items-center gap-1.5">
-              <span>●</span>
+            <div className="text-xs text-[#63C7A2] font-mono mt-2.5 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#63C7A2] animate-pulse" />
               <span>{stats.activeSubscribers} active clinics run-rate</span>
             </div>
           </div>
 
           {/* Gross Contribution Card */}
-          <div className="card p-5 bg-[var(--color-surface-elevated)] border-[#63C7A2]/30 shadow-[0_0_20px_rgba(99,199,162,0.06)] relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-radial from-[#63C7A2]/10 to-transparent pointer-events-none" />
-            <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-              <span>Gross Contribution</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#63C7A2]/15 text-[#63C7A2] font-semibold">
+          <div className="card p-5 bg-[var(--color-surface-elevated)] border-[#63C7A2]/40 shadow-[0_0_24px_rgba(99,199,162,0.08)] relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-28 h-28 bg-radial from-[#63C7A2]/15 to-transparent pointer-events-none" />
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm">💎</span>
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                  Gross Contribution
+                </span>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#63C7A2]/15 text-[#63C7A2] font-semibold border border-[#63C7A2]/30">
                 {stats.profitMargin}% margin
               </span>
             </div>
             <div className="font-mono text-3xl font-bold text-[#63C7A2] tracking-tight">
               ₹{stats.grossContribution.toLocaleString('en-IN')}
             </div>
-            <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-              Net platform yield (MRR − AI Compute)
+            <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2.5 flex items-center gap-1.5">
+              <span>●</span>
+              <span>Net platform yield (MRR − AI Compute)</span>
             </div>
           </div>
 
           {/* 30-Day Collections Card */}
           <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] relative overflow-hidden">
-            <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-              <span>Payments (30d)</span>
-              <span className="text-[#63C7A2] text-xs">✓ Verified</span>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm">💳</span>
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                  Payments (30d)
+                </span>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#63C7A2]/15 text-[#63C7A2] font-semibold border border-[#63C7A2]/30">
+                ✓ Verified
+              </span>
             </div>
             <div className="font-mono text-3xl font-bold text-[#63C7A2] tracking-tight">
               ₹{stats.totalPaymentsThisMonth.toLocaleString('en-IN')}
             </div>
-            <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-              UPI &amp; Web3 confirmed settlements
+            <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2.5 flex items-center gap-1.5">
+              <span>●</span>
+              <span>UPI &amp; Web3 confirmed settlements</span>
             </div>
           </div>
 
           {/* AI Compute Spend Card */}
           <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] relative overflow-hidden">
-            <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-              <span>AI Compute Spend</span>
-              <span className="text-[#E87A38] text-xs">⚡ Gemini</span>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm">⚡</span>
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                  AI Compute Spend
+                </span>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#E87A38]/15 text-[#E87A38] font-semibold border border-[#E87A38]/30">
+                Gemini Flash
+              </span>
             </div>
             <div className="font-mono text-3xl font-bold text-[#E87A38] tracking-tight">
               ₹{stats.aiSpend.toFixed(2)}
             </div>
-            <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-              Sub-cent Gemini Flash margins
+            <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2.5 flex items-center gap-1.5">
+              <span>●</span>
+              <span>Sub-cent Gemini Flash margins</span>
             </div>
           </div>
         </div>
@@ -187,8 +216,9 @@ export default async function AdminDashboard() {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="card p-4">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
-              Registered Users
+            <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] flex items-center justify-between">
+              <span>Users</span>
+              <span>👥</span>
             </div>
             <div className="font-mono text-2xl font-bold text-[var(--color-text-primary)] mt-1.5">
               {stats.totalUsers}
@@ -199,8 +229,9 @@ export default async function AdminDashboard() {
           </div>
 
           <div className="card p-4 border-[#E84B2C]/40 bg-[var(--color-surface-elevated)] shadow-[0_0_12px_rgba(232,75,44,0.1)]">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-[#E87A38] font-semibold">
-              Active Clinics
+            <div className="text-[10px] font-mono uppercase tracking-wider text-[#E87A38] font-semibold flex items-center justify-between">
+              <span>Active Clinics</span>
+              <span>🏥</span>
             </div>
             <div className="font-mono text-2xl font-bold text-[#E87A38] mt-1.5">
               {stats.activeSubscribers}
@@ -213,8 +244,9 @@ export default async function AdminDashboard() {
           <div className={`card p-4 transition-all ${
             stats.expiringCount > 0 ? 'border-[#E87A38]/50 bg-[#E87A38]/05' : ''
           }`}>
-            <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
-              Expiring (7d)
+            <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] flex items-center justify-between">
+              <span>Expiring (7d)</span>
+              <span>⏳</span>
             </div>
             <div className={`font-mono text-2xl font-bold mt-1.5 ${
               stats.expiringCount > 0 ? 'text-[#E87A38]' : 'text-[var(--color-text-muted)]'
@@ -227,8 +259,9 @@ export default async function AdminDashboard() {
           </div>
 
           <div className="card p-4">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
-              Organizations
+            <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] flex items-center justify-between">
+              <span>Clinics (Orgs)</span>
+              <span>🏢</span>
             </div>
             <div className="font-mono text-2xl font-bold text-[var(--color-text-primary)] mt-1.5">
               {stats.totalOrgs}
@@ -239,8 +272,9 @@ export default async function AdminDashboard() {
           </div>
 
           <div className="card p-4">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
-              Expired Tiers
+            <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] flex items-center justify-between">
+              <span>Expired Tiers</span>
+              <span>⏸️</span>
             </div>
             <div className="font-mono text-2xl font-bold text-[var(--color-text-muted)] mt-1.5">
               {stats.expired}
@@ -251,8 +285,9 @@ export default async function AdminDashboard() {
           </div>
 
           <div className="card p-4">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
-              Suspended
+            <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] flex items-center justify-between">
+              <span>Suspended</span>
+              <span>🔒</span>
             </div>
             <div className="font-mono text-2xl font-bold text-[var(--color-text-muted)] mt-1.5">
               {stats.suspended}

@@ -333,37 +333,56 @@ export default function AdminUsersPage() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <div className="card p-4">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Total Accounts</div>
-          <div className="font-mono text-2xl font-bold text-[var(--color-text-primary)] mt-1">{stats.total}</div>
+        <div className="card p-4 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] relative overflow-hidden">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] flex items-center justify-between">
+            <span>Total Accounts</span>
+            <span className="text-sm">👥</span>
+          </div>
+          <div className="font-mono text-2xl font-bold text-[var(--color-text-primary)] mt-1.5">{stats.total}</div>
+          <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-1">Platform directory</div>
         </div>
 
-        <div className="card p-4 border-[#D4AF37]/35 bg-[var(--color-surface-elevated)] shadow-[0_0_14px_rgba(212,175,55,0.08)]">
+        <div className="card p-4 border-[#D4AF37]/40 bg-[var(--color-surface-elevated)] shadow-[0_0_16px_rgba(212,175,55,0.08)] relative overflow-hidden">
           <div className="text-[10px] font-mono uppercase tracking-wider text-[#D4AF37] font-semibold flex items-center justify-between">
             <span>Super Admins</span>
-            <span>👑</span>
+            <span className="text-sm">👑</span>
           </div>
-          <div className="font-mono text-2xl font-bold text-[#D4AF37] mt-1">{stats.superAdmins}</div>
+          <div className="font-mono text-2xl font-bold text-[#D4AF37] mt-1.5">{stats.superAdmins}</div>
+          <div className="text-[10px] font-mono text-[#D4AF37]/80 mt-1">Root platform access</div>
         </div>
 
-        <div className="card p-4">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Clinic Owners</div>
-          <div className="font-mono text-2xl font-bold text-[#E87A38] mt-1">{stats.owners}</div>
+        <div className="card p-4 border-[#E87A38]/30 bg-[var(--color-surface-elevated)] relative overflow-hidden">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[#E87A38] font-semibold flex items-center justify-between">
+            <span>Clinic Owners</span>
+            <span className="text-sm">🏥</span>
+          </div>
+          <div className="font-mono text-2xl font-bold text-[#E87A38] mt-1.5">{stats.owners}</div>
+          <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-1">Practice principals</div>
         </div>
 
-        <div className="card p-4">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Clinic Staff</div>
-          <div className="font-mono text-2xl font-bold text-[#63C7A2] mt-1">{stats.staff}</div>
+        <div className="card p-4 border-[#63C7A2]/30 bg-[var(--color-surface-elevated)] relative overflow-hidden">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[#63C7A2] font-semibold flex items-center justify-between">
+            <span>Clinic Staff</span>
+            <span className="text-sm">🩺</span>
+          </div>
+          <div className="font-mono text-2xl font-bold text-[#63C7A2] mt-1.5">{stats.staff}</div>
+          <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-1">Reception operators</div>
         </div>
 
-        <div className={`card p-4 transition-all ${
-          stats.unassigned > 0 ? 'border-[#E84B2C]/40 bg-[#E84B2C]/05' : ''
+        <div className={`card p-4 transition-all relative overflow-hidden ${
+          stats.unassigned > 0 ? 'border-[#E84B2C]/40 bg-[#E84B2C]/05 shadow-[0_0_14px_rgba(232,75,44,0.08)]' : 'border-[var(--color-border-standard)]'
         }`}>
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">Pending Onboarding</div>
-          <div className={`font-mono text-2xl font-bold mt-1 ${
+          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] flex items-center justify-between">
+            <span>Pending Setup</span>
+            <span className="text-sm">⏳</span>
+          </div>
+          <div className={`font-mono text-2xl font-bold mt-1.5 ${
             stats.unassigned > 0 ? 'text-[#E84B2C]' : 'text-[var(--color-text-muted)]'
           }`}>
             {stats.unassigned}
+          </div>
+          <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-1">
+            {stats.unassigned > 0 ? 'Awaiting clinic' : 'All assigned'}
           </div>
         </div>
       </div>

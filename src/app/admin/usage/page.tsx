@@ -73,59 +73,90 @@ export default async function AdminUsagePage() {
       {/* Balanced 4-Metric Hero Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Spend */}
-        <div className="card p-5 bg-[var(--color-surface-elevated)] border-[#E84B2C]/30 shadow-[0_0_20px_rgba(232,75,44,0.08)] relative overflow-hidden">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-            <span>Total AI Spend (Recent)</span>
-            <span className="text-[#63C7A2] text-xs font-mono">₹ INR</span>
+        <div className="card p-5 bg-[var(--color-surface-elevated)] border-[#E84B2C]/40 shadow-[0_0_24px_rgba(232,75,44,0.08)] relative overflow-hidden">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">💰</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                Total AI Spend
+              </span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#63C7A2]/15 text-[#63C7A2] font-semibold border border-[#63C7A2]/30">
+              ₹ INR
+            </span>
           </div>
           <div className="font-mono text-3xl font-bold text-[#63C7A2] tracking-tight">
             ₹{totalSpend < 0.01 && totalSpend > 0 ? totalSpend.toFixed(4) : totalSpend.toFixed(2)}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-            Sub-cent Gemini Flash margins
+          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2.5 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#63C7A2]" />
+            <span>Sub-cent Gemini Flash margins</span>
           </div>
         </div>
 
         {/* Total Tokens */}
         <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] relative overflow-hidden">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-            <span>Total Tokens Processed</span>
-            <span className="text-[#E87A38] text-xs font-mono">Context</span>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">🔤</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                Tokens Processed
+              </span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#E87A38]/15 text-[#E87A38] font-semibold border border-[#E87A38]/30">
+              Context Total
+            </span>
           </div>
           <div className="font-mono text-3xl font-bold text-[#E87A38] tracking-tight">
             {totalTokens.toLocaleString('en-IN')}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-            Input &amp; output context tokens
+          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2.5 flex items-center gap-1.5">
+            <span>●</span>
+            <span>Input &amp; output context tokens</span>
           </div>
         </div>
 
         {/* Avg Latency */}
         <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] relative overflow-hidden">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-            <span>Avg Inference Latency</span>
-            <span className="text-[#63C7A2] text-xs font-mono">⚡ Real-Time</span>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">⚡</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                Avg Latency
+              </span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#63C7A2]/15 text-[#63C7A2] font-semibold border border-[#63C7A2]/30">
+              ⚡ Real-Time
+            </span>
           </div>
           <div className="font-mono text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">
             {avgLatency.toLocaleString()}ms
           </div>
-          <div className="text-xs text-[#63C7A2] font-mono mt-2 flex items-center gap-1.5">
-            <span>●</span>
+          <div className="text-xs text-[#63C7A2] font-mono mt-2.5 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#63C7A2] animate-pulse" />
             <span>{avgLatency < 1500 ? 'Ultra-responsive streaming' : 'Standard round-trip'}</span>
           </div>
         </div>
 
         {/* Primary Provider Split */}
         <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] relative overflow-hidden">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-            <span>Primary Provider Split</span>
-            <span className="text-[#38BDF8] text-xs font-mono">Dual-Route</span>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">🔀</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                Model Routing
+              </span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#38BDF8]/15 text-[#38BDF8] font-semibold border border-[#38BDF8]/30">
+              Dual-Route
+            </span>
           </div>
-          <div className="font-heading text-xl font-bold text-[var(--color-text-primary)] mt-1 tracking-tight">
+          <div className="font-heading text-lg font-bold text-[var(--color-text-primary)] mt-1.5 tracking-tight truncate">
             {geminiPercent}% Gemini / {fallbackPercent}% Fallback
           </div>
-          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-            High resilience dual-routing
+          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2 flex items-center gap-1.5">
+            <span>●</span>
+            <span>High resilience dual-routing</span>
           </div>
         </div>
       </div>

@@ -547,23 +547,23 @@ export default function AdminCampaignsPage() {
       )}
 
       {/* WhatsApp Sender Status Banner */}
-      <div className="card p-4 bg-[#171614] border border-[#F3F0E8]/08 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="card p-4 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1C1916] border border-[#F3F0E8]/10 flex items-center justify-center text-lg text-[#63C7A2]">
+          <div className="w-10 h-10 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-standard)] flex items-center justify-center text-lg text-[#63C7A2]">
             💬
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-xs text-[#F3F0E8]">WhatsApp Outbound Dispatch Line</span>
+              <span className="font-semibold text-xs text-[var(--color-text-primary)]">WhatsApp Outbound Dispatch Line</span>
               {activeSender?.status === 'connected' ? (
                 <span className="badge badge-success text-[10px]">● Connected</span>
               ) : (
                 <span className="badge badge-warning text-[10px]">Disconnected</span>
               )}
             </div>
-            <div className="text-[11px] text-[#9E9B93] mt-0.5 font-mono">
+            <div className="text-[11px] text-[var(--color-text-muted)] mt-0.5 font-mono">
               {activeSender?.phoneNumber ? (
-                <span>Outbound node: <strong className="text-[#D0CBC1]">+{activeSender.phoneNumber}</strong> ({activeSender.clinicName})</span>
+                <span>Outbound node: <strong className="text-[var(--color-text-secondary)]">+{activeSender.phoneNumber}</strong> ({activeSender.clinicName})</span>
               ) : (
                 <span>No phone number registered yet. Connect WhatsApp in clinic settings.</span>
               )}
@@ -582,7 +582,7 @@ export default function AdminCampaignsPage() {
       {/* Campaign Selector / Switcher */}
       {campaigns.length > 0 ? (
         <div>
-          <div className="text-xs font-mono text-[#9E9B93] mb-2 uppercase tracking-wider">Active Campaigns</div>
+          <div className="text-xs font-mono text-[var(--color-text-muted)] mb-2 uppercase tracking-wider">Active Campaigns</div>
           <div className="flex gap-3 overflow-x-auto pb-2">
             {campaigns.map(camp => {
               const isSelected = camp.id === selectedCampaignId;
@@ -593,8 +593,8 @@ export default function AdminCampaignsPage() {
                   onClick={() => setSelectedCampaignId(camp.id)}
                   className={`p-3.5 rounded-xl text-left transition-all min-w-[220px] shrink-0 border ${
                     isSelected
-                      ? 'bg-[#1C1916] border-[#E84B2C] shadow-[0_0_12px_rgba(232,75,44,0.15)]'
-                      : 'bg-[#171614] border-[#F3F0E8]/08 hover:border-[#F3F0E8]/16'
+                      ? 'bg-[var(--color-surface-secondary)] border-[#E84B2C] shadow-[0_0_14px_rgba(232,75,44,0.18)]'
+                      : 'bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] hover:border-[var(--color-border-hover)]'
                   }`}
                 >
                   <div className="flex justify-between items-center mb-1">
@@ -751,10 +751,10 @@ export default function AdminCampaignsPage() {
       {selectedCampaign && (
         <>
           {/* Action Control Bar */}
-          <div className="card p-5 bg-[#171614] border border-[#F3F0E8]/12 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <div className="flex items-center gap-2.5 mb-1">
-                <h2 className="font-heading text-lg font-semibold text-[#F3F0E8]">
+                <h2 className="font-heading text-lg font-semibold text-[var(--color-text-primary)]">
                   {selectedCampaign.name}
                 </h2>
                 <span className={`badge text-[10px] font-mono uppercase ${
@@ -767,10 +767,10 @@ export default function AdminCampaignsPage() {
                   {selectedCampaign.status === 'running' ? '● RUNNING IN BACKGROUND' : selectedCampaign.status}
                 </span>
               </div>
-              <div className="text-xs font-mono text-[#9E9B93] flex items-center gap-2 flex-wrap">
-                <span>Threshold: <strong className="text-[#D0CBC1]">≤{selectedCampaign.responseThresholdSeconds}s Bot</strong></span>
+              <div className="text-xs font-mono text-[var(--color-text-muted)] flex items-center gap-2 flex-wrap">
+                <span>Threshold: <strong className="text-[var(--color-text-secondary)]">≤{selectedCampaign.responseThresholdSeconds}s Bot</strong></span>
                 <span>•</span>
-                <span>Throttle: <strong className="text-[#D0CBC1]">{selectedCampaign.delaySeconds}s delay</strong></span>
+                <span>Throttle: <strong className="text-[var(--color-text-secondary)]">{selectedCampaign.delaySeconds}s delay</strong></span>
                 <span>•</span>
                 <span>Created {new Date(selectedCampaign.createdAt).toLocaleDateString()}</span>
               </div>
@@ -833,65 +833,65 @@ export default function AdminCampaignsPage() {
           </div>
 
           {/* KPI Stat Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
-            <div className="card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Total Leads</div>
-              <div className="font-mono text-2xl font-bold text-[#F3F0E8] mt-1">{selectedCampaign.stats.totalLeads}</div>
-              <div className="text-[10px] font-mono text-[#9E9B93] mt-0.5">{selectedCampaign.stats.pendingCount} queued</div>
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+            <div className="card p-3.5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)]">
+              <div className="text-[10px] font-mono uppercase text-[var(--color-text-muted)]">Total Leads</div>
+              <div className="font-mono text-2xl font-bold text-[var(--color-text-primary)] mt-1">{selectedCampaign.stats.totalLeads}</div>
+              <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-0.5">{selectedCampaign.stats.pendingCount} queued</div>
             </div>
 
-            <div className="card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Dispatched</div>
+            <div className="card p-3.5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)]">
+              <div className="text-[10px] font-mono uppercase text-[var(--color-text-muted)]">Dispatched</div>
               <div className="font-mono text-2xl font-bold text-[#E87A38] mt-1">{selectedCampaign.stats.sentCount}</div>
-              <div className="text-[10px] font-mono text-[#9E9B93] mt-0.5">
+              <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-0.5">
                 {selectedCampaign.stats.totalLeads > 0
                   ? `${Math.round((selectedCampaign.stats.sentCount / selectedCampaign.stats.totalLeads) * 100)}% sent`
                   : '0%'}
               </div>
             </div>
 
-            <div className="card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Replies</div>
-              <div className="font-mono text-2xl font-bold text-[#F3F0E8] mt-1">{selectedCampaign.stats.repliedCount}</div>
-              <div className="text-[10px] font-mono text-[#9E9B93] mt-0.5">
+            <div className="card p-3.5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)]">
+              <div className="text-[10px] font-mono uppercase text-[var(--color-text-muted)]">Replies</div>
+              <div className="font-mono text-2xl font-bold text-[var(--color-text-primary)] mt-1">{selectedCampaign.stats.repliedCount}</div>
+              <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-0.5">
                 {selectedCampaign.stats.sentCount > 0
                   ? `${Math.round((selectedCampaign.stats.repliedCount / selectedCampaign.stats.sentCount) * 100)}% reply rate`
                   : 'Awaiting'}
               </div>
             </div>
 
-            <div className="card p-3.5 border-[#63C7A2]/40 bg-[#171614] shadow-[0_0_12px_rgba(99,199,162,0.1)]">
-              <div className="text-[10px] font-mono uppercase text-[#63C7A2]">Hot Leads (Manual)</div>
+            <div className="card p-3.5 border-[#63C7A2]/40 bg-[var(--color-surface-elevated)] shadow-[0_0_12px_rgba(99,199,162,0.1)]">
+              <div className="text-[10px] font-mono uppercase text-[#63C7A2] font-semibold">Hot Leads (Manual)</div>
               <div className="font-mono text-2xl font-bold text-[#63C7A2] mt-1">
                 🎯 {selectedCampaign.stats.noAiManualCount}
               </div>
-              <div className="text-[10px] font-mono text-[#9E9B93] mt-0.5">Prime pitch targets</div>
+              <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-0.5">Prime pitch targets</div>
             </div>
 
-            <div className="card p-3.5 border-[#D4AF37]/30 bg-[#171614]">
-              <div className="text-[10px] font-mono uppercase text-[#D4AF37]">Has AI Automation</div>
+            <div className="card p-3.5 border-[#D4AF37]/35 bg-[var(--color-surface-elevated)] shadow-[0_0_12px_rgba(212,175,55,0.08)]">
+              <div className="text-[10px] font-mono uppercase text-[#D4AF37] font-semibold">Has AI Automation</div>
               <div className="font-mono text-2xl font-bold text-[#D4AF37] mt-1">
                 🤖 {selectedCampaign.stats.hasAiCount}
               </div>
-              <div className="text-[10px] font-mono text-[#9E9B93] mt-0.5">Replied in ≤{selectedCampaign.responseThresholdSeconds}s</div>
+              <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-0.5">Replied in ≤{selectedCampaign.responseThresholdSeconds}s</div>
             </div>
 
-            <div className="card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Avg Latency</div>
+            <div className="card p-3.5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)]">
+              <div className="text-[10px] font-mono uppercase text-[var(--color-text-muted)]">Avg Latency</div>
               <div className="font-mono text-2xl font-bold text-[#E87A38] mt-1">
                 {selectedCampaign.stats.avgResponseTimeSeconds != null
                   ? `${selectedCampaign.stats.avgResponseTimeSeconds}s`
                   : '—'}
               </div>
-              <div className="text-[10px] font-mono text-[#9E9B93] mt-0.5">Across all replies</div>
+              <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-0.5">Across all replies</div>
             </div>
           </div>
 
           {/* Qualification Logic Explainer Banner */}
-          <div className="p-4 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 flex items-start gap-3 text-xs leading-relaxed">
+          <div className="p-4 rounded-xl bg-[var(--color-surface-secondary)] border border-[var(--color-border-standard)] flex items-start gap-3 text-xs leading-relaxed">
             <span className="text-base text-[#E87A38]">💡</span>
-            <div className="text-[#9E9B93]">
-              <strong className="text-[#F3F0E8]">Lead Qualification Logic:</strong>{' '}
+            <div className="text-[var(--color-text-secondary)]">
+              <strong className="text-[var(--color-text-primary)]">Lead Qualification Logic:</strong>{' '}
               When a clinic replies, we measure the elapsed seconds from dispatch.
               Replies within <strong className="text-[#D4AF37]">≤ {selectedCampaign.responseThresholdSeconds}s</strong> are classified as <span className="text-[#D4AF37] font-mono text-[11px]">🤖 HAS AI BOT</span>.
               Replies taking <strong className="text-[#63C7A2]">&gt; {selectedCampaign.responseThresholdSeconds}s</strong> are qualified as <span className="text-[#63C7A2] font-mono text-[11px]">🎯 NO AI (MANUAL FRONT DESK)</span> — these clinics are your <strong>highest-value sales opportunities</strong>.

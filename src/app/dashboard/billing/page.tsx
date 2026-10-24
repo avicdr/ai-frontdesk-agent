@@ -245,73 +245,82 @@ export default function BillingPage() {
       {/* Subscription Status & Telemetry Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Status Card */}
-        <div className="card p-6 lg:col-span-2 relative overflow-hidden bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)]">
+        <div className="card p-6 lg:col-span-2 relative overflow-hidden bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
           <div className="absolute top-0 right-0 w-80 h-80 bg-radial from-[#E84B2C]/10 to-transparent pointer-events-none" />
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-              <div className="mb-2">
+              <div className="mb-2.5">
                 {getStatusBadge(subscription?.status)}
               </div>
-              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[var(--color-text-primary)]">
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text-primary)]">
                 {subscription?.subscription_plans?.name || (subscription?.status === 'trial' ? 'Pro Trial Tier' : 'No Active Plan')}
               </h2>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1.5 flex items-center gap-2 flex-wrap">
+              <div className="text-xs text-[var(--color-text-muted)] mt-2 flex items-center gap-2 flex-wrap">
                 {subscription ? (
                   subscription.status === 'trial' ? (
-                    <span>3-Day Free Operational Trial • {subscription.daysRemaining != null ? `${subscription.daysRemaining} days remaining` : 'Active'}</span>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--color-surface-secondary)] border border-[var(--color-border-subtle)]">
+                      <span className="text-[#E87A38]">⏱️</span> 3-Day Free Operational Trial • {subscription.daysRemaining != null ? `${subscription.daysRemaining} days remaining` : 'Active'}
+                    </span>
                   ) : (
                     <>
-                      <span className="font-mono text-[var(--color-text-secondary)] font-semibold">
+                      <span className="font-mono text-[var(--color-text-secondary)] font-semibold bg-[var(--color-surface-secondary)] px-2 py-0.5 rounded border border-[var(--color-border-subtle)]">
                         {isInternational
                           ? `${selectedPlanConfig.priceUsdDisplay} USD / month`
                           : `₹${(subscription.subscription_plans?.price_inr || 0).toLocaleString('en-IN')} / month`}
                       </span>
-                      <span>•</span>
-                      <span>{subscription.expires_at ? `Renews on ${new Date(subscription.expires_at).toLocaleDateString('en-IN')}` : 'Monthly billing'}</span>
+                      <span className="text-[var(--color-text-muted)]">•</span>
+                      <span className="text-[var(--color-text-secondary)]">
+                        {subscription.expires_at ? `Renews on ${new Date(subscription.expires_at).toLocaleDateString('en-IN')}` : 'Monthly recurring billing'}
+                      </span>
                     </>
                   )
                 ) : (
                   <span>Select an active tier below to establish AI front desk availability</span>
                 )}
-              </p>
+              </div>
             </div>
 
+            {/* Days Remaining Pill Box */}
             <div
               style={{
                 background: 'var(--color-surface-secondary, #1C1916)',
                 border: '1px solid var(--color-border-standard)',
                 borderRadius: '14px',
                 padding: '0.85rem 1.25rem',
-                minWidth: '140px',
+                minWidth: '150px',
                 textAlign: 'center',
                 boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
               }}
             >
               <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] flex items-center justify-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#63C7A2] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[#63C7A2] animate-pulse" />
                 <span>Days Remaining</span>
               </div>
               <div
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: '2rem',
+                  fontSize: '2.25rem',
                   fontWeight: 800,
-                  marginTop: '0.2rem',
+                  lineHeight: 1.1,
+                  marginTop: '0.25rem',
                   color: (subscription?.daysRemaining ?? 0) > 3 ? '#63C7A2' : '#E84B2C',
                 }}
               >
                 {subscription?.daysRemaining ?? 0}
               </div>
-              <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-0.5">
+              <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-1">
                 {(subscription?.daysRemaining ?? 0) > 3 ? 'Auto-renews via UPI' : 'Renewal required'}
               </div>
             </div>
           </div>
 
+          {/* Quota Progress Meter */}
           <div className="pt-5 border-t border-[var(--color-border-subtle)]">
-            <div className="flex justify-between items-center text-xs mb-2">
-              <span className="text-[var(--color-text-muted)] font-medium">Monthly AI Conversation Quota</span>
-              <span className="font-mono text-[var(--color-text-primary)] font-semibold">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs mb-2.5">
+              <span className="text-[var(--color-text-muted)] font-medium flex items-center gap-1.5">
+                <span className="text-[#E87A38]">💬</span> Monthly AI Conversation Quota
+              </span>
+              <span className="font-mono text-xs font-semibold px-2.5 py-0.5 rounded-md bg-[var(--color-surface-secondary)] border border-[var(--color-border-standard)] text-[var(--color-text-primary)]">
                 {subscription ? `${quotaUsed.toLocaleString()} / ${quotaLimit.toLocaleString()} chats (${quotaPercent}%)` : '0 / 0 chats'}
               </span>
             </div>
@@ -324,116 +333,143 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* AI Cost Efficiency Telemetry */}
-        <div className="card p-6 flex flex-col justify-between bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)]">
+        {/* AI Cost Efficiency Telemetry Card */}
+        <div className="card p-6 flex flex-col justify-between bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
           <div>
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-[var(--color-border-subtle)]">
+            <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-[var(--color-border-subtle)]">
               <h3 className="font-heading text-sm font-semibold text-[var(--color-text-primary)] flex items-center gap-1.5">
                 <span className="text-[#E87A38]">✦</span> Engine Telemetry
               </h3>
-              <span className="text-[10px] font-mono text-[#63C7A2] bg-[#63C7A2]/10 px-2 py-0.5 rounded-full border border-[#63C7A2]/25 font-semibold">
+              <span className="text-[10px] font-mono text-[#63C7A2] bg-[#63C7A2]/10 px-2.5 py-0.5 rounded-full border border-[#63C7A2]/25 font-semibold shrink-0">
                 ● ACTIVE
               </span>
             </div>
-            <div className="space-y-3 text-xs">
-              <div className="flex justify-between items-center py-1.5 border-b border-[var(--color-border-subtle)]">
+            <div className="space-y-2.5 text-xs">
+              <div className="flex justify-between items-center gap-2 py-1.5 border-b border-[var(--color-border-subtle)]">
                 <span className="text-[var(--color-text-muted)]">Primary Model</span>
-                <span className="font-mono text-[#38BDF8] font-semibold flex items-center gap-1">
+                <span className="font-mono text-xs text-[#38BDF8] font-semibold bg-[#38BDF8]/10 px-2 py-0.5 rounded border border-[#38BDF8]/20 flex items-center gap-1">
                   <span>✨</span> Gemini 1.5 Flash
                 </span>
               </div>
-              <div className="flex justify-between items-center py-1.5 border-b border-[var(--color-border-subtle)]">
+              <div className="flex justify-between items-center gap-2 py-1.5 border-b border-[var(--color-border-subtle)]">
                 <span className="text-[var(--color-text-muted)]">Fallback Resilience</span>
-                <span className="font-mono text-[var(--color-text-secondary)] font-medium">GPT-4o mini</span>
+                <span className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-secondary)] px-2 py-0.5 rounded border border-[var(--color-border-standard)] font-medium">
+                  GPT-4o mini
+                </span>
               </div>
-              <div className="flex justify-between items-center py-1.5 border-b border-[var(--color-border-subtle)]">
+              <div className="flex justify-between items-center gap-2 py-1.5 border-b border-[var(--color-border-subtle)]">
                 <span className="text-[var(--color-text-muted)]">AI Requests Used</span>
-                <span className="font-mono text-[var(--color-text-primary)] font-semibold">
+                <span className="font-mono text-xs text-[var(--color-text-primary)] font-semibold bg-[var(--color-surface-secondary)] px-2 py-0.5 rounded border border-[var(--color-border-standard)]">
                   {subscription?.ai_requests_used ?? 0} / {subscription?.subscription_plans?.included_ai_requests ?? 500}
                 </span>
               </div>
-              <div className="flex justify-between items-center py-1.5 border-b border-[var(--color-border-subtle)]">
+              <div className="flex justify-between items-center gap-2 py-1.5 border-b border-[var(--color-border-subtle)]">
                 <span className="text-[var(--color-text-muted)]">Response Latency</span>
-                <span className="font-mono text-[#63C7A2] font-semibold">⚡ ~840ms</span>
+                <span className="font-mono text-xs text-[#63C7A2] font-semibold bg-[#63C7A2]/10 px-2 py-0.5 rounded border border-[#63C7A2]/20">
+                  ⚡ ~840ms
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="pt-3 border-t border-[var(--color-border-subtle)] mt-3 flex justify-between items-center">
+          <div className="pt-3.5 border-t border-[var(--color-border-subtle)] mt-4 flex justify-between items-center gap-2">
             <span className="text-xs text-[var(--color-text-muted)]">Monthly Token Cost</span>
-            <span className="font-mono text-sm font-bold text-[#63C7A2]">
+            <span className="font-mono text-sm font-bold text-[#63C7A2] bg-[#63C7A2]/10 px-2.5 py-0.5 rounded border border-[#63C7A2]/20">
               {isInternational ? `$${(Number(subscription?.ai_cost_used_inr ?? 0) / 85).toFixed(2)} USD` : `₹${Number(subscription?.ai_cost_used_inr ?? 0).toFixed(2)}`}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Available Plans */}
+      {/* Available Plans (Redesigned High-Converting Pricing Cards) */}
       <div>
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E87A38]" />
             <span className="text-xs font-mono uppercase tracking-wider text-[#E87A38] font-semibold">
               {isInternational ? 'Global Web3 Tiers' : 'Verified Domestic Tiers'}
             </span>
           </div>
-          <h2 className="font-heading text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">
+          <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
             {isInternational ? 'International Subscription Tiers (Crypto)' : 'Subscription Plans (Instant UPI)'}
           </h2>
-          <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-            Scale your clinic reception capacity with predictable, transparent limits.
+          <p className="text-xs text-[var(--color-text-muted)] mt-1">
+            Scale your clinic reception capacity with transparent pricing, instant activation, and zero hidden platform charges.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {currentPlans.map(p => {
             const isCurrentPlan = subscription?.subscription_plans?.slug === p.id;
             return (
               <div
                 key={p.id}
-                className={`card p-6 flex flex-col justify-between transition-all duration-300 relative ${
+                className={`card p-6 flex flex-col justify-between transition-all duration-300 relative rounded-2xl ${
                   isCurrentPlan
-                    ? 'border-[#E84B2C]/50 bg-[var(--color-surface-elevated)] shadow-[0_0_24px_rgba(232,75,44,0.15)] ring-1 ring-[#E84B2C]/30'
+                    ? 'border-[#E84B2C] bg-[var(--color-surface-elevated)] shadow-[0_0_30px_rgba(232,75,44,0.18)] ring-1 ring-[#E84B2C]'
                     : p.popular
-                    ? 'border-[#E87A38]/40 bg-[var(--color-surface-elevated)] shadow-[0_0_16px_rgba(232,122,56,0.08)]'
+                    ? 'border-[#E87A38]/50 bg-[var(--color-surface-elevated)] shadow-[0_0_20px_rgba(232,122,56,0.1)]'
                     : 'border-[var(--color-border-standard)] bg-[var(--color-surface-elevated)] hover:border-[var(--color-border-hover)]'
                 }`}
               >
+                {/* Top Badge Pills */}
                 {isCurrentPlan && (
-                  <span className="absolute -top-3 right-5 bg-gradient-to-r from-[#E84B2C] to-[#E87A38] text-[#FFFFFF] text-[10px] font-mono uppercase tracking-wider font-bold px-3 py-0.5 rounded-full shadow-[0_0_12px_#E84B2C]">
+                  <span className="absolute -top-3 right-6 bg-gradient-to-r from-[#E84B2C] to-[#E87A38] text-[#FFFFFF] text-[10px] font-mono uppercase tracking-wider font-bold px-3 py-0.5 rounded-full shadow-[0_0_12px_#E84B2C]">
                     Current Plan ✓
                   </span>
                 )}
                 {p.popular && !isCurrentPlan && (
-                  <span className="absolute -top-3 right-5 bg-[#E87A38]/20 border border-[#E87A38]/40 text-[#E87A38] text-[10px] font-mono uppercase tracking-wider font-semibold px-2.5 py-0.5 rounded-full">
-                    Recommended
+                  <span className="absolute -top-3 right-6 bg-[#E87A38] text-[#080505] text-[10px] font-mono uppercase tracking-wider font-bold px-3 py-0.5 rounded-full shadow-[0_0_12px_rgba(232,122,56,0.4)]">
+                    Most Popular ★
                   </span>
                 )}
 
                 <div>
-                  <div className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">{p.name}</div>
-                  <div className="font-heading text-2xl font-bold text-[var(--color-text-primary)] mb-1">
-                    {p.price}
-                    <span className="text-xs font-normal text-[var(--color-text-muted)] font-body ml-1">/ month</span>
+                  {/* Plan Tier Identifier */}
+                  <div className="text-[11px] font-mono uppercase tracking-wider font-semibold text-[#E87A38] mb-1">
+                    {p.id === 'starter' ? '🌱 Starter Tier' : p.id === 'pro' ? '⭐ Practice Standard' : '🚀 Multi-Doctor Suite'}
                   </div>
-                  <div className="text-xs font-mono text-[#E87A38] font-semibold mb-4">
-                    {p.chatsQuota.toLocaleString()} AI Patient Chats Included
+                  <h3 className="text-xl font-bold text-[var(--color-text-primary)] font-heading mb-2">
+                    {p.name}
+                  </h3>
+
+                  {/* Pricing Display */}
+                  <div className="flex items-baseline gap-1.5 my-3 pb-3 border-b border-[var(--color-border-subtle)]">
+                    <span className="font-heading text-3xl sm:text-4xl font-extrabold text-[var(--color-text-primary)] tracking-tight">
+                      {p.price}
+                    </span>
+                    <span className="text-xs font-normal text-[var(--color-text-muted)] font-mono">
+                      / month
+                    </span>
                   </div>
 
-                  <p className="text-xs text-[var(--color-text-muted)] mb-5 line-clamp-2 leading-relaxed">
+                  {/* Quota Highlight Box */}
+                  <div className="flex items-center gap-2 py-2 px-3 rounded-xl bg-[#E84B2C]/10 border border-[#E84B2C]/25 text-[#E87A38] text-xs font-mono font-semibold mb-3.5">
+                    <span>💬</span>
+                    <span>{p.chatsQuota.toLocaleString()} AI Patient Chats Included</span>
+                  </div>
+
+                  <p className="text-xs text-[var(--color-text-muted)] mb-4 leading-relaxed min-h-[34px]">
                     {p.description}
                   </p>
 
-                  <div className="space-y-2.5 mb-6">
-                    {p.features.slice(0, 5).map((feat, i) => (
-                      <div key={i} className="text-xs text-[var(--color-text-secondary)] flex items-center gap-2">
-                        <span className="text-[#63C7A2] text-xs font-bold">✓</span>
-                        <span>{feat}</span>
+                  {/* Features List with Rich Circular Checkmarks */}
+                  <div className="space-y-2.5 mb-6 pt-3 border-t border-[var(--color-border-subtle)]">
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-2">
+                      Included Capabilities:
+                    </div>
+                    {p.features.map((feat, i) => (
+                      <div key={i} className="text-xs text-[var(--color-text-secondary)] flex items-start gap-2.5">
+                        <span className="w-4 h-4 rounded-full bg-[#63C7A2]/15 text-[#63C7A2] border border-[#63C7A2]/30 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                          ✓
+                        </span>
+                        <span className="leading-snug">{feat}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Bulletproof Action Button - NO color clashing */}
+                {/* Primary Action Button */}
                 <button
                   type="button"
                   onClick={() => {
@@ -446,31 +482,31 @@ export default function BillingPage() {
                   }}
                   style={{
                     width: '100%',
-                    padding: '0.65rem 1rem',
-                    borderRadius: '10px',
+                    padding: '0.75rem 1.25rem',
+                    borderRadius: '12px',
                     fontWeight: 600,
-                    fontSize: '0.8125rem',
+                    fontSize: '0.85rem',
                     cursor: 'pointer',
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.2s ease',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.4rem',
+                    gap: '0.5rem',
                     background: isCurrentPlan
-                      ? 'var(--color-surface-secondary, #1C1916)'
+                      ? 'linear-gradient(135deg, rgba(232, 75, 44, 0.2), rgba(200, 105, 56, 0.25))'
                       : 'linear-gradient(135deg, #E84B2C, #C86938)',
                     color: isCurrentPlan ? '#E87A38' : '#FFFFFF',
                     border: isCurrentPlan
-                      ? '1px solid rgba(232, 122, 56, 0.4)'
-                      : '1px solid rgba(255, 255, 255, 0.2)',
+                      ? '1px solid rgba(232, 122, 56, 0.5)'
+                      : '1px solid rgba(255, 255, 255, 0.25)',
                     boxShadow: isCurrentPlan
-                      ? '0 0 12px rgba(232, 75, 44, 0.15)'
-                      : '0 2px 10px rgba(232, 75, 44, 0.35)',
+                      ? '0 0 16px rgba(232, 75, 44, 0.2)'
+                      : '0 4px 16px rgba(232, 75, 44, 0.4)',
                   }}
                 >
                   {isInternational
-                    ? (isCurrentPlan ? `Renew via Crypto (${p.price})` : `Pay with Crypto (${p.price})`)
-                    : (isCurrentPlan ? `⚡ Renew ${p.name}` : `Switch to ${p.name}`)}
+                    ? (isCurrentPlan ? `🪙 Renew via Crypto (${p.price})` : `Pay with Crypto (${p.price}) →`)
+                    : (isCurrentPlan ? `⚡ Renew ${p.name} (UPI)` : `Switch to ${p.name} →`)}
                 </button>
               </div>
             );

@@ -68,72 +68,112 @@ export default async function AdminExpirationsPage() {
       </div>
 
       {/* Sentinel Retention Metrics (4 Responsive Hero Cards) */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Expiring Soon */}
-        <div className={`card p-5 transition-all ${
+        <div className={`card p-5 transition-all relative overflow-hidden ${
           expiringSoonCount > 0
-            ? 'border-[#E87A38]/50 bg-[#E87A38]/08 shadow-[0_0_16px_rgba(232,122,56,0.1)]'
+            ? 'border-[#E87A38]/50 bg-[#E87A38]/08 shadow-[0_0_20px_rgba(232,122,56,0.12)]'
             : 'border-[var(--color-border-standard)] bg-[var(--color-surface-elevated)]'
         }`}>
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-            <span>Expiring Soon (≤ 7d)</span>
-            <span className="text-xs">⚠️</span>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">⏳</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                Expiring (≤ 7d)
+              </span>
+            </div>
+            <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold border ${
+              expiringSoonCount > 0
+                ? 'bg-[#E87A38]/20 text-[#E87A38] border-[#E87A38]/40'
+                : 'bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)] border-[var(--color-border-standard)]'
+            }`}>
+              {expiringSoonCount > 0 ? '⚠️ Action' : 'Safe'}
+            </span>
           </div>
           <div className={`font-mono text-3xl font-bold tracking-tight ${
             expiringSoonCount > 0 ? 'text-[#E87A38]' : 'text-[var(--color-text-primary)]'
           }`}>
             {expiringSoonCount}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-            {expiringSoonCount > 0 ? 'Urgent renewal reminder needed' : 'Zero immediate expirations'}
+          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2.5 flex items-center gap-1.5">
+            <span>●</span>
+            <span>{expiringSoonCount > 0 ? 'Urgent renewal reminder needed' : 'Zero immediate expirations'}</span>
           </div>
         </div>
 
         {/* In Grace Period */}
-        <div className={`card p-5 transition-all ${
+        <div className={`card p-5 transition-all relative overflow-hidden ${
           inGracePeriodCount > 0
-            ? 'border-[#E84B2C]/50 bg-[#E84B2C]/08 shadow-[0_0_16px_rgba(232,75,44,0.1)]'
+            ? 'border-[#E84B2C]/50 bg-[#E84B2C]/08 shadow-[0_0_20px_rgba(232,75,44,0.12)]'
             : 'border-[var(--color-border-standard)] bg-[var(--color-surface-elevated)]'
         }`}>
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-            <span>In Grace Period</span>
-            <span className="text-xs">🚨</span>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">🚨</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                Grace Period
+              </span>
+            </div>
+            <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold border ${
+              inGracePeriodCount > 0
+                ? 'bg-[#E84B2C]/20 text-[#E84B2C] border-[#E84B2C]/40 animate-pulse'
+                : 'bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)] border-[var(--color-border-standard)]'
+            }`}>
+              {inGracePeriodCount > 0 ? 'At Risk' : 'Clear'}
+            </span>
           </div>
           <div className={`font-mono text-3xl font-bold tracking-tight ${
             inGracePeriodCount > 0 ? 'text-[#E84B2C]' : 'text-[var(--color-text-primary)]'
           }`}>
             {inGracePeriodCount}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-            {inGracePeriodCount > 0 ? 'Risk of automated clinic suspension' : 'No clinics in grace period'}
+          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2.5 flex items-center gap-1.5">
+            <span>●</span>
+            <span>{inGracePeriodCount > 0 ? 'Risk of automated clinic suspension' : 'No clinics in grace period'}</span>
           </div>
         </div>
 
         {/* Healthy & Active */}
-        <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)]">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-            <span>Healthy &amp; Active</span>
-            <span className="text-[#63C7A2] text-xs">✓ Safe</span>
+        <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] relative overflow-hidden">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">🛡️</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                Active &amp; Safe
+              </span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#63C7A2]/15 text-[#63C7A2] font-semibold border border-[#63C7A2]/30">
+              ✓ Protected
+            </span>
           </div>
           <div className="font-mono text-3xl font-bold text-[#63C7A2] tracking-tight">
             {activeHealthyCount}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-            Renewals safely &gt; 7 days out
+          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2.5 flex items-center gap-1.5">
+            <span>●</span>
+            <span>Renewals safely &gt; 7 days out</span>
           </div>
         </div>
 
         {/* Expired Tiers */}
-        <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)]">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-            <span>Total Managed Clinics</span>
-            <span className="text-[#D4AF37] text-xs">🏥 Total</span>
+        <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] relative overflow-hidden">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">🏥</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                Total Clinics
+              </span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#D4AF37]/15 text-[#D4AF37] font-semibold border border-[#D4AF37]/30">
+              Managed
+            </span>
           </div>
           <div className="font-mono text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">
             {subscriptions.length}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-            {expiredCount} fully expired accounts
+          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2.5 flex items-center gap-1.5">
+            <span>●</span>
+            <span>{expiredCount} inactive / expired accounts</span>
           </div>
         </div>
       </div>

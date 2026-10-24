@@ -100,59 +100,90 @@ export default async function AdminRevenuePage() {
       {/* Top 4 Hero KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Collected Revenue */}
-        <div className="card p-5 bg-[var(--color-surface-elevated)] border-[#E84B2C]/30 shadow-[0_0_20px_rgba(232,75,44,0.08)] relative overflow-hidden">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-            <span>Total Collected Revenue</span>
-            <span className="text-[#63C7A2] text-xs">✓ Settled</span>
+        <div className="card p-5 bg-[var(--color-surface-elevated)] border-[#E84B2C]/40 shadow-[0_0_24px_rgba(232,75,44,0.08)] relative overflow-hidden">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">💰</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                Total Revenue
+              </span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#63C7A2]/15 text-[#63C7A2] font-semibold border border-[#63C7A2]/30">
+              ✓ Settled
+            </span>
           </div>
           <div className="font-mono text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">
             ₹{totalRevenue.toLocaleString('en-IN')}
           </div>
-          <div className="text-xs text-[#63C7A2] font-mono mt-2 flex items-center gap-1.5">
-            <span>●</span>
+          <div className="text-xs text-[#63C7A2] font-mono mt-2.5 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#63C7A2]" />
             <span>{paymentCount} confirmed settlements</span>
           </div>
         </div>
 
         {/* Platform MRR */}
-        <div className="card p-5 bg-[var(--color-surface-elevated)] border-[#63C7A2]/30 shadow-[0_0_20px_rgba(99,199,162,0.06)] relative overflow-hidden">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-            <span>Platform MRR</span>
-            <span className="text-[#E87A38] text-xs font-mono">Monthly</span>
+        <div className="card p-5 bg-[var(--color-surface-elevated)] border-[#63C7A2]/40 shadow-[0_0_24px_rgba(99,199,162,0.08)] relative overflow-hidden">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">📈</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                Platform MRR
+              </span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#E87A38]/15 text-[#E87A38] font-semibold border border-[#E87A38]/30">
+              Monthly Run-rate
+            </span>
           </div>
           <div className="font-mono text-3xl font-bold text-[#63C7A2] tracking-tight">
             ₹{mrr.toLocaleString('en-IN')}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-            Active clinic tier recurring run-rate
+          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2.5 flex items-center gap-1.5">
+            <span>●</span>
+            <span>Active clinic recurring run-rate</span>
           </div>
         </div>
 
         {/* Projected ARR */}
         <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] relative overflow-hidden">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-            <span>Projected Annual (ARR)</span>
-            <span className="text-[#D4AF37] text-xs font-mono">Run-rate</span>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">🚀</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                Annual ARR
+              </span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#D4AF37]/15 text-[#D4AF37] font-semibold border border-[#D4AF37]/30">
+              Annualized
+            </span>
           </div>
           <div className="font-mono text-3xl font-bold text-[#D4AF37] tracking-tight">
             ₹{arr.toLocaleString('en-IN')}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-            MRR × 12 annualized baseline
+          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2.5 flex items-center gap-1.5">
+            <span>●</span>
+            <span>MRR × 12 baseline yield</span>
           </div>
         </div>
 
         {/* ARPU */}
         <div className="card p-5 bg-[var(--color-surface-elevated)] border-[var(--color-border-standard)] relative overflow-hidden">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] mb-1 flex items-center justify-between">
-            <span>Avg Revenue / Clinic</span>
-            <span className="text-[#63C7A2] text-xs font-mono">ARPU</span>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">👥</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--color-text-muted)]">
+                Avg / Clinic
+              </span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#63C7A2]/15 text-[#63C7A2] font-semibold border border-[#63C7A2]/30">
+              ARPU
+            </span>
           </div>
           <div className="font-mono text-3xl font-bold text-[#63C7A2] tracking-tight">
             ₹{avgRevenuePerClinic.toLocaleString('en-IN')}
           </div>
-          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2">
-            Per active subscription cycle
+          <div className="text-xs text-[var(--color-text-muted)] font-mono mt-2.5 flex items-center gap-1.5">
+            <span>●</span>
+            <span>Per active monthly cycle</span>
           </div>
         </div>
       </div>
