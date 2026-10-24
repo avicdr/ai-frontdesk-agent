@@ -127,17 +127,17 @@ export default function AdminPaymentsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="border-b border-[#F3F0E8]/08 pb-6">
+      <div className="border-b border-[var(--color-border-subtle)] pb-6">
         <div className="flex items-center gap-2 mb-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-[#E84B2C] shadow-[0_0_8px_#E84B2C]" />
-          <span className="text-[11px] font-mono tracking-widest text-[#E87A38] uppercase">
+          <span className="text-[11px] font-mono tracking-widest text-[#E87A38] uppercase font-semibold">
             Settlement Verification Console
           </span>
         </div>
-        <h1 className="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-[#F3F0E8]">
+        <h1 className="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--color-text-primary)]">
           UPI &amp; Crypto Settlement Queue
         </h1>
-        <p className="text-sm text-[#9E9B93] mt-1">
+        <p className="text-sm text-[var(--color-text-muted)] mt-1">
           Verify and approve manual UPI references, or directly assign and activate plans for any practice.
         </p>
       </div>
@@ -163,14 +163,14 @@ export default function AdminPaymentsPage() {
       )}
 
       {/* Direct Approval & Assignment Card */}
-      <div className="card p-6 bg-[#171614] border border-[#F3F0E8]/12 relative overflow-hidden">
+      <div className="card p-6 bg-[var(--color-surface-elevated)] border border-[var(--color-border-standard)] relative overflow-hidden">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[#E87A38]">⚡</span>
-          <h2 className="font-heading text-base font-semibold text-[#F3F0E8]">
+          <h2 className="font-heading text-base font-semibold text-[var(--color-text-primary)]">
             Direct Plan Assignment &amp; Offline Payment Override
           </h2>
         </div>
-        <p className="text-xs text-[#9E9B93] mb-5">
+        <p className="text-xs text-[var(--color-text-muted)] mb-5">
           Instantly provision or extend clinic subscriptions without requiring an online checkout flow.
         </p>
 
@@ -254,9 +254,9 @@ export default function AdminPaymentsPage() {
       </div>
 
       {/* Orders Approval Queue */}
-      <div className="card p-0 overflow-hidden">
-        <div className="p-4 border-b border-[#F3F0E8]/08">
-          <h2 className="font-heading text-sm font-semibold text-[#F3F0E8]">
+      <div className="card p-0 overflow-hidden bg-[var(--color-surface-elevated)] border border-[var(--color-border-standard)]">
+        <div className="p-4 border-b border-[var(--color-border-subtle)]">
+          <h2 className="font-heading text-sm font-semibold text-[var(--color-text-primary)]">
             Pending Checkout Orders &amp; Audit Queue
           </h2>
         </div>
@@ -278,13 +278,13 @@ export default function AdminPaymentsPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-[#9E9B93]">
+                  <td colSpan={8} className="text-center py-12 text-[var(--color-text-muted)]">
                     Loading payment queue...
                   </td>
                 </tr>
               ) : payments.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-[#9E9B93]">
+                  <td colSpan={8} className="text-center py-12 text-[var(--color-text-muted)]">
                     No pending checkout orders. All subscriptions reconciled.
                   </td>
                 </tr>
@@ -298,11 +298,11 @@ export default function AdminPaymentsPage() {
                     : null;
 
                   return (
-                    <tr key={p.id} className="hover:bg-[#F3F0E8]/03 transition-colors">
-                      <td className="font-mono text-xs text-[#9E9B93]">{p.id.slice(0, 8)}...</td>
-                      <td className="font-medium text-xs text-[#F3F0E8]">{p.organizations?.name ?? 'Clinic'}</td>
-                      <td className="text-xs text-[#D0CBC1]">{p.subscription_plans?.name ?? '—'}</td>
-                      <td className="font-mono font-bold text-xs text-[#F3F0E8]">
+                    <tr key={p.id} className="hover:bg-[var(--color-surface-secondary)] transition-colors">
+                      <td className="font-mono text-xs text-[var(--color-text-muted)]">{p.id.slice(0, 8)}...</td>
+                      <td className="font-medium text-xs text-[var(--color-text-primary)]">{p.organizations?.name ?? 'Clinic'}</td>
+                      <td className="text-xs text-[var(--color-text-secondary)]">{p.subscription_plans?.name ?? '—'}</td>
+                      <td className="font-mono font-bold text-xs text-[var(--color-text-primary)]">
                         {isCrypto ? `$${p.metadata?.amount_usd || 100} USD` : `₹${Number(p.amount_inr).toLocaleString('en-IN')}`}
                       </td>
                       <td>
@@ -330,10 +330,10 @@ export default function AdminPaymentsPage() {
                               <span className="text-[10px]">↗</span>
                             </a>
                           ) : (
-                            <span className="text-[#F3F0E8]">{p.utr_number}</span>
+                            <span className="text-[var(--color-text-primary)]">{p.utr_number}</span>
                           )
                         ) : (
-                          <span className="text-[#9E9B93]">—</span>
+                          <span className="text-[var(--color-text-muted)]">—</span>
                         )}
                       </td>
                       <td>
