@@ -1,6 +1,7 @@
 import { requireSuperAdmin } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Security & Audit Logs' };
 
 export default async function AdminAuditLogsPage() {
   const { admin } = await requireSuperAdmin();
@@ -12,63 +13,75 @@ export default async function AdminAuditLogsPage() {
     .limit(50);
 
   return (
-    <div>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>📋 Platform Security & Audit Trail</h1>
-        <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>
-          Immutable audit record of all tenant events, manual overrides, payment approvals, and permission checks.
+    <div className="space-y-6 animate-fade-in">
+      <div className="border-b border-[#F3F0E8]/08 pb-6">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#E84B2C] shadow-[0_0_8px_#E84B2C]" />
+          <span className="text-[11px] font-mono tracking-widest text-[#E87A38] uppercase">
+            Compliance &amp; Tamper-Evident Ledger
+          </span>
+        </div>
+        <h1 className="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-[#F3F0E8]">
+          Security &amp; Audit Trail
+        </h1>
+        <p className="text-sm text-[#9E9B93] mt-1">
+          Immutable audit record of all multi-tenant actions, tier overrides, payment verifications, and auth grants.
         </p>
       </div>
 
-      <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Action</th>
-              <th>Actor Type</th>
-              <th>Actor ID</th>
-              <th>Entity</th>
-              <th>Details</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(logs ?? []).length === 0 ? (
+      <div className="card p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="data-table">
+            <thead>
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'hsl(var(--color-text-muted))' }}>
-                  No audit logs recorded yet.
-                </td>
+                <th>Timestamp</th>
+                <th>Action Code</th>
+                <th>Actor Privilege</th>
+                <th>Actor ID</th>
+                <th>Target Entity</th>
+                <th>State Delta / Metadata</th>
               </tr>
-            ) : (
-              (logs ?? []).map((log: any) => (
-                <tr key={log.id}>
-                  <td style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', whiteSpace: 'nowrap' }}>
-                    {new Date(log.created_at).toLocaleString('en-IN')}
-                  </td>
-                  <td>
-                    <span style={{ fontWeight: 700, fontSize: '0.8rem', color: 'hsl(var(--color-primary))' }}>
-                      {log.action}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge badge-${log.actor_type === 'super_admin' ? 'info' : 'muted'}`}>
-                      {log.actor_type}
-                    </span>
-                  </td>
-                  <td style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
-                    {log.actor_id?.slice(0, 8)}...
-                  </td>
-                  <td style={{ fontSize: '0.8rem' }}>
-                    {log.entity_type} ({log.entity_id?.slice(0, 8)}...)
-                  </td>
-                  <td style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'hsl(var(--color-text-muted))' }}>
-                    {JSON.stringify(log.new_state || log.metadata || {})}
+            </thead>
+            <tbody>
+              {(logs ?? []).length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-12 text-[#9E9B93]">
+                    No security events recorded in audit ledger.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                (logs ?? []).map((log: any) => (
+                  <tr key={log.id} className="hover:bg-[#F3F0E8]/03 transition-colors">
+                    <td className="font-mono text-xs text-[#9E9B93] whitespace-nowrap">
+                      {new Date(log.created_at).toLocaleString('en-IN')}
+                    </td>
+                    <td>
+                      <span className="font-mono font-semibold text-xs text-[#E87A38]">
+                        {log.action}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge font-mono text-[10px] uppercase ${
+                        log.actor_type === 'super_admin' ? 'badge-primary' : 'badge-neutral'
+                      }`}>
+                        {log.actor_type}
+                      </span>
+                    </td>
+                    <td className="font-mono text-xs text-[#D0CBC1]">
+                      {log.actor_id?.slice(0, 10)}...
+                    </td>
+                    <td className="font-mono text-xs text-[#F3F0E8]">
+                      {log.entity_type} ({log.entity_id?.slice(0, 8)}...)
+                    </td>
+                    <td className="font-mono text-[11px] text-[#9E9B93] max-w-xs truncate">
+                      {JSON.stringify(log.new_state || log.metadata || {})}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

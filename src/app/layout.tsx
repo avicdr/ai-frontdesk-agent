@@ -1,40 +1,49 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Serif_Display, Inter } from "next/font/google";
+import { Syne, Plus_Jakarta_Sans, Cinzel } from "next/font/google";
 import "./globals.css";
 
-const dmSerif = DM_Serif_Display({
-  weight: "400",
+const syne = Syne({
   subsets: ["latin"],
-  style: ["normal", "italic"],
   display: "swap",
   variable: "--font-display",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-const inter = Inter({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-sans",
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-cinzel",
+  weight: ["400", "600", "700"],
 });
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#FAF5EE",
+  themeColor: "#111110",
 };
 
 export const metadata: Metadata = {
   title: {
-    default: "AI Front Desk — AI Receptionist for Clinics",
+    default: "AI Front Desk — Premium AI Receptionist for Clinics",
     template: "%s | AI Front Desk",
   },
   description:
-    "Give your clinic or appointment-based practice an intelligent AI receptionist that answers patient queries, checks availability, and books appointments 24/7 on WhatsApp.",
+    "Intelligent 24/7 AI receptionist for clinics and appointment practices. Seamless WhatsApp patient dialogue, real-time schedule orchestration, and automated care workflows.",
   keywords: [
     "AI receptionist",
     "clinic AI front desk",
     "WhatsApp assistant",
     "appointment booking automation",
+    "patient concierge",
+    "Arenova",
   ],
   authors: [{ name: "AI Front Desk" }],
   icons: {
@@ -47,7 +56,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "AI Front Desk — Intelligent Clinic Receptionist",
-    description: "Intelligent front-desk assistant for clinics and appointment businesses.",
+    description: "Sophisticated AI front-desk platform for modern clinics and appointment practices.",
     type: "website",
   },
 };
@@ -61,7 +70,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${dmSerif.variable} ${inter.variable}`}
+      className={`${syne.variable} ${plusJakartaSans.variable} ${cinzel.variable} dark`}
     >
       <body className="antialiased">
         {children}

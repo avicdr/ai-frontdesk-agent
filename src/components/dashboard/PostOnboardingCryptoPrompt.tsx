@@ -1,7 +1,8 @@
 'use client';
 
 // src/components/dashboard/PostOnboardingCryptoPrompt.tsx
-// Rich burnt orange banner prompting international clients to pay via Crypto (USDT, USDC, BTC, ETH)
+// Rich ember banner prompting international clients to pay via Crypto (USDT, USDC, BTC, ETH)
+// Redesigned with Cinematic Obsidian × Phoenix Ember Design System
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -74,35 +75,29 @@ export function PostOnboardingCryptoPrompt({
 
   if (isPaymentSubmitted) {
     return (
-      <div style={{
-        padding: '1.25rem 1.5rem',
-        background: '#EDF7F1',
-        border: '1px solid #CEE8D8',
-        borderRadius: '16px',
-        marginBottom: '1.75rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '1rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ fontSize: '1.75rem' }}>⏳</span>
+      <div className="p-5 rounded-2xl bg-[#171614] border border-[#63C7A2]/30 mb-7 flex items-center justify-between flex-wrap gap-4 shadow-[0_4px_24px_rgba(0,0,0,0.5)] animate-fade-in">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-[#63C7A2]/10 border border-[#63C7A2]/25 flex items-center justify-center text-lg text-[#63C7A2]">
+            ⏳
+          </div>
           <div>
-            <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#235A34' }}>
+            <div className="font-semibold text-sm text-[#F3F0E8] flex items-center gap-2">
               Crypto Payment Verification In Progress
+              <span className="text-[10px] font-mono text-[#63C7A2] uppercase tracking-wider bg-[#63C7A2]/10 px-2 py-0.5 rounded-full border border-[#63C7A2]/20">
+                PENDING CONFIRMATION
+              </span>
             </div>
-            <div style={{ fontSize: '0.825rem', color: '#487B57' }}>
-              Your crypto transaction hash was received and is awaiting blockchain/admin confirmation. Your receptionist will activate automatically.
+            <div className="text-xs text-[#9E9B93] mt-0.5">
+              Your Web3 transaction hash was submitted and is undergoing network confirmation. Your AI receptionist will activate automatically.
             </div>
           </div>
         </div>
         <button
           type="button"
-          className="btn btn-secondary btn-sm"
+          className="btn btn-secondary text-xs"
           onClick={() => setDismissed(true)}
         >
-          Dismiss
+          Dismiss Notice
         </button>
       </div>
     );
@@ -116,74 +111,42 @@ export function PostOnboardingCryptoPrompt({
 
   return (
     <>
-      <div style={{
-        padding: '1.5rem',
-        background: '#FFFFFF',
-        border: '1px solid rgba(196, 81, 42, 0.3)',
-        borderRadius: '16px',
-        marginBottom: '1.75rem',
-        boxShadow: '0 4px 20px rgba(196, 81, 42, 0.08)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{
-              width: 44,
-              height: 44,
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #C4512A, #9E3D23)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.25rem',
-              color: '#FFFFFF',
-              boxShadow: '0 4px 12px rgba(196, 81, 42, 0.25)',
-            }}>
+      <div className="p-6 rounded-2xl bg-[#171614] border border-[#E84B2C]/30 mb-7 shadow-[0_8px_32px_rgba(232,75,44,0.12)] relative overflow-hidden group animate-fade-in">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-[radial-gradient(ellipse_at_top_right,rgba(232,75,44,0.12),transparent_70%)] pointer-events-none" />
+
+        <div className="flex justify-between items-start flex-wrap gap-4 relative z-10">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#E84B2C] to-[#C86938] flex items-center justify-center text-xl text-[#F3F0E8] shadow-[0_0_16px_rgba(232,75,44,0.4)] shrink-0">
               🪙
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#201A17', margin: 0 }}>
-                  Activate Your Subscription via Crypto
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h3 className="font-heading text-lg font-semibold text-[#F3F0E8]">
+                  Activate Global Reception via Web3 Settlement
                 </h3>
-                <span style={{
-                  background: 'rgba(196, 81, 42, 0.08)',
-                  color: '#C4512A',
-                  fontSize: '0.68rem',
-                  fontWeight: 600,
-                  padding: '2px 8px',
-                  borderRadius: '9999px',
-                  border: '1px solid rgba(196, 81, 42, 0.2)',
-                }}>
+                <span className="text-[10px] font-mono uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-[#E87A38]/15 border border-[#E87A38]/30 text-[#E87A38]">
                   International Practice
                 </span>
               </div>
-              <p style={{ fontSize: '0.85rem', color: '#756A62', marginTop: '0.2rem', margin: 0 }}>
-                Onboarding complete! To activate your AI receptionist 24/7 on WhatsApp, select a plan and pay securely via Crypto (USDT, USDC, BTC, ETH).
+              <p className="text-xs text-[#9E9B93] mt-1 max-w-2xl leading-relaxed">
+                Clinic configuration verified. To maintain uninterrupted 24/7 AI receptionist availability on WhatsApp, select your monthly tier and settle securely via Web3 (USDT, USDC, BTC, or ETH).
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              className="btn btn-primary"
-              style={{
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                padding: '0.55rem 1.25rem',
-              }}
+              className="btn btn-primary text-xs font-semibold px-4 py-2"
               onClick={() => setShowCryptoModal(true)}
             >
               Pay via Crypto (${planDetails.priceUsd})
             </button>
             <button
               type="button"
-              style={{ background: 'transparent', border: 'none', color: '#756A62', fontSize: '1.1rem', cursor: 'pointer', padding: '0.4rem' }}
+              className="text-[#9E9B93] hover:text-[#F3F0E8] transition-colors text-base p-1"
               onClick={() => setDismissed(true)}
-              title="Close"
+              title="Dismiss"
             >
               ✕
             </button>
@@ -191,12 +154,7 @@ export function PostOnboardingCryptoPrompt({
         </div>
 
         {/* Quick Tier Selector */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '0.75rem',
-          marginTop: '0.25rem',
-        }}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-4 border-t border-[#F3F0E8]/08 relative z-10">
           {PRICING_PLANS.map(p => {
             const isSelected = selectedPlanId === p.id;
             return (
@@ -206,27 +164,21 @@ export function PostOnboardingCryptoPrompt({
                   setSelectedPlanId(p.id);
                   setShowCryptoModal(true);
                 }}
-                style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: '10px',
-                  background: isSelected ? 'rgba(196, 81, 42, 0.06)' : '#FAF5EE',
-                  border: `1.5px solid ${isSelected ? '#C4512A' : '#E9DED3'}`,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  transition: 'all 0.15s ease',
-                }}
+                className={`p-3.5 rounded-xl cursor-pointer flex items-center justify-between transition-all duration-200 ${
+                  isSelected
+                    ? 'bg-[#1C1916] border border-[#E84B2C] shadow-[0_0_12px_rgba(232,75,44,0.2)]'
+                    : 'bg-[#111110]/70 border border-[#F3F0E8]/08 hover:border-[#F3F0E8]/16 hover:bg-[#1C1916]'
+                }`}
               >
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: '0.85rem', color: isSelected ? '#C4512A' : '#201A17' }}>
+                  <div className={`text-xs font-semibold ${isSelected ? 'text-[#E87A38]' : 'text-[#F3F0E8]'}`}>
                     {p.name}
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#756A62' }}>
+                  <div className="text-[11px] font-mono text-[#9E9B93]">
                     {p.chatsDisplay}
                   </div>
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#201A17' }}>
+                <div className="font-heading font-bold text-sm text-[#F3F0E8]">
                   {p.priceUsdDisplay}
                 </div>
               </div>

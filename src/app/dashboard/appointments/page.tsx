@@ -1,7 +1,7 @@
 'use client';
 
 // src/app/dashboard/appointments/page.tsx
-// Claude-inspired Clinic Appointment Management with warm typography, calm status indicators, and clean data tables
+// Cinematic Obsidian × Phoenix Ember Clinic Appointment Management
 
 import React, { useState, useEffect } from 'react';
 
@@ -106,21 +106,21 @@ export default function AppointmentsPage() {
 
   return (
     <div style={{ width: '100%', maxWidth: '100%' }}>
-      {/* Header (Claude Warm Serif) */}
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.75rem' }}>
         <div>
           <h1 style={{
-            fontSize: '2rem',
+            fontSize: '2.1rem',
             fontWeight: 500,
-            fontFamily: 'var(--font-serif)',
-            color: '#262522',
-            letterSpacing: '-0.02em',
+            fontFamily: 'var(--font-display)',
+            color: '#F3F0E8',
+            letterSpacing: '-0.025em',
             margin: 0,
           }}>
             Appointments & Schedule
           </h1>
-          <p style={{ color: '#706C65', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            All patient appointments synced from WhatsApp AI bookings and Google Calendar.
+          <p style={{ color: '#9E9B93', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+            Synchronized patient appointments from automated WhatsApp dialogues and Google Calendar bookings.
           </p>
         </div>
 
@@ -134,7 +134,7 @@ export default function AppointmentsPage() {
         </button>
       </div>
 
-      {/* Metrics Row (Full width) */}
+      {/* Metrics Row */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -143,21 +143,21 @@ export default function AppointmentsPage() {
         width: '100%',
       }}>
         {[
-          { label: 'Total Scheduled', value: total, icon: '📋' },
-          { label: 'Confirmed / Upcoming', value: confirmed, icon: '⏰' },
-          { label: 'Completed Care', value: completed, icon: '✓' },
-          { label: 'Cancelled / Rescheduled', value: cancelled, icon: '✕' },
+          { label: 'Total Scheduled', value: total, icon: '📋', accent: '#F3F0E8' },
+          { label: 'Confirmed / Upcoming', value: confirmed, icon: '⏰', accent: '#E87A38' },
+          { label: 'Completed Care', value: completed, icon: '✓', accent: '#63C7A2' },
+          { label: 'Cancelled / Rescheduled', value: cancelled, icon: '✕', accent: '#E84B2C' },
         ].map((m, i) => (
-          <div key={i} className="stat-card" style={{ padding: '1.15rem 1.35rem' }}>
+          <div key={i} className="stat-card" style={{ padding: '1.25rem 1.35rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.78rem', color: '#706C65', fontWeight: 500 }}>{m.label}</span>
+              <span style={{ fontSize: '0.78rem', color: '#9E9B93', fontWeight: 500 }}>{m.label}</span>
               <span style={{
-                width: 28,
-                height: 28,
-                borderRadius: '6px',
-                background: '#F4F1EB',
-                border: '1px solid #E7E2DA',
-                color: '#262522',
+                width: 30,
+                height: 30,
+                borderRadius: '8px',
+                background: '#1C1916',
+                border: '1px solid rgba(243, 240, 232, 0.08)',
+                color: '#F3F0E8',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -166,7 +166,7 @@ export default function AppointmentsPage() {
                 {m.icon}
               </span>
             </div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 600, color: '#262522', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '1.75rem', fontWeight: 600, color: m.accent, marginTop: '0.35rem', fontFamily: 'var(--font-sans)' }}>
               {m.value}
             </div>
           </div>
@@ -183,12 +183,12 @@ export default function AppointmentsPage() {
               type="button"
               onClick={() => setStatusFilter(f)}
               style={{
-                padding: '0.4rem 0.85rem',
+                padding: '0.45rem 0.95rem',
                 borderRadius: '8px',
-                border: `1px solid ${isActive ? '#F0D5C7' : '#E7E2DA'}`,
-                background: isActive ? '#F8E8DE' : '#FFFFFF',
-                color: isActive ? '#C86646' : '#706C65',
-                fontSize: '0.8rem',
+                border: `1px solid ${isActive ? 'rgba(232, 75, 44, 0.35)' : 'rgba(243, 240, 232, 0.08)'}`,
+                background: isActive ? 'rgba(232, 75, 44, 0.12)' : '#171614',
+                color: isActive ? '#E87A38' : '#9E9B93',
+                fontSize: '0.8125rem',
                 fontWeight: isActive ? 600 : 500,
                 cursor: 'pointer',
                 textTransform: 'capitalize',
@@ -203,7 +203,7 @@ export default function AppointmentsPage() {
       </div>
 
       {/* Appointments Data Table */}
-      <div className="card table-responsive" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="card table-responsive" style={{ padding: 0, overflow: 'hidden', border: '1px solid rgba(243, 240, 232, 0.08)' }}>
         <table>
           <thead>
             <tr>
@@ -218,13 +218,13 @@ export default function AppointmentsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#706C65' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#9E9B93' }}>
                   Loading appointments...
                 </td>
               </tr>
             ) : appointments.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#706C65' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#9E9B93' }}>
                   No appointments found for the selected filter.
                 </td>
               </tr>
@@ -232,15 +232,15 @@ export default function AppointmentsPage() {
               appointments.map(appt => (
                 <tr key={appt.id}>
                   <td>
-                    <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#262522' }}>{appt.patient_name}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#706C65' }}>{appt.patient_phone}</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#F3F0E8' }}>{appt.patient_name}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#9E9B93' }}>{appt.patient_phone}</div>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 500, color: '#262522' }}>{appt.services?.name ?? 'General Dental Care'}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#487B57' }}>{appt.services?.price_display ?? '—'}</div>
+                    <div style={{ fontWeight: 500, color: '#F3F0E8' }}>{appt.services?.name ?? 'General Consultation'}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#63C7A2' }}>{appt.services?.price_display ?? '—'}</div>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 600, color: '#262522' }}>
+                    <div style={{ fontWeight: 600, color: '#E87A38' }}>
                       {new Date(appt.starts_at).toLocaleDateString('en-IN', {
                         timeZone: 'Asia/Kolkata',
                         weekday: 'short',
@@ -248,7 +248,7 @@ export default function AppointmentsPage() {
                         day: 'numeric',
                       })}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#706C65' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#9E9B93' }}>
                       {new Date(appt.starts_at).toLocaleTimeString('en-US', {
                         timeZone: 'Asia/Kolkata',
                         hour: '2-digit',
@@ -265,7 +265,7 @@ export default function AppointmentsPage() {
                     </span>
                   </td>
                   <td>
-                    <span style={{ fontSize: '0.78rem', color: '#706C65' }}>
+                    <span style={{ fontSize: '0.78rem', color: '#D0CBC1' }}>
                       {appt.source === 'whatsapp' ? '🤖 WhatsApp AI' : '👤 Front Desk'}
                     </span>
                   </td>
@@ -277,13 +277,14 @@ export default function AppointmentsPage() {
                             type="button"
                             onClick={() => handleUpdateStatus(appt.id, 'completed')}
                             style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#487B57',
-                              fontSize: '0.78rem',
+                              background: 'rgba(99, 199, 162, 0.1)',
+                              border: '1px solid rgba(99, 199, 162, 0.25)',
+                              borderRadius: '6px',
+                              color: '#63C7A2',
+                              fontSize: '0.75rem',
                               fontWeight: 600,
                               cursor: 'pointer',
-                              padding: '2px 4px',
+                              padding: '4px 8px',
                             }}
                           >
                             ✓ Complete
@@ -292,13 +293,14 @@ export default function AppointmentsPage() {
                             type="button"
                             onClick={() => handleUpdateStatus(appt.id, 'cancelled')}
                             style={{
-                              background: 'none',
-                              border: 'none',
-                              color: '#C44E45',
-                              fontSize: '0.78rem',
+                              background: 'rgba(232, 75, 44, 0.1)',
+                              border: '1px solid rgba(232, 75, 44, 0.25)',
+                              borderRadius: '6px',
+                              color: '#E84B2C',
+                              fontSize: '0.75rem',
                               fontWeight: 600,
                               cursor: 'pointer',
-                              padding: '2px 4px',
+                              padding: '4px 8px',
                             }}
                           >
                             ✕ Cancel
@@ -306,7 +308,7 @@ export default function AppointmentsPage() {
                         </>
                       )}
                       {appt.status !== 'confirmed' && (
-                        <span style={{ fontSize: '0.75rem', color: '#97938A' }}>—</span>
+                        <span style={{ fontSize: '0.75rem', color: '#9E9B93' }}>—</span>
                       )}
                     </div>
                   </td>
@@ -325,23 +327,23 @@ export default function AppointmentsPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(38, 37, 34, 0.45)',
-          backdropFilter: 'blur(3px)',
+          background: 'rgba(8, 5, 5, 0.75)',
+          backdropFilter: 'blur(6px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 100,
           padding: '1rem',
         }}>
-          <div className="card" style={{ maxWidth: 480, width: '100%', padding: '1.75rem', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div className="card-elevated" style={{ maxWidth: 480, width: '100%', padding: '1.75rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#262522', margin: 0 }}>
-                New Walk-In Appointment
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#F3F0E8', margin: 0 }}>
+                Manual Walk-In Booking
               </h2>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                style={{ background: 'none', border: 'none', color: '#706C65', cursor: 'pointer', fontSize: '1.25rem' }}
+                style={{ background: 'none', border: 'none', color: '#9E9B93', cursor: 'pointer', fontSize: '1.25rem' }}
               >
                 ✕
               </button>
@@ -352,10 +354,10 @@ export default function AppointmentsPage() {
                 <label className="label">Patient Name</label>
                 <input
                   className="input"
-                  required
                   value={newPatientName}
                   onChange={e => setNewPatientName(e.target.value)}
-                  placeholder="e.g. Ramesh Patel"
+                  placeholder="e.g. Rahul Sharma"
+                  required
                 />
               </div>
 
@@ -363,36 +365,36 @@ export default function AppointmentsPage() {
                 <label className="label">Patient WhatsApp / Phone</label>
                 <input
                   className="input"
-                  required
                   value={newPatientPhone}
                   onChange={e => setNewPatientPhone(e.target.value)}
-                  placeholder="+91 98765 43210"
+                  placeholder="e.g. +91 98765 43210"
+                  required
                 />
               </div>
 
               <div>
-                <label className="label">Appointment Date & Time</label>
+                <label className="label">Date & Time</label>
                 <input
-                  className="input"
                   type="datetime-local"
-                  required
+                  className="input"
                   value={newStartsAt}
                   onChange={e => setNewStartsAt(e.target.value)}
+                  required
                 />
               </div>
 
               <div>
-                <label className="label">Internal Notes</label>
+                <label className="label">Notes / Clinical Reason</label>
                 <textarea
                   className="input"
-                  rows={2}
+                  rows={3}
                   value={newNotes}
                   onChange={e => setNewNotes(e.target.value)}
-                  placeholder="Optional clinic notes..."
+                  placeholder="e.g. Severe tooth pain lower right molar"
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
                 <button
                   type="button"
                   className="btn btn-secondary"
@@ -405,7 +407,7 @@ export default function AppointmentsPage() {
                   className="btn btn-primary"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Booking...' : 'Book & Sync Calendar'}
+                  {isSubmitting ? 'Booking...' : 'Confirm Appointment'}
                 </button>
               </div>
             </form>

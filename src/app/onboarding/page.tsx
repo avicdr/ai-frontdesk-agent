@@ -540,29 +540,20 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF5EE', color: '#201A17', padding: '2rem 1rem 4rem 1rem' }}>
-      <div style={{ maxWidth: 880, margin: '0 auto', position: 'relative', zIndex: 10 }}>
+    <div className="min-h-screen bg-[#111110] text-[#F3F0E8] py-8 px-4 sm:px-6 relative overflow-hidden animate-fade-in">
+      {/* Background ambient ember lighting */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(ellipse_at_top_right,rgba(232,75,44,0.12),transparent_70%)] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[radial-gradient(ellipse_at_bottom_left,rgba(200,105,56,0.08),transparent_70%)] pointer-events-none" />
+
+      <div className="max-w-4xl mx-auto relative z-10">
         {/* Top bar with quick Dashboard jump */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <Link href="/" style={{ color: '#756A62', textDecoration: 'none', fontSize: '0.825rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+        <div className="flex justify-between items-center mb-6">
+          <Link href="/" className="text-xs font-mono text-[#9E9B93] hover:text-[#F3F0E8] transition-colors flex items-center gap-1.5">
             ← Home
           </Link>
           <Link
             href="/dashboard"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              fontSize: '0.825rem',
-              fontWeight: 500,
-              color: '#201A17',
-              background: '#FFFFFF',
-              border: '1px solid #E9DED3',
-              padding: '0.45rem 1rem',
-              borderRadius: '9px',
-              textDecoration: 'none',
-              boxShadow: '0 1px 2px rgba(32,26,23,0.04)',
-            }}
+            className="btn btn-secondary text-xs px-3.5 py-1.5 flex items-center gap-1.5"
           >
             <span>Go to Clinic Dashboard</span>
             <span>→</span>
@@ -570,51 +561,21 @@ export default function OnboardingPage() {
         </div>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.35rem 0.9rem',
-            borderRadius: '9999px',
-            background: 'rgba(196, 81, 42, 0.08)',
-            border: '1px solid rgba(196, 81, 42, 0.2)',
-            fontSize: '0.78rem',
-            fontWeight: 600,
-            color: '#C4512A',
-            marginBottom: '0.85rem',
-          }}>
-            ✦ AI Front Desk Setup Wizard
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E84B2C]/10 border border-[#E84B2C]/30 text-[#E87A38] text-[11px] font-mono uppercase tracking-widest font-semibold mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E84B2C] shadow-[0_0_8px_#E84B2C]" />
+            AI Front Desk Setup Wizard
           </div>
-          <h1 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(1.85rem, 3.5vw, 2.4rem)',
-            fontWeight: 400,
-            letterSpacing: '-0.025em',
-            color: '#201A17',
-            marginBottom: '0.5rem',
-          }}>
+          <h1 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight text-[#F3F0E8] mb-2">
             Set Up Your 24/7 AI Receptionist
           </h1>
-          <p style={{ color: '#756A62', fontSize: '0.95rem', maxWidth: 540, margin: '0 auto', lineHeight: 1.5 }}>
-            Empower your practice with an automated WhatsApp receptionist that quotes treatments, checks calendar slots, and books appointments.
+          <p className="text-sm text-[#9E9B93] max-w-xl mx-auto leading-relaxed">
+            Empower your practice with an autonomous WhatsApp receptionist that quotes treatments, checks calendar slots, and books appointments.
           </p>
         </div>
 
         {/* Step Indicator */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '2rem',
-          background: '#FFFFFF',
-          padding: '0.875rem 1.25rem',
-          borderRadius: '14px',
-          border: '1px solid #E9DED3',
-          overflowX: 'auto',
-          gap: '0.5rem',
-          boxShadow: '0 1px 3px rgba(32, 26, 23, 0.04)',
-        }}>
+        <div className="flex justify-between items-center mb-8 p-3 rounded-2xl bg-[#171614] border border-[#F3F0E8]/08 overflow-x-auto gap-2 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
           {[
             { step: 1, label: 'Clinic Essentials' },
             { step: 2, label: 'AI Persona' },
@@ -628,47 +589,33 @@ export default function OnboardingPage() {
             const isDone = currentStep > step;
             const isCurrent = currentStep === step;
             return (
-              <div key={step} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: isCurrent ? 1 : isDone ? 0.9 : 0.55 }}>
-                <div style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  background: isCurrent ? '#C4512A' : isDone ? '#EDF7F1' : '#F6EFE5',
-                  border: isCurrent ? '1.5px solid #C4512A' : isDone ? '1px solid #CEE8D8' : '1px solid #E9DED3',
-                  color: isCurrent ? '#FFFFFF' : isDone ? '#235A34' : '#756A62',
-                  flexShrink: 0,
-                }}>
+              <div key={step} className={`flex items-center gap-2 transition-opacity ${
+                isCurrent ? 'opacity-100' : isDone ? 'opacity-90' : 'opacity-40'
+              }`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-bold shrink-0 transition-all ${
+                  isCurrent
+                    ? 'bg-[#E84B2C] text-[#F3F0E8] shadow-[0_0_10px_#E84B2C]'
+                    : isDone
+                    ? 'bg-[#63C7A2]/20 border border-[#63C7A2]/40 text-[#63C7A2]'
+                    : 'bg-[#1C1916] border border-[#F3F0E8]/10 text-[#9E9B93]'
+                }`}>
                   {isDone ? '✓' : step}
                 </div>
-                <span style={{ fontSize: '0.75rem', fontWeight: isCurrent ? 600 : 500, whiteSpace: 'nowrap', color: isCurrent ? '#201A17' : '#756A62' }}>
+                <span className={`text-xs whitespace-nowrap font-medium ${
+                  isCurrent ? 'text-[#F3F0E8] font-semibold' : 'text-[#9E9B93]'
+                }`}>
                   {label}
                 </span>
-                {step < 8 && <div style={{ width: 14, height: 1, background: '#E9DED3' }} />}
+                {step < 8 && <div className="w-3.5 h-[1px] bg-[#F3F0E8]/10" />}
               </div>
             );
           })}
         </div>
 
         {/* Step Content Card */}
-        <div className="card" style={{ padding: '2.25rem', border: '1px solid #E9DED3', borderRadius: '20px', background: '#FFFFFF', boxShadow: '0 8px 30px rgba(32, 26, 23, 0.08)' }}>
+        <div className="card p-6 sm:p-8 bg-[#171614] border border-[#F3F0E8]/10 shadow-[0_20px_50px_rgba(0,0,0,0.7)] relative overflow-hidden">
           {errorMsg && (
-            <div style={{
-              padding: '0.875rem 1.25rem',
-              borderRadius: '12px',
-              background: 'hsla(0, 84%, 60%, 0.12)',
-              border: '1px solid hsla(0, 84%, 60%, 0.35)',
-              color: 'hsl(0, 84%, 70%)',
-              marginBottom: '1.75rem',
-              fontSize: '0.875rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}>
+            <div className="p-4 rounded-xl bg-[#E84B2C]/10 border border-[#E84B2C]/30 text-[#E84B2C] text-xs flex items-center gap-2.5 mb-6">
               <span>⚠️</span>
               <span>{errorMsg}</span>
             </div>
@@ -686,35 +633,20 @@ export default function OnboardingPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {/* Healthcare Specialty / Clinic Type Selector */}
-                <div className="form-field" style={{
-                  background: 'rgba(196, 81, 42, 0.05)',
-                  padding: '1.25rem',
-                  borderRadius: '14px',
-                  border: '1px solid rgba(196, 81, 42, 0.2)',
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <label className="label" style={{ fontWeight: 600, fontSize: '0.95rem', margin: 0, color: '#201A17' }}>
-                      <span>🏥</span> Clinic Type / Healthcare Specialty <span style={{ color: 'hsl(var(--color-error))' }}>*</span>
+                <div className="form-field p-5 rounded-2xl bg-[#1C1916] border border-[#E84B2C]/25 shadow-[0_4px_20px_rgba(232,75,44,0.06)]">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="label font-semibold text-sm m-0 text-[#F3F0E8] flex items-center gap-2">
+                      <span>🏥</span> Clinic Type / Healthcare Specialty <span className="text-[#E84B2C]">*</span>
                     </label>
-                    <span style={{ fontSize: '0.75rem', color: '#C4512A', fontWeight: 600 }}>
+                    <span className="text-xs text-[#E87A38] font-mono font-semibold">
                       {currentClinicConfig.icon} {currentClinicConfig.label}
                     </span>
                   </div>
 
                   <select
-                    className="input"
+                    className="input w-full cursor-pointer text-sm font-medium bg-[#111110] text-[#F3F0E8] border border-[#F3F0E8]/12 p-3 rounded-xl"
                     value={businessType}
                     onChange={e => handleSelectClinicType(e.target.value as ClinicTypeId)}
-                    style={{
-                      cursor: 'pointer',
-                      fontSize: '0.95rem',
-                      fontWeight: 500,
-                      background: '#FFFFFF',
-                      color: '#201A17',
-                      border: '1px solid #E9DED3',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '10px',
-                    }}
                   >
                     {CLINIC_TYPES.map(type => (
                       <option key={type.id} value={type.id}>
@@ -723,13 +655,13 @@ export default function OnboardingPage() {
                     ))}
                   </select>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem', fontSize: '0.775rem', color: '#756A62' }}>
-                    <span>✨</span>
+                  <div className="flex items-center gap-2 mt-2 text-xs text-[#9E9B93]">
+                    <span className="text-[#E87A38]">✨</span>
                     <span>
-                      <strong style={{ color: '#201A17' }}>{currentClinicConfig.label}:</strong> {currentClinicConfig.specialtyDescription}
+                      <strong className="text-[#F3F0E8]">{currentClinicConfig.label}:</strong> {currentClinicConfig.specialtyDescription}
                     </span>
                   </div>
-                  <span className="form-hint" style={{ marginTop: '0.35rem', color: '#756A62' }}>
+                  <span className="text-[11px] text-[#9E9B93] block mt-1">
                     Switching specialty automatically adapts your catalog, procedure presets, and AI clinical responses.
                   </span>
                 </div>
@@ -849,9 +781,9 @@ export default function OnboardingPage() {
                     <label className="label">
                       <span>🎭</span> Conversational Tone
                     </label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    <div className="flex flex-col gap-2.5">
                       {[
-                        { id: 'friendly', title: '🌸 Warm & Friendly', desc: 'Gentle, polite & empathetic — ideal for nervous dental patients' },
+                        { id: 'friendly', title: '🌸 Warm & Friendly', desc: 'Gentle, polite & empathetic — ideal for nervous patients' },
                         { id: 'professional', title: '👔 Professional & Formal', desc: 'Clinical precision, structured questions, respectful etiquette' },
                         { id: 'concise', title: '⚡ Fast & Concise', desc: 'Quick quotes, direct slot booking, minimal chit-chat' },
                       ].map(t => {
@@ -860,39 +792,24 @@ export default function OnboardingPage() {
                           <div
                             key={t.id}
                             onClick={() => setTone(t.id as any)}
-                            style={{
-                              padding: '0.875rem 1rem',
-                              borderRadius: '12px',
-                              border: `1.5px solid ${isSelected ? '#C4512A' : '#E9DED3'}`,
-                              background: isSelected ? 'rgba(196, 81, 42, 0.06)' : '#FAF5EE',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              transition: 'all 0.15s ease',
-                              boxShadow: isSelected ? '0 0 16px rgba(196, 81, 42, 0.12)' : 'none',
-                            }}
+                            className={`p-3.5 rounded-xl cursor-pointer flex items-center justify-between transition-all ${
+                              isSelected
+                                ? 'bg-[#1C1916] border border-[#E84B2C] shadow-[0_0_16px_rgba(232,75,44,0.15)]'
+                                : 'bg-[#111110] border border-[#F3F0E8]/08 hover:border-[#F3F0E8]/16'
+                            }`}
                           >
                             <div>
-                              <div style={{ fontWeight: 600, fontSize: '0.875rem', color: isSelected ? '#C4512A' : '#201A17', marginBottom: '0.2rem' }}>
+                              <div className={`font-semibold text-xs mb-0.5 ${isSelected ? 'text-[#E87A38]' : 'text-[#F3F0E8]'}`}>
                                 {t.title}
                               </div>
-                              <div style={{ fontSize: '0.75rem', color: '#756A62' }}>
+                              <div className="text-[11px] text-[#9E9B93]">
                                 {t.desc}
                               </div>
                             </div>
-                            <div style={{
-                              width: 18,
-                              height: 18,
-                              borderRadius: '50%',
-                              border: `2px solid ${isSelected ? '#C4512A' : '#E9DED3'}`,
-                              background: isSelected ? '#C4512A' : 'transparent',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}>
-                              {isSelected && <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'white' }} />}
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                              isSelected ? 'border-[#E84B2C] bg-[#E84B2C]' : 'border-[#F3F0E8]/20'
+                            }`}>
+                              {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                             </div>
                           </div>
                         );
@@ -1782,7 +1699,7 @@ export default function OnboardingPage() {
               </div>
 
               {/* Plan Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
                 {PRICING_PLANS.map(p => {
                   const isSelected = selectedPlan === p.id;
                   const priceDisplay = isInternational ? p.priceUsdDisplay : p.priceInrDisplay;
@@ -1791,55 +1708,33 @@ export default function OnboardingPage() {
                     <div
                       key={p.id}
                       onClick={() => setSelectedPlan(p.id as any)}
-                      style={{
-                        padding: '1.75rem 1.5rem 1.5rem',
-                        borderRadius: '16px',
-                        border: `1.5px solid ${isSelected ? '#C4512A' : '#E9DED3'}`,
-                        background: isSelected ? 'rgba(196, 81, 42, 0.05)' : '#FFFFFF',
-                        cursor: 'pointer',
-                        position: 'relative',
-                        overflow: 'visible',
-                        marginTop: '0.75rem',
-                        transition: 'all 0.2s ease',
-                        boxShadow: isSelected
-                          ? '0 0 0 1px rgba(196, 81, 42, 0.1), 0 8px 20px rgba(196, 81, 42, 0.12)'
-                          : '0 1px 3px rgba(32, 26, 23, 0.04)',
-                      }}
+                      className={`p-6 rounded-2xl cursor-pointer relative transition-all duration-300 ${
+                        isSelected
+                          ? 'bg-[#1C1916] border border-[#E84B2C] shadow-[0_0_24px_rgba(232,75,44,0.18)]'
+                          : 'bg-[#171614] border border-[#F3F0E8]/08 hover:border-[#F3F0E8]/16'
+                      }`}
                     >
                       {p.badge && (
-                        <div style={{
-                          position: 'absolute',
-                          top: -11,
-                          right: 16,
-                          background: 'linear-gradient(135deg, #C4512A 0%, #9E3D23 100%)',
-                          color: 'white',
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          padding: '0.25rem 0.75rem',
-                          borderRadius: '9999px',
-                          boxShadow: '0 4px 12px rgba(196, 81, 42, 0.3)',
-                          zIndex: 10,
-                          letterSpacing: '0.02em',
-                        }}>
+                        <div className="absolute -top-3 right-4 bg-gradient-to-r from-[#E84B2C] to-[#C86938] text-[#F3F0E8] text-[10px] font-mono uppercase tracking-wider font-bold px-2.5 py-0.5 rounded-full shadow-[0_0_12px_#E84B2C]">
                           {p.badge}
                         </div>
                       )}
-                      <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '0.35rem', color: '#201A17' }}>{p.name}</div>
-                      <div style={{ fontSize: '1.75rem', fontWeight: 700, color: isSelected ? '#C4512A' : '#201A17', marginBottom: '0.35rem', fontFamily: 'var(--font-sans)' }}>
-                        {priceDisplay}<span style={{ fontSize: '0.8rem', color: '#756A62', fontWeight: 500 }}>/mo</span>
+                      <div className="font-semibold text-sm text-[#F3F0E8] mb-1">{p.name}</div>
+                      <div className="font-heading text-2xl font-bold text-[#F3F0E8] mb-1">
+                        {priceDisplay}<span className="text-xs text-[#9E9B93] font-normal ml-1">/mo</span>
                       </div>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#C4512A', marginBottom: '1rem' }}>
+                      <div className="text-xs font-mono text-[#E87A38] mb-4">
                         {p.chatsDisplay}
                       </div>
-                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.78rem', color: '#756A62' }}>
+                      <ul className="space-y-2 text-xs text-[#D0CBC1]">
                         {p.features.map((f, i) => (
-                          <li key={i} style={{ marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <span style={{ color: '#16A34A', fontWeight: 700 }}>✓</span> {f}
+                          <li key={i} className="flex items-center gap-2">
+                            <span className="text-[#63C7A2] text-xs">✓</span> {f}
                           </li>
                         ))}
                         {isInternational && (
-                          <li style={{ marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#C4512A' }}>
-                            <span>🪙</span> Pay via Crypto (USDT / USDC / BTC)
+                          <li className="flex items-center gap-2 text-[#E87A38] font-mono text-[11px]">
+                            <span>🪙</span> Crypto (USDT / USDC / BTC / ETH)
                           </li>
                         )}
                       </ul>
@@ -1851,48 +1746,33 @@ export default function OnboardingPage() {
               {/* PAYMENT CARD: Either Crypto (International) or UPI (Domestic India) */}
               {isInternational ? (
                 /* International Crypto Gateway Card */
-                <div style={{
-                  background: '#FFFFFF',
-                  borderRadius: '16px',
-                  border: '1px solid #E9DED3',
-                  padding: 'clamp(1rem, 3vw, 1.75rem)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1.25rem',
-                  boxShadow: '0 2px 8px rgba(32, 26, 23, 0.04)',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                      <span style={{ fontSize: '1.5rem' }}>🪙</span>
+                <div className="p-6 rounded-2xl bg-[#171614] border border-[#E84B2C]/25 shadow-[0_4px_24px_rgba(232,75,44,0.08)] space-y-5">
+                  <div className="flex justify-between items-center flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E84B2C] to-[#C86938] flex items-center justify-center text-lg text-[#F3F0E8] shadow-[0_0_12px_rgba(232,75,44,0.3)]">
+                        🪙
+                      </div>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: '1rem', color: '#201A17' }}>
-                          International Crypto Payment Gateway
+                        <div className="font-semibold text-sm text-[#F3F0E8]">
+                          International Web3 Settlement Gateway
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: '#756A62' }}>
-                          Selected Tier: <strong style={{ color: '#C4512A' }}>{PRICING_PLANS.find(p => p.id === selectedPlan)?.name}</strong> — <strong style={{ color: '#201A17' }}>{PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsdDisplay} USD</strong>
+                        <div className="text-xs text-[#9E9B93]">
+                          Selected Tier: <strong className="text-[#E87A38]">{PRICING_PLANS.find(p => p.id === selectedPlan)?.name}</strong> — <strong className="text-[#F3F0E8] font-mono">{PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsdDisplay} USD</strong>
                         </div>
                       </div>
                     </div>
 
-                    <div style={{
-                      padding: '0.4rem 0.85rem',
-                      borderRadius: '8px',
-                      background: '#EDF7F1',
-                      border: '1px solid #CEE8D8',
-                      color: '#235A34',
-                      fontWeight: 600,
-                      fontSize: '0.825rem',
-                    }}>
-                      Amount: {PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsd} {selectedCryptoNetwork.symbol}
+                    <div className="px-3 py-1.5 rounded-lg bg-[#63C7A2]/10 border border-[#63C7A2]/25 text-[#63C7A2] font-mono text-xs font-semibold">
+                      Required: {PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsd} {selectedCryptoNetwork.symbol}
                     </div>
                   </div>
 
                   {/* Network Tabs */}
                   <div>
-                    <div style={{ fontSize: '0.72rem', color: '#756A62', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-                      Select Network:
+                    <div className="text-[10px] font-mono uppercase text-[#9E9B93] tracking-wider mb-2">
+                      Select Blockchain Network:
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem' }}>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {CRYPTO_NETWORKS.map(net => {
                         const isNetActive = selectedCryptoNetwork.id === net.id;
                         return (
@@ -1900,18 +1780,11 @@ export default function OnboardingPage() {
                             key={net.id}
                             type="button"
                             onClick={() => setSelectedCryptoNetwork(net)}
-                            style={{
-                              padding: '0.5rem',
-                              borderRadius: '8px',
-                              background: isNetActive ? 'rgba(196, 81, 42, 0.08)' : '#FAF5EE',
-                              border: `1.5px solid ${isNetActive ? '#C4512A' : '#E9DED3'}`,
-                              color: isNetActive ? '#C4512A' : '#756A62',
-                              fontSize: '0.75rem',
-                              fontWeight: isNetActive ? 600 : 500,
-                              cursor: 'pointer',
-                              textAlign: 'center',
-                              transition: 'all 0.15s ease',
-                            }}
+                            className={`p-2.5 rounded-xl text-xs font-mono transition-all text-center border ${
+                              isNetActive
+                                ? 'bg-[#1C1916] border-[#E84B2C] text-[#E87A38] shadow-[0_0_12px_rgba(232,75,44,0.2)]'
+                                : 'bg-[#111110] border-[#F3F0E8]/08 text-[#9E9B93] hover:border-[#F3F0E8]/16'
+                            }`}
                           >
                             <div>{net.name}</div>
                           </button>
@@ -1921,62 +1794,27 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* QR & Deposit Details */}
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
-                    gap: '1.25rem',
-                    alignItems: 'center',
-                    background: 'hsl(var(--color-surface))',
-                    padding: '1rem',
-                    borderRadius: '12px',
-                    border: '1px solid hsl(var(--color-border))',
-                  }}>
+                  <div className="p-4 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 flex flex-col sm:flex-row items-center gap-5">
                     {/* Real Crypto QR Image */}
-                    <div style={{
-                      background: 'white',
-                      borderRadius: '12px',
-                      padding: '0.75rem',
-                      textAlign: 'center',
-                      width: 130,
-                      margin: '0 auto',
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
-                    }}>
-                      <div style={{ width: 110, height: 110, background: '#FFFFFF', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img
-                          src={selectedCryptoNetwork.qrImagePath}
-                          alt={`${selectedCryptoNetwork.name} Deposit QR`}
-                          style={{
-                            width: 102,
-                            height: 102,
-                            objectFit: 'contain',
-                            borderRadius: '4px',
-                            display: 'block',
-                          }}
-                        />
-                      </div>
-                      <div style={{ color: '#201A17', fontSize: '0.68rem', fontWeight: 600, marginTop: '0.35rem' }}>
-                        {selectedCryptoNetwork.symbol} Deposit
+                    <div className="bg-white rounded-xl p-2 text-center shrink-0 shadow-[0_0_20px_rgba(232,75,44,0.15)]">
+                      <img
+                        src={selectedCryptoNetwork.qrImagePath}
+                        alt={`${selectedCryptoNetwork.name} Deposit QR`}
+                        className="w-24 h-24 object-contain rounded-lg"
+                      />
+                      <div className="text-[#111110] text-[10px] font-mono font-bold mt-1">
+                        {selectedCryptoNetwork.symbol}
                       </div>
                     </div>
 
                     {/* Deposit Address Box & TxID input */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div className="flex-1 w-full space-y-3">
                       <div>
-                        <div style={{ fontSize: '0.7rem', color: '#756A62', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-                          Official {selectedCryptoNetwork.name} Address:
+                        <div className="text-[10px] font-mono uppercase tracking-wider text-[#9E9B93]">
+                          Official {selectedCryptoNetwork.name} Deposit Address:
                         </div>
-                        <div style={{
-                          padding: '0.6rem 0.75rem',
-                          borderRadius: '8px',
-                          background: '#FAF5EE',
-                          border: '1px solid #E9DED3',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '0.5rem',
-                          marginTop: '0.25rem',
-                        }}>
-                          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#C4512A', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                        <div className="p-2.5 rounded-lg bg-[#171614] border border-[#F3F0E8]/10 flex items-center justify-between gap-2 mt-1">
+                          <span className="font-mono text-xs text-[#E87A38] break-all">
                             {selectedCryptoNetwork.address}
                           </span>
                           <button
@@ -1986,27 +1824,23 @@ export default function OnboardingPage() {
                               setCopiedCryptoAddress(true);
                               setTimeout(() => setCopiedCryptoAddress(false), 2000);
                             }}
-                            className="btn btn-secondary btn-sm"
-                            style={{ flexShrink: 0, fontSize: '0.72rem', padding: '0.35rem 0.6rem' }}
+                            className="btn btn-secondary text-xs px-2.5 py-1 font-mono shrink-0"
                           >
                             {copiedCryptoAddress ? '✓ Copied' : '📋 Copy'}
                           </button>
                         </div>
                       </div>
 
-                      <div className="form-field" style={{ margin: 0 }}>
-                        <label className="label" style={{ fontSize: '0.8rem' }}>
-                          <span>🧾</span> Transaction Hash (TxID)
-                        </label>
+                      <div>
+                        <label className="label text-xs">Transaction Hash / TxID *</label>
                         <input
-                          className="input"
+                          className="input font-mono text-xs"
                           value={cryptoTxHash}
                           onChange={e => setCryptoTxHash(e.target.value)}
-                          placeholder="e.g. 0x8f... or Tron TxID from your withdrawal receipt"
-                          style={{ fontFamily: 'monospace', fontSize: '0.825rem' }}
+                          placeholder="e.g. 0x8f... or Tron TxID from withdrawal"
                         />
-                        <span className="form-hint" style={{ fontSize: '0.7rem' }}>
-                          💡 Send {PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsd} {selectedCryptoNetwork.symbol} on {selectedCryptoNetwork.networkName} and paste your TxID here.
+                        <span className="text-[11px] text-[#9E9B93] block mt-1">
+                          💡 Submit your transaction hash. System verifies and provisions active receptionist availability automatically.
                         </span>
                       </div>
                     </div>
@@ -2014,87 +1848,53 @@ export default function OnboardingPage() {
                 </div>
               ) : (
                 /* Domestic UPI Instant Payment Card */
-                <div style={{
-                  background: 'hsl(var(--color-surface-2))',
-                  borderRadius: '16px',
-                  border: '1px solid hsl(var(--color-border))',
-                  padding: 'clamp(1rem, 3vw, 1.75rem)',
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
-                  gap: '1.5rem',
-                  alignItems: 'center',
-                }}>
+                <div className="p-6 rounded-2xl bg-[#171614] border border-[#E84B2C]/25 shadow-[0_4px_24px_rgba(232,75,44,0.08)] flex flex-col sm:flex-row items-center gap-6">
                   {/* Official Paytm UPI QR Card */}
-                  <div style={{
-                    background: 'white',
-                    borderRadius: '16px',
-                    padding: '0.75rem',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                    boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
-                    maxWidth: 220,
-                    margin: '0 auto',
-                  }}>
+                  <div className="bg-white rounded-2xl p-3 flex flex-col items-center text-center shrink-0 shadow-[0_0_20px_rgba(232,75,44,0.15)] max-w-[190px]">
                     <img
                       src="/upi-qr.png"
-                      alt="Paytm UPI QR Code for aviwasasleep@ptaxis"
-                      style={{
-                        width: '100%',
-                        maxWidth: 200,
-                        height: 'auto',
-                        borderRadius: '12px',
-                        display: 'block',
-                      }}
+                      alt="UPI QR Code for AI Front Desk"
+                      className="w-full h-auto rounded-lg"
                     />
-                    <div style={{ color: '#0f172a', fontSize: '0.75rem', fontWeight: 700, marginTop: '0.5rem' }}>
+                    <div className="text-[#111110] text-[11px] font-bold mt-2">
                       Scan with any UPI App
                     </div>
-                    <div style={{ color: '#64748b', fontSize: '0.65rem' }}>
+                    <div className="text-[#706C65] text-[10px]">
                       Paytm • GPay • PhonePe • BHIM
                     </div>
                   </div>
 
                   {/* VPA Details & UTR Input */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{
-                      padding: '0.875rem 1rem',
-                      borderRadius: '10px',
-                      background: 'hsl(var(--color-surface))',
-                      border: '1px solid #E9DED3',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                    }}>
+                  <div className="flex-1 w-full space-y-4">
+                    <div className="p-3.5 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 flex items-center justify-between">
                       <div>
-                        <div style={{ fontSize: '0.7rem', color: '#756A62', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-                          Official Clinic UPI VPA:
+                        <div className="text-[10px] font-mono uppercase text-[#9E9B93]">
+                          Practice UPI VPA:
                         </div>
-                        <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#C4512A', fontFamily: 'monospace' }}>
+                        <div className="text-base font-mono font-bold text-[#F3F0E8] mt-0.5">
                           {PLATFORM_UPI_VPA}
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={handleCopyVpa}
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary text-xs font-mono"
                       >
                         {copiedVpa ? '✓ Copied' : '📋 Copy VPA'}
                       </button>
                     </div>
 
-                    <div className="form-field">
-                      <label className="label">
-                        <span>🧾</span> 12-Digit Bank UTR / UPI Transaction Reference
+                    <div>
+                      <label className="label text-xs">
+                        12-Digit Bank UTR / UPI Transaction Reference
                       </label>
                       <input
-                        className="input"
+                        className="input font-mono text-sm"
                         value={utrNumber}
                         onChange={e => setUtrNumber(e.target.value)}
                         placeholder="e.g. 429104928104 (from your UPI receipt)"
                       />
-                      <span className="form-hint">
+                      <span className="text-[11px] text-[#9E9B93] block mt-1">
                         💡 Automated verification activates your AI receptionist within seconds of UTR submission.
                       </span>
                     </div>
@@ -2105,21 +1905,13 @@ export default function OnboardingPage() {
           )}
 
           {/* Wizard Footer Navigation */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: '2.5rem',
-            paddingTop: '1.5rem',
-            borderTop: '1px solid hsl(var(--color-border))',
-          }}>
+          <div className="flex justify-between items-center mt-10 pt-6 border-t border-[#F3F0E8]/08">
             {currentStep > 1 ? (
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="btn btn-secondary text-xs px-5 py-2.5"
                 onClick={() => setCurrentStep(currentStep - 1)}
                 disabled={isSubmitting}
-                style={{ padding: '0.75rem 1.5rem' }}
               >
                 ← Back
               </button>
@@ -2130,28 +1922,20 @@ export default function OnboardingPage() {
             {currentStep < 8 ? (
               <button
                 type="button"
-                className="btn btn-primary"
+                className="btn btn-primary text-xs font-semibold px-6 py-2.5"
                 onClick={handleNext}
                 disabled={isSubmitting}
-                style={{ padding: '0.75rem 1.75rem', fontSize: '0.95rem' }}
               >
                 {isSubmitting ? 'Saving Progress...' : 'Next Step →'}
               </button>
             ) : (
               <button
                 type="button"
-                className="btn btn-primary"
-                style={{
-                  background: 'linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(160 84% 39%) 100%)',
-                  padding: '0.875rem 2rem',
-                  fontSize: '1rem',
-                  fontWeight: 700,
-                  boxShadow: '0 4px 20px hsla(142, 71%, 45%, 0.4)',
-                }}
+                className="btn btn-primary text-xs font-bold px-8 py-3 bg-gradient-to-r from-[#E84B2C] to-[#C86938] shadow-[0_0_25px_rgba(232,75,44,0.4)] hover:shadow-[0_0_35px_rgba(232,75,44,0.6)]"
                 onClick={handleCompleteActivation}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Activating...' : '🚀 Complete Activation & Launch'}
+                {isSubmitting ? 'Activating Front Desk...' : '🚀 Complete Activation & Launch'}
               </button>
             )}
           </div>

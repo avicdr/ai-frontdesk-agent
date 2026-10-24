@@ -1,7 +1,7 @@
 'use client';
 
 // src/app/dashboard/agent-test/page.tsx
-// Claude-inspired AI Receptionist Testing Playground — clean conversational canvas, refined typography, and tool inspector
+// Cinematic Obsidian × Phoenix Ember AI Receptionist Testing Playground
 
 import React, { useState } from 'react';
 
@@ -20,7 +20,7 @@ export default function AgentTestPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: "Hello! Welcome to our clinic. I'm your AI front desk assistant. How can I help you today?",
+      content: "Hello! Welcome to our clinic. I'm your AI front desk assistant. How can I assist you with your appointment or questions today?",
     },
   ]);
   const [inputText, setInputText] = useState('');
@@ -69,7 +69,7 @@ export default function AgentTestPage() {
       }
     } catch (e) {
       console.error(e);
-      setMessages([...newMessages, { role: 'assistant', content: '⚠️ Error reaching AI engine. Please check your API keys.' }]);
+      setMessages([...newMessages, { role: 'assistant', content: '⚠️ Error reaching AI engine. Please verify configuration.' }]);
     } finally {
       setLoading(false);
     }
@@ -79,7 +79,7 @@ export default function AgentTestPage() {
     setMessages([
       {
         role: 'assistant',
-        content: "Hello! Welcome to our clinic. I'm your AI front desk assistant. How can I help you today?",
+        content: "Hello! Welcome to our clinic. I'm your AI front desk assistant. How can I assist you with your appointment or questions today?",
       },
     ]);
     setExecutions([]);
@@ -92,17 +92,17 @@ export default function AgentTestPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.75rem' }}>
         <div>
           <h1 style={{
-            fontSize: '2rem',
+            fontSize: '2.1rem',
             fontWeight: 500,
-            fontFamily: 'var(--font-serif)',
-            color: '#262522',
-            letterSpacing: '-0.02em',
+            fontFamily: 'var(--font-display)',
+            color: '#F3F0E8',
+            letterSpacing: '-0.025em',
             marginBottom: '0.35rem',
           }}>
             AI Receptionist Test Playground
           </h1>
-          <p style={{ color: '#706C65', fontSize: '0.875rem' }}>
-            Interact with your clinic&apos;s AI assistant in real-time. Inspect tool calls, pricing queries, and booking workflows.
+          <p style={{ color: '#9E9B93', fontSize: '0.875rem' }}>
+            Simulate patient conversations in real-time. Inspect tool calls, schedule conflict checks, and Gemini telemetry.
           </p>
         </div>
 
@@ -112,13 +112,13 @@ export default function AgentTestPage() {
           onClick={handleReset}
           style={{ fontSize: '0.8125rem' }}
         >
-          Reset Conversation
+          Reset Session
         </button>
       </div>
 
-      {/* Preset Test Prompts */}
+      {/* Suggested Queries Chips */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.35rem', alignItems: 'center' }}>
-        <span style={{ fontSize: '0.75rem', color: '#706C65', fontWeight: 600, whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: '0.75rem', color: '#9E9B93', fontWeight: 600, whiteSpace: 'nowrap' }}>
           Suggested queries:
         </span>
         {[
@@ -135,16 +135,23 @@ export default function AgentTestPage() {
             onClick={() => handleSendMessage(prompt)}
             disabled={loading}
             style={{
-              padding: '0.35rem 0.75rem',
+              padding: '0.35rem 0.8rem',
               borderRadius: '9999px',
-              background: '#FFFFFF',
-              border: '1px solid #E7E2DA',
-              color: '#262522',
+              background: '#1C1916',
+              border: '1px solid rgba(243, 240, 232, 0.1)',
+              color: '#D0CBC1',
               fontSize: '0.78rem',
               whiteSpace: 'nowrap',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
-              boxShadow: '0 1px 2px rgba(38, 37, 34, 0.02)',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = 'rgba(232, 75, 44, 0.4)';
+              e.currentTarget.style.color = '#F3F0E8';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = 'rgba(243, 240, 232, 0.1)';
+              e.currentTarget.style.color = '#D0CBC1';
             }}
           >
             &ldquo;{prompt}&rdquo;
@@ -152,7 +159,7 @@ export default function AgentTestPage() {
         ))}
       </div>
 
-      {/* Playground Grid (Full width) */}
+      {/* Playground Grid */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 460px), 1fr))',
@@ -161,12 +168,12 @@ export default function AgentTestPage() {
         width: '100%',
       }}>
         {/* Chat Simulator Pane */}
-        <div className="card" style={{ padding: 0, overflow: 'hidden', border: '1px solid #E7E2DA', boxShadow: 'var(--shadow-card)' }}>
+        <div className="card" style={{ padding: 0, overflow: 'hidden', border: '1px solid rgba(243, 240, 232, 0.08)' }}>
           {/* Chat Window Header */}
           <div style={{
-            background: '#F4F1EB',
+            background: '#1C1916',
             padding: '1rem 1.25rem',
-            borderBottom: '1px solid #E7E2DA',
+            borderBottom: '1px solid rgba(243, 240, 232, 0.08)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -176,36 +183,37 @@ export default function AgentTestPage() {
                 width: 32,
                 height: 32,
                 borderRadius: '8px',
-                background: '#D97757',
+                background: 'linear-gradient(135deg, #E84B2C, #C86938)',
                 color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '0.9rem',
                 fontWeight: 700,
+                boxShadow: '0 0 12px rgba(232, 75, 44, 0.35)',
               }}>
                 ✦
               </div>
               <div>
-                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#262522' }}>AI Receptionist</div>
-                <div style={{ fontSize: '0.72rem', color: '#487B57', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#487B57' }} />
+                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#F3F0E8' }}>AI Receptionist</div>
+                <div style={{ fontSize: '0.72rem', color: '#63C7A2', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#63C7A2', display: 'inline-block', boxShadow: '0 0 8px rgba(99, 199, 162, 0.6)' }} />
                   Live Simulator
                 </div>
               </div>
             </div>
 
-            <div style={{ fontSize: '0.75rem', color: '#706C65' }}>
-              Simulating: <span style={{ fontFamily: 'var(--font-mono)', color: '#262522' }}>{simulatePhone}</span>
+            <div style={{ fontSize: '0.75rem', color: '#9E9B93' }}>
+              Simulating: <span style={{ fontFamily: 'var(--font-mono)', color: '#F3F0E8' }}>{simulatePhone}</span>
             </div>
           </div>
 
-          {/* Messages Area (Claude Warm Parchment Canvas) */}
+          {/* Messages Area */}
           <div style={{
             height: 440,
             overflowY: 'auto',
             padding: '1.5rem',
-            background: '#FAF9F5',
+            background: '#0D0D0C',
             display: 'flex',
             flexDirection: 'column',
             gap: '1.25rem',
@@ -225,16 +233,16 @@ export default function AgentTestPage() {
                     maxWidth: '85%',
                     padding: '0.85rem 1.15rem',
                     borderRadius: isAssistant ? '14px 14px 14px 4px' : '14px 14px 4px 14px',
-                    background: isAssistant ? '#FFFFFF' : '#F4F1EB',
-                    border: '1px solid #E7E2DA',
-                    color: '#262522',
+                    background: isAssistant ? '#171614' : 'linear-gradient(135deg, #E84B2C, #C86938)',
+                    border: isAssistant ? '1px solid rgba(243, 240, 232, 0.08)' : '1px solid rgba(243, 240, 232, 0.15)',
+                    color: '#F3F0E8',
                     fontSize: '0.875rem',
                     lineHeight: 1.6,
-                    boxShadow: isAssistant ? '0 1px 3px rgba(38, 37, 34, 0.03)' : 'none',
+                    boxShadow: isAssistant ? '0 2px 8px rgba(0, 0, 0, 0.3)' : '0 2px 10px rgba(232, 75, 44, 0.3)',
                   }}>
                     {m.content}
                   </div>
-                  <div style={{ fontSize: '0.6875rem', color: '#706C65', marginTop: '0.3rem', padding: '0 0.25rem' }}>
+                  <div style={{ fontSize: '0.6875rem', color: '#9E9B93', marginTop: '0.3rem', padding: '0 0.25rem' }}>
                     {isAssistant ? 'AI Receptionist' : 'Patient'}
                   </div>
                 </div>
@@ -242,18 +250,18 @@ export default function AgentTestPage() {
             })}
 
             {loading && (
-              <div style={{ alignSelf: 'flex-start', background: '#FFFFFF', border: '1px solid #E7E2DA', padding: '0.6rem 1rem', borderRadius: '12px', fontSize: '0.8rem', color: '#706C65' }}>
-                <span style={{ color: '#D97757', marginRight: '0.4rem' }}>✦</span>
-                Formulating response & checking clinic schedule...
+              <div style={{ alignSelf: 'flex-start', background: '#171614', border: '1px solid rgba(243, 240, 232, 0.08)', padding: '0.65rem 1rem', borderRadius: '12px', fontSize: '0.8rem', color: '#D0CBC1', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <span style={{ color: '#E87A38' }}>✦</span>
+                Formulating response & inspecting clinic schedule...
               </div>
             )}
           </div>
 
-          {/* Claude-Style Chat Composer */}
+          {/* Chat Composer */}
           <div style={{
             padding: '1rem 1.25rem',
-            borderTop: '1px solid #E7E2DA',
-            background: '#FFFFFF',
+            borderTop: '1px solid rgba(243, 240, 232, 0.08)',
+            background: '#171614',
             display: 'flex',
             gap: '0.65rem',
           }}>
@@ -286,44 +294,44 @@ export default function AgentTestPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Telemetry Card */}
           <div className="card" style={{ padding: '1.25rem' }}>
-            <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#262522', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ color: '#D97757' }}>✦</span> Model Telemetry
+            <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#F3F0E8', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <span style={{ color: '#E87A38' }}>✦</span> Model Telemetry
             </h3>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.8rem' }}>
-              <div style={{ padding: '0.65rem', background: '#F4F1EB', border: '1px solid #E7E2DA', borderRadius: '8px' }}>
-                <div style={{ color: '#706C65', fontSize: '0.7rem' }}>Provider</div>
-                <div style={{ fontWeight: 600, color: '#262522', marginTop: '0.15rem' }}>{lastProvider ?? 'Gemini 1.5 Flash'}</div>
+              <div style={{ padding: '0.75rem', background: '#1C1916', border: '1px solid rgba(243, 240, 232, 0.08)', borderRadius: '10px' }}>
+                <div style={{ color: '#9E9B93', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Provider</div>
+                <div style={{ fontWeight: 600, color: '#F3F0E8', marginTop: '0.2rem' }}>{lastProvider ?? 'Gemini 1.5 Flash'}</div>
               </div>
 
-              <div style={{ padding: '0.65rem', background: '#F4F1EB', border: '1px solid #E7E2DA', borderRadius: '8px' }}>
-                <div style={{ color: '#706C65', fontSize: '0.7rem' }}>Latency</div>
-                <div style={{ fontWeight: 600, color: '#487B57', marginTop: '0.15rem' }}>
+              <div style={{ padding: '0.75rem', background: '#1C1916', border: '1px solid rgba(243, 240, 232, 0.08)', borderRadius: '10px' }}>
+                <div style={{ color: '#9E9B93', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Latency</div>
+                <div style={{ fontWeight: 600, color: '#63C7A2', marginTop: '0.2rem' }}>
                   {lastLatency ? `${lastLatency}ms` : '—'}
                 </div>
               </div>
 
-              <div style={{ padding: '0.65rem', background: '#F4F1EB', border: '1px solid #E7E2DA', borderRadius: '8px' }}>
-                <div style={{ color: '#706C65', fontSize: '0.7rem' }}>Input Tokens</div>
-                <div style={{ fontWeight: 600, color: '#262522', marginTop: '0.15rem' }}>{lastTokens?.input ?? 0}</div>
+              <div style={{ padding: '0.75rem', background: '#1C1916', border: '1px solid rgba(243, 240, 232, 0.08)', borderRadius: '10px' }}>
+                <div style={{ color: '#9E9B93', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Input Tokens</div>
+                <div style={{ fontWeight: 600, color: '#F3F0E8', marginTop: '0.2rem', fontFamily: 'var(--font-mono)' }}>{lastTokens?.input ?? 0}</div>
               </div>
 
-              <div style={{ padding: '0.65rem', background: '#F4F1EB', border: '1px solid #E7E2DA', borderRadius: '8px' }}>
-                <div style={{ color: '#706C65', fontSize: '0.7rem' }}>Output Tokens</div>
-                <div style={{ fontWeight: 600, color: '#262522', marginTop: '0.15rem' }}>{lastTokens?.output ?? 0}</div>
+              <div style={{ padding: '0.75rem', background: '#1C1916', border: '1px solid rgba(243, 240, 232, 0.08)', borderRadius: '10px' }}>
+                <div style={{ color: '#9E9B93', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Output Tokens</div>
+                <div style={{ fontWeight: 600, color: '#F3F0E8', marginTop: '0.2rem', fontFamily: 'var(--font-mono)' }}>{lastTokens?.output ?? 0}</div>
               </div>
             </div>
           </div>
 
           {/* Tool Execution Log */}
           <div className="card" style={{ padding: '1.25rem', flex: 1 }}>
-            <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#262522', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#F3F0E8', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
               <span>⚙️</span> Tool Invocations
             </h3>
 
             {executions.length === 0 ? (
-              <div style={{ fontSize: '0.8rem', color: '#706C65', fontStyle: 'italic', padding: '1rem 0' }}>
-                No tools triggered yet. Ask about prices, hours, or appointment booking to see tools run!
+              <div style={{ fontSize: '0.8rem', color: '#9E9B93', fontStyle: 'italic', padding: '1rem 0' }}>
+                No tools triggered yet. Ask about prices, working hours, or schedule booking to view executions.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: 300, overflowY: 'auto' }}>
@@ -333,20 +341,20 @@ export default function AgentTestPage() {
                     style={{
                       padding: '0.75rem',
                       borderRadius: '8px',
-                      background: '#F4F1EB',
-                      border: '1px solid #E7E2DA',
+                      background: '#1C1916',
+                      border: '1px solid rgba(243, 240, 232, 0.08)',
                       fontSize: '0.75rem',
                       fontFamily: 'var(--font-mono)',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#D97757', fontWeight: 600, marginBottom: '0.35rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#E87A38', fontWeight: 600, marginBottom: '0.35rem' }}>
                       <span>▶ {ex.tool}</span>
                       <span className="badge badge-success" style={{ fontSize: '0.65rem' }}>SUCCESS</span>
                     </div>
-                    <div style={{ color: '#706C65', marginBottom: '0.25rem' }}>
+                    <div style={{ color: '#9E9B93', marginBottom: '0.25rem' }}>
                       Args: {JSON.stringify(ex.args)}
                     </div>
-                    <div style={{ color: '#262522', whiteSpace: 'pre-wrap', maxHeight: 100, overflowY: 'auto', background: '#FFFFFF', padding: '0.4rem', borderRadius: '4px', border: '1px solid #E7E2DA' }}>
+                    <div style={{ color: '#F3F0E8', whiteSpace: 'pre-wrap', maxHeight: 100, overflowY: 'auto', background: '#0D0D0C', padding: '0.45rem', borderRadius: '4px', border: '1px solid rgba(243, 240, 232, 0.06)' }}>
                       {JSON.stringify(ex.result, null, 2)}
                     </div>
                   </div>

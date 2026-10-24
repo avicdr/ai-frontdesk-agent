@@ -2,6 +2,7 @@
 
 // src/app/admin/users/page.tsx
 // Platform Super-Admin Users Management Console — View, edit, assign clinics, reset passwords, ban, and delete accounts
+// Redesigned with Cinematic Obsidian × Phoenix Ember Design System
 
 import React, { useState, useEffect, useMemo } from 'react';
 
@@ -100,41 +101,42 @@ export default function AdminUsersPage() {
   // Filtered users calculation
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
-      // Search text match
-      const q = searchQuery.toLowerCase().trim();
-      const matchesSearch = !q || (
-        user.email.toLowerCase().includes(q) ||
-        user.fullName.toLowerCase().includes(q) ||
-        user.phone.toLowerCase().includes(q) ||
-        user.memberships.some(m => m.organizationName.toLowerCase().includes(q))
-      );
+      // 1. Role filter
+      if (roleFilter === 'super_admin' && !user.isSuperAdmin) return false;
+      if (roleFilter === 'banned' && !user.isBanned) return false;
+      if (roleFilter === 'no_clinic' && user.memberships.length > 0) return false;
+      if (roleFilter === 'owner' && !user.memberships.some(m => m.role === 'owner')) return false;
+      if (roleFilter === 'staff' && !user.memberships.some(m => m.role === 'staff' || m.role === 'admin')) return false;
 
-      if (!matchesSearch) return false;
-
-      // Role filter match
-      if (roleFilter === 'super_admin') return user.isSuperAdmin;
-      if (roleFilter === 'owner') return user.memberships.some(m => m.role === 'owner');
-      if (roleFilter === 'staff') return user.memberships.some(m => m.role === 'staff' || m.role === 'admin' || m.role === 'viewer');
-      if (roleFilter === 'no_clinic') return user.memberships.length === 0;
-      if (roleFilter === 'banned') return user.isBanned;
+      // 2. Search query filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesName = (user.fullName || '').toLowerCase().includes(q);
+        const matchesEmail = user.email.toLowerCase().includes(q);
+        const matchesPhone = (user.phone || '').toLowerCase().includes(q);
+        const matchesClinic = user.memberships.some(m =>
+          m.organizationName.toLowerCase().includes(q) || m.organizationSlug.toLowerCase().includes(q)
+        );
+        return matchesName || matchesEmail || matchesPhone || matchesClinic;
+      }
 
       return true;
     });
-  }, [users, searchQuery, roleFilter]);
+  }, [users, roleFilter, searchQuery]);
 
-  // Metrics
+  // Statistics
   const stats = useMemo(() => {
     return {
       total: users.length,
       superAdmins: users.filter(u => u.isSuperAdmin).length,
       owners: users.filter(u => u.memberships.some(m => m.role === 'owner')).length,
-      staff: users.filter(u => u.memberships.some(m => m.role !== 'owner')).length,
-      unassigned: users.filter(u => u.memberships.length === 0 && !u.isSuperAdmin).length,
+      staff: users.filter(u => u.memberships.some(m => m.role === 'staff' || m.role === 'admin')).length,
+      unassigned: users.filter(u => u.memberships.length === 0).length,
       banned: users.filter(u => u.isBanned).length,
     };
   }, [users]);
 
-  // Open edit modal for user
+  // Handle open edit modal
   const handleOpenEdit = (user: AdminUser) => {
     setEditingUser(user);
     setEditFullName(user.fullName || '');
@@ -149,11 +151,11 @@ export default function AdminUsersPage() {
       setEditOrgRole(user.memberships[0].role);
     } else {
       setEditOrgId('');
-      setEditOrgRole('owner');
+      setEditOrgRole('staff');
     }
   };
 
-  // Save updated user
+  // Submit edit user
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
@@ -161,15 +163,15 @@ export default function AdminUsersPage() {
     setToastMessage(null);
 
     try {
-      const payload: Record<string, any> = {
+      const payload: any = {
         userId: editingUser.id,
         fullName: editFullName.trim(),
         phone: editPhone.trim(),
         isSuperAdmin: editIsSuperAdmin,
-        emailConfirm: editEmailConfirm,
+        emailConfirmed: editEmailConfirm,
         isBanned: editIsBanned,
-        organizationId: editOrgId ? editOrgId : null,
-        role: editOrgRole,
+        organizationId: editOrgId || null,
+        organizationRole: editOrgId ? editOrgRole : null,
       };
 
       if (editPassword.trim()) {
@@ -177,14 +179,14 @@ export default function AdminUsersPage() {
       }
 
       const res = await fetch('/api/v1/admin/users', {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error?.message || 'Failed to update user');
+        throw new Error(json.error?.message || 'Failed to update user profile');
       }
 
       setToastMessage({ type: 'success', text: `User ${editingUser.email} updated successfully!` });
@@ -198,7 +200,7 @@ export default function AdminUsersPage() {
     }
   };
 
-  // Create new user
+  // Submit create user
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newEmail.trim() || !newPassword.trim()) return;
@@ -206,14 +208,14 @@ export default function AdminUsersPage() {
     setToastMessage(null);
 
     try {
-      const payload: Record<string, any> = {
-        email: newEmail.trim(),
+      const payload = {
+        email: newEmail.trim().toLowerCase(),
         password: newPassword.trim(),
-        fullName: newFullName.trim() || newEmail.split('@')[0],
+        fullName: newFullName.trim(),
         phone: newPhone.trim(),
         isSuperAdmin: newIsSuperAdmin,
-        organizationId: newOrgId ? newOrgId : null,
-        role: newOrgRole,
+        organizationId: newOrgId || null,
+        organizationRole: newOrgId ? newOrgRole : null,
       };
 
       const res = await fetch('/api/v1/admin/users', {
@@ -224,12 +226,11 @@ export default function AdminUsersPage() {
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error?.message || 'Failed to create user');
+        throw new Error(json.error?.message || 'Failed to create user account');
       }
 
       setToastMessage({ type: 'success', text: `User ${newEmail} created successfully!` });
       setShowAddModal(false);
-      // Reset form
       setNewEmail('');
       setNewPassword('');
       setNewFullName('');
@@ -272,60 +273,58 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#F3F0E8]/08 pb-6">
         <div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            👥 Users & Staff Management
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E84B2C] shadow-[0_0_8px_#E84B2C]" />
+            <span className="text-[11px] font-mono tracking-widest text-[#E87A38] uppercase">
+              Identity &amp; Access Governance
+            </span>
+          </div>
+          <h1 className="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-[#F3F0E8] flex items-center gap-2">
+            <span>Users &amp; Staff Console</span>
           </h1>
-          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>
-            View, search, edit roles, assign clinics, reset passwords, and manage all accounts across the platform.
+          <p className="text-sm text-[#9E9B93] mt-1">
+            Global directory of clinic owners, reception staff, and platform super-administrators.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div className="flex items-center gap-3">
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-secondary text-xs"
             onClick={fetchUsers}
             disabled={loading}
-            style={{ fontSize: '0.85rem' }}
           >
             🔄 Refresh
           </button>
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-primary text-xs"
             onClick={() => setShowAddModal(true)}
-            style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
           >
-            <span>+</span>
-            <span>Create User</span>
+            + Create New User
           </button>
         </div>
       </div>
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div style={{
-          marginBottom: '1.5rem',
-          padding: '0.85rem 1.25rem',
-          borderRadius: '8px',
-          fontSize: '0.875rem',
-          fontWeight: 600,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          background: toastMessage.type === 'success' ? 'hsl(142 71% 45% / 0.15)' : 'hsl(0 84% 60% / 0.15)',
-          border: toastMessage.type === 'success' ? '1px solid hsl(142 71% 45% / 0.3)' : '1px solid hsl(0 84% 60% / 0.3)',
-          color: toastMessage.type === 'success' ? 'hsl(142 71% 65%)' : 'hsl(0 84% 75%)',
-        }}>
-          <div>{toastMessage.type === 'success' ? '✅' : '⚠️'} {toastMessage.text}</div>
+        <div className={`p-4 rounded-xl text-xs flex items-center justify-between border ${
+          toastMessage.type === 'success'
+            ? 'bg-[#63C7A2]/10 border-[#63C7A2]/30 text-[#63C7A2]'
+            : 'bg-[#E84B2C]/10 border-[#E84B2C]/30 text-[#E84B2C]'
+        }`}>
+          <div className="flex items-center gap-2 font-medium">
+            <span>{toastMessage.type === 'success' ? '✓' : '⚠️'}</span>
+            <span>{toastMessage.text}</span>
+          </div>
           <button
             type="button"
             onClick={() => setToastMessage(null)}
-            style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1.1rem' }}
+            className="text-inherit hover:opacity-75 transition-opacity"
           >
             ✕
           </button>
@@ -333,326 +332,277 @@ export default function AdminUsersPage() {
       )}
 
       {/* Metrics Row */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '1rem',
-        marginBottom: '1.75rem',
-      }}>
-        <div className="card" style={{ padding: '1.25rem' }}>
-          <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', fontWeight: 600 }}>Total Users</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem', color: 'white' }}>{stats.total}</div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="card p-4">
+          <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Total Accounts</div>
+          <div className="font-mono text-2xl font-bold text-[#F3F0E8] mt-1">{stats.total}</div>
         </div>
 
-        <div className="card" style={{ padding: '1.25rem' }}>
-          <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', fontWeight: 600 }}>Super Admins</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem', color: 'hsl(265 83% 70%)' }}>{stats.superAdmins}</div>
+        <div className="card p-4 border-[#D4AF37]/30 bg-[#171614]">
+          <div className="text-[10px] font-mono uppercase text-[#D4AF37]">Super Admins</div>
+          <div className="font-mono text-2xl font-bold text-[#D4AF37] mt-1">{stats.superAdmins}</div>
         </div>
 
-        <div className="card" style={{ padding: '1.25rem' }}>
-          <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', fontWeight: 600 }}>Clinic Owners</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem', color: 'hsl(221 83% 65%)' }}>{stats.owners}</div>
+        <div className="card p-4">
+          <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Clinic Owners</div>
+          <div className="font-mono text-2xl font-bold text-[#E87A38] mt-1">{stats.owners}</div>
         </div>
 
-        <div className="card" style={{ padding: '1.25rem' }}>
-          <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', fontWeight: 600 }}>Clinic Staff / Admins</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem', color: 'hsl(142 71% 55%)' }}>{stats.staff}</div>
+        <div className="card p-4">
+          <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Clinic Staff</div>
+          <div className="font-mono text-2xl font-bold text-[#63C7A2] mt-1">{stats.staff}</div>
         </div>
 
-        <div className="card" style={{ padding: '1.25rem' }}>
-          <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', fontWeight: 600 }}>Pending Onboarding / No Clinic</div>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.25rem', color: stats.unassigned > 0 ? 'hsl(45 93% 58%)' : 'hsl(var(--color-text-muted))' }}>
+        <div className="card p-4">
+          <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Pending Onboarding</div>
+          <div className={`font-mono text-2xl font-bold mt-1 ${
+            stats.unassigned > 0 ? 'text-[#E84B2C]' : 'text-[#9E9B93]'
+          }`}>
             {stats.unassigned}
           </div>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center' }}>
-          {/* Search box */}
-          <div style={{ position: 'relative', flex: '1 1 300px' }}>
-            <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '0.9rem' }}>
-              🔍
-            </span>
-            <input
-              type="text"
-              className="input"
-              placeholder="Search by name, email, phone, or clinic..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              style={{ paddingLeft: '2.5rem', width: '100%' }}
-            />
-          </div>
+      {/* Search and Filters */}
+      <div className="card p-4 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[#9E9B93]">
+            🔍
+          </span>
+          <input
+            type="text"
+            className="input pl-8 text-xs w-full"
+            placeholder="Search by name, email, phone, or clinic slug..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
+        </div>
 
-          {/* Role pills */}
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            {[
-              { id: 'all', label: `All (${users.length})` },
-              { id: 'super_admin', label: `Super Admin (${stats.superAdmins})` },
-              { id: 'owner', label: `Owners (${stats.owners})` },
-              { id: 'staff', label: `Staff (${stats.staff})` },
-              { id: 'no_clinic', label: `No Clinic (${stats.unassigned})` },
-              { id: 'banned', label: `Banned (${stats.banned})` },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setRoleFilter(tab.id as any)}
-                style={{
-                  padding: '0.4rem 0.85rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  border: roleFilter === tab.id ? '1px solid hsl(var(--color-primary))' : '1px solid hsl(var(--color-border))',
-                  background: roleFilter === tab.id ? 'hsl(var(--color-primary) / 0.15)' : 'hsl(var(--color-surface))',
-                  color: roleFilter === tab.id ? 'white' : 'hsl(var(--color-text-muted))',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        {/* Role Pills */}
+        <div className="flex gap-1.5 flex-wrap">
+          {[
+            { id: 'all', label: `All (${users.length})` },
+            { id: 'super_admin', label: `Super Admin (${stats.superAdmins})` },
+            { id: 'owner', label: `Owners (${stats.owners})` },
+            { id: 'staff', label: `Staff (${stats.staff})` },
+            { id: 'no_clinic', label: `No Clinic (${stats.unassigned})` },
+            { id: 'banned', label: `Banned (${stats.banned})` },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setRoleFilter(tab.id as any)}
+              className={`px-3 py-1.5 rounded-full text-xs font-mono transition-all ${
+                roleFilter === tab.id
+                  ? 'bg-[#E84B2C] text-[#F3F0E8] shadow-[0_0_8px_rgba(232,75,44,0.4)]'
+                  : 'bg-[#111110] text-[#9E9B93] border border-[#F3F0E8]/08 hover:border-[#F3F0E8]/16'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Users Table */}
-      <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>System Role</th>
-              <th>Assigned Clinic</th>
-              <th>Phone</th>
-              <th>Status</th>
-              <th>Joined Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+      <div className="card p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="data-table">
+            <thead>
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'hsl(var(--color-text-muted))' }}>
-                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⏳</div>
-                  <div>Loading platform users...</div>
-                </td>
+                <th>Identity &amp; Account</th>
+                <th>Role Tier</th>
+                <th>Assigned Clinic</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Registration</th>
+                <th>Actions</th>
               </tr>
-            ) : filteredUsers.length === 0 ? (
-              <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '3rem', color: 'hsl(var(--color-text-muted))' }}>
-                  <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>👥</div>
-                  <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>No users found</div>
-                  <div style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                    {searchQuery ? 'Try clearing or modifying your search query.' : 'No users match this filter.'}
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              filteredUsers.map(user => {
-                const primaryOrg = user.memberships[0];
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-12 text-[#9E9B93]">
+                    <div className="text-2xl mb-1">⏳</div>
+                    <div className="text-xs">Querying multi-tenant directory...</div>
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-12 text-[#9E9B93]">
+                    <div className="text-2xl mb-1">👥</div>
+                    <div className="text-sm font-medium text-[#F3F0E8]">No user accounts found</div>
+                    <div className="text-xs mt-1 text-[#9E9B93]">
+                      {searchQuery ? 'Adjust your search terms to match active accounts.' : 'No users match this role filter.'}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map(user => {
+                  const primaryOrg = user.memberships[0];
 
-                return (
-                  <tr key={user.id}>
-                    {/* User Identity */}
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: '50%',
-                          background: user.isSuperAdmin
-                            ? 'linear-gradient(135deg, hsl(265 83% 60%), hsl(221 83% 55%))'
-                            : 'hsl(var(--color-surface-hover))',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 700,
-                          fontSize: '0.9rem',
-                          color: 'white',
-                          flexShrink: 0,
-                          border: user.isSuperAdmin ? '2px solid hsl(265 83% 75%)' : '1px solid hsl(var(--color-border))',
-                        }}>
-                          {user.fullName ? user.fullName.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                            <span>{user.fullName}</span>
-                            {user.isSuperAdmin && (
-                              <span title="Super Admin" style={{ fontSize: '0.85rem' }}>👑</span>
-                            )}
+                  return (
+                    <tr key={user.id} className="hover:bg-[#F3F0E8]/03 transition-colors">
+                      {/* Identity */}
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs uppercase shrink-0 ${
+                            user.isSuperAdmin
+                              ? 'bg-gradient-to-br from-[#E84B2C] to-[#C86938] text-[#F3F0E8] border border-[#D4AF37]'
+                              : 'bg-[#1C1916] text-[#D0CBC1] border border-[#F3F0E8]/10'
+                          }`}>
+                            {user.fullName ? user.fullName.charAt(0) : user.email.charAt(0)}
                           </div>
-                          <div style={{ fontSize: '0.78rem', color: 'hsl(var(--color-text-muted))', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                            <span>{user.email}</span>
-                            {user.emailConfirmed ? (
-                              <span title="Email verified" style={{ color: 'hsl(142 71% 45%)', fontSize: '0.75rem' }}>✓</span>
-                            ) : (
-                              <span title="Email unverified" style={{ color: 'hsl(45 93% 58%)', fontSize: '0.75rem' }}>• unverified</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Role Badges */}
-                    <td>
-                      {user.isSuperAdmin ? (
-                        <span className="badge" style={{
-                          background: 'linear-gradient(135deg, hsl(265 83% 55% / 0.25), hsl(221 83% 55% / 0.25))',
-                          color: 'hsl(265 83% 75%)',
-                          border: '1px solid hsl(265 83% 65% / 0.4)',
-                          fontWeight: 700,
-                        }}>
-                          Super Admin
-                        </span>
-                      ) : primaryOrg ? (
-                        <span className={`badge ${
-                          primaryOrg.role === 'owner'
-                            ? 'badge-primary'
-                            : primaryOrg.role === 'admin'
-                            ? 'badge-info'
-                            : 'badge-secondary'
-                        }`}>
-                          {primaryOrg.role.toUpperCase()}
-                        </span>
-                      ) : (
-                        <span className="badge badge-warning" style={{ opacity: 0.85 }}>
-                          No Clinic
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Clinic / Organization */}
-                    <td>
-                      {primaryOrg ? (
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{primaryOrg.organizationName}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'hsl(var(--color-text-muted))' }}>
-                            slug: {primaryOrg.organizationSlug}
+                          <div>
+                            <div className="font-medium text-sm text-[#F3F0E8] flex items-center gap-1.5">
+                              <span>{user.fullName || 'Anonymous User'}</span>
+                              {user.isSuperAdmin && (
+                                <span title="Super Admin Privilege" className="text-xs">👑</span>
+                              )}
+                            </div>
+                            <div className="text-[11px] font-mono text-[#9E9B93] flex items-center gap-1.5">
+                              <span>{user.email}</span>
+                              {user.emailConfirmed ? (
+                                <span title="Verified" className="text-[#63C7A2] text-xs">✓</span>
+                              ) : (
+                                <span title="Unverified" className="text-[#E87A38] text-[10px]">• unverified</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      ) : (
-                        <span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', fontStyle: 'italic' }}>
-                          Pending Onboarding
-                        </span>
-                      )}
-                    </td>
+                      </td>
 
-                    {/* Phone */}
-                    <td style={{ fontSize: '0.82rem' }}>
-                      {user.phone ? user.phone : <span style={{ color: 'hsl(var(--color-text-muted))' }}>—</span>}
-                    </td>
+                      {/* Role */}
+                      <td>
+                        {user.isSuperAdmin ? (
+                          <span className="badge bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] font-mono text-[10px]">
+                            SUPER ADMIN
+                          </span>
+                        ) : primaryOrg ? (
+                          <span className={`badge font-mono text-[10px] ${
+                            primaryOrg.role === 'owner'
+                              ? 'badge-primary'
+                              : primaryOrg.role === 'admin'
+                              ? 'badge-warning'
+                              : 'badge-neutral'
+                          }`}>
+                            {primaryOrg.role.toUpperCase()}
+                          </span>
+                        ) : (
+                          <span className="badge badge-warning text-[10px]">
+                            NO CLINIC
+                          </span>
+                        )}
+                      </td>
 
-                    {/* Status */}
-                    <td>
-                      {user.isBanned ? (
-                        <span className="badge badge-danger">Banned</span>
-                      ) : (
-                        <span className="badge badge-success">Active</span>
-                      )}
-                    </td>
+                      {/* Clinic */}
+                      <td>
+                        {primaryOrg ? (
+                          <div>
+                            <div className="font-medium text-xs text-[#F3F0E8]">{primaryOrg.organizationName}</div>
+                            <div className="text-[10px] font-mono text-[#9E9B93]">
+                              slug: {primaryOrg.organizationSlug}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs font-mono text-[#9E9B93] italic">
+                            Pending Onboarding
+                          </span>
+                        )}
+                      </td>
 
-                    {/* Joined Date */}
-                    <td>
-                      <div style={{ fontSize: '0.8rem' }}>
-                        {new Date(user.createdAt).toLocaleDateString('en-IN')}
-                      </div>
-                      <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))' }}>
-                        {user.lastSignInAt
-                          ? `Active ${new Date(user.lastSignInAt).toLocaleDateString('en-IN')}`
-                          : 'Never signed in'}
-                      </div>
-                    </td>
+                      {/* Phone */}
+                      <td className="font-mono text-xs text-[#D0CBC1]">
+                        {user.phone ? user.phone : <span className="text-[#9E9B93]">—</span>}
+                      </td>
 
-                    {/* Actions */}
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', fontWeight: 600 }}
-                          onClick={() => handleOpenEdit(user)}
-                        >
-                          ✏️ Manage
-                        </button>
-                        <button
-                          type="button"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'hsl(0 84% 65%)',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                            padding: '0.35rem',
-                            borderRadius: '4px',
-                          }}
-                          title="Delete user"
-                          onClick={() => setDeletingUser(user)}
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                      {/* Status */}
+                      <td>
+                        {user.isBanned ? (
+                          <span className="badge badge-danger">Banned</span>
+                        ) : (
+                          <span className="badge badge-success">Active</span>
+                        )}
+                      </td>
+
+                      {/* Joined Date */}
+                      <td>
+                        <div className="font-mono text-xs text-[#D0CBC1]">
+                          {new Date(user.createdAt).toLocaleDateString('en-IN')}
+                        </div>
+                        <div className="text-[10px] font-mono text-[#9E9B93]">
+                          {user.lastSignInAt
+                            ? `Active ${new Date(user.lastSignInAt).toLocaleDateString('en-IN')}`
+                            : 'Never signed in'}
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-secondary text-xs px-2.5 py-1"
+                            onClick={() => handleOpenEdit(user)}
+                          >
+                            ✏️ Manage
+                          </button>
+                          <button
+                            type="button"
+                            className="text-[#E84B2C] hover:text-[#E87A38] transition-colors text-sm p-1"
+                            title="Delete user"
+                            onClick={() => setDeletingUser(user)}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* ============================================================ */}
       {/* MANAGE / EDIT USER MODAL */}
       {/* ============================================================ */}
       {editingUser && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem',
-        }}>
-          <div className="card" style={{ maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <div className="fixed inset-0 bg-[#080505]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 bg-[#171614] border border-[#F3F0E8]/12 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scale-in">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-[#F3F0E8]/08">
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Manage User Account</h2>
-                <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>{editingUser.email}</div>
+                <h2 className="font-heading text-lg font-semibold text-[#F3F0E8]">Manage Account</h2>
+                <div className="font-mono text-xs text-[#9E9B93] mt-0.5">{editingUser.email}</div>
               </div>
               <button
                 type="button"
                 onClick={() => setEditingUser(null)}
-                style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.25rem' }}
+                className="text-[#9E9B93] hover:text-[#F3F0E8] text-lg p-1"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveUser} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {/* Profile Details */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <form onSubmit={handleSaveUser} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Full Name</label>
+                  <label className="label text-xs">Full Name</label>
                   <input
                     type="text"
-                    className="input"
+                    className="input text-xs"
                     value={editFullName}
                     onChange={e => setEditFullName(e.target.value)}
                     required
                   />
                 </div>
                 <div>
-                  <label className="label">Phone Number</label>
+                  <label className="label text-xs">Phone Number</label>
                   <input
                     type="text"
-                    className="input"
+                    className="input text-xs font-mono"
                     value={editPhone}
                     onChange={e => setEditPhone(e.target.value)}
                     placeholder="+91 98765 43210"
@@ -660,38 +610,32 @@ export default function AdminUsersPage() {
                 </div>
               </div>
 
-              {/* Password Override */}
               <div>
-                <label className="label">Reset Password (leave empty to keep current)</label>
+                <label className="label text-xs">Reset Password (leave empty to retain)</label>
                 <input
                   type="password"
-                  className="input"
+                  className="input text-xs"
                   value={editPassword}
                   onChange={e => setEditPassword(e.target.value)}
-                  placeholder="Enter new password (min. 6 chars)"
+                  placeholder="Enter new credential (min 6 chars)"
                   minLength={6}
                 />
               </div>
 
               {/* Clinic Assignment */}
-              <div style={{
-                padding: '1rem',
-                borderRadius: '8px',
-                background: 'hsl(var(--color-surface))',
-                border: '1px solid hsl(var(--color-border))',
-              }}>
-                <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: '0.75rem' }}>
-                  🏥 Clinic Organization Assignment
+              <div className="p-4 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 space-y-3">
+                <div className="font-heading text-xs font-semibold text-[#F3F0E8] flex items-center gap-1.5">
+                  <span className="text-[#E87A38]">🏥</span> Clinic Tenant Assignment
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem' }}>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="label" style={{ fontSize: '0.75rem' }}>Clinic / Tenant</label>
+                    <label className="label text-[11px]">Clinic</label>
                     <select
-                      className="input"
+                      className="input text-xs"
                       value={editOrgId}
                       onChange={e => setEditOrgId(e.target.value)}
                     >
-                      <option value="">-- No Clinic / Remove from Clinic --</option>
+                      <option value="">-- No Clinic / Detach --</option>
                       {organizations.map(org => (
                         <option key={org.id} value={org.id}>
                           {org.name} ({org.slug})
@@ -699,11 +643,10 @@ export default function AdminUsersPage() {
                       ))}
                     </select>
                   </div>
-
                   <div>
-                    <label className="label" style={{ fontSize: '0.75rem' }}>Clinic Role</label>
+                    <label className="label text-[11px]">Role</label>
                     <select
-                      className="input"
+                      className="input text-xs"
                       value={editOrgRole}
                       onChange={e => setEditOrgRole(e.target.value as any)}
                       disabled={!editOrgId}
@@ -717,85 +660,64 @@ export default function AdminUsersPage() {
                 </div>
               </div>
 
-              {/* Permissions & Security Toggles */}
-              <div style={{
-                padding: '1rem',
-                borderRadius: '8px',
-                background: 'hsl(var(--color-surface))',
-                border: '1px solid hsl(var(--color-border))',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.75rem',
-              }}>
-                <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>
-                  🛡️ Security & Platform Permissions
+              {/* Security & Permissions */}
+              <div className="p-4 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 space-y-3">
+                <div className="font-heading text-xs font-semibold text-[#F3F0E8] flex items-center gap-1.5">
+                  <span className="text-[#E84B2C]">🛡️</span> Security &amp; Platform Privileges
                 </div>
 
-                {/* Super Admin Toggle */}
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
+                <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={editIsSuperAdmin}
                     onChange={e => setEditIsSuperAdmin(e.target.checked)}
-                    style={{ marginTop: '3px' }}
+                    className="mt-0.5"
                   />
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>👑 Platform Super Admin</div>
-                    <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                      Grants full unrestricted platform management, financial telemetry, subscriber administration, and database overrides.
+                    <div className="text-xs font-semibold text-[#D4AF37]">👑 Platform Super Admin</div>
+                    <div className="text-[11px] text-[#9E9B93]">
+                      Grants root multi-tenant management, ledger inspection, and system reconfiguration.
                     </div>
                   </div>
                 </label>
 
-                {/* Email Verified Toggle */}
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
+                <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={editEmailConfirm}
                     onChange={e => setEditEmailConfirm(e.target.checked)}
-                    style={{ marginTop: '3px' }}
+                    className="mt-0.5"
                   />
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Email Verified</div>
-                    <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                      Mark this user&apos;s email address as verified without requiring verification link.
+                    <div className="text-xs font-semibold text-[#F3F0E8]">Email Verified</div>
+                    <div className="text-[11px] text-[#9E9B93]">
+                      Mark user email as verified immediately.
                     </div>
                   </div>
                 </label>
 
-                {/* Banned Toggle */}
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
+                <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={editIsBanned}
                     onChange={e => setEditIsBanned(e.target.checked)}
-                    style={{ marginTop: '3px' }}
+                    className="mt-0.5"
                   />
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: editIsBanned ? 'hsl(0 84% 65%)' : 'inherit' }}>
-                      🚫 Ban / Suspend User Account
+                    <div className={`text-xs font-semibold ${editIsBanned ? 'text-[#E84B2C]' : 'text-[#F3F0E8]'}`}>
+                      🚫 Suspend Account Access
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                      Blocks the user from signing in and revokes active authentication tokens.
+                    <div className="text-[11px] text-[#9E9B93]">
+                      Revokes active sessions and blocks sign-in.
                     </div>
                   </div>
                 </label>
               </div>
 
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+              <div className="flex justify-between items-center pt-2">
                 <button
                   type="button"
-                  style={{
-                    background: 'none',
-                    border: '1px solid hsl(0 84% 60% / 0.4)',
-                    color: 'hsl(0 84% 70%)',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '6px',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
+                  className="text-xs font-mono text-[#E84B2C] hover:underline"
                   onClick={() => {
                     const u = editingUser;
                     setEditingUser(null);
@@ -805,10 +727,10 @@ export default function AdminUsersPage() {
                   Delete Account...
                 </button>
 
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div className="flex gap-2">
                   <button
                     type="button"
-                    className="btn btn-secondary"
+                    className="btn btn-secondary text-xs"
                     onClick={() => setEditingUser(null)}
                     disabled={isSubmitting}
                   >
@@ -816,7 +738,7 @@ export default function AdminUsersPage() {
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-primary"
+                    className="btn btn-primary text-xs"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? 'Saving...' : 'Save Changes'}
@@ -832,54 +754,40 @@ export default function AdminUsersPage() {
       {/* CREATE NEW USER MODAL */}
       {/* ============================================================ */}
       {showAddModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem',
-        }}>
-          <div className="card" style={{ maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <div className="fixed inset-0 bg-[#080505]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="card max-w-md w-full max-h-[90vh] overflow-y-auto p-6 bg-[#171614] border border-[#F3F0E8]/12 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scale-in">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-[#F3F0E8]/08">
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Create New User</h2>
-                <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>
-                  Add a platform user, clinic owner, or super administrator.
-                </div>
+                <h2 className="font-heading text-lg font-semibold text-[#F3F0E8]">Create Platform User</h2>
+                <div className="text-xs text-[#9E9B93]">Add a clinic owner, staff, or super-admin.</div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.25rem' }}
+                className="text-[#9E9B93] hover:text-[#F3F0E8] text-lg p-1"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
-                <label className="label">Email Address *</label>
+                <label className="label text-xs">Email Address *</label>
                 <input
                   type="email"
-                  className="input"
+                  className="input text-xs"
                   required
                   value={newEmail}
                   onChange={e => setNewEmail(e.target.value)}
-                  placeholder="doctor@example.com"
+                  placeholder="doctor@practice.com"
                 />
               </div>
 
               <div>
-                <label className="label">Initial Password * (min. 6 characters)</label>
+                <label className="label text-xs">Password * (min 6 characters)</label>
                 <input
                   type="password"
-                  className="input"
+                  className="input text-xs"
                   required
                   minLength={6}
                   value={newPassword}
@@ -888,22 +796,22 @@ export default function AdminUsersPage() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Full Name</label>
+                  <label className="label text-xs">Full Name</label>
                   <input
                     type="text"
-                    className="input"
+                    className="input text-xs"
                     value={newFullName}
                     onChange={e => setNewFullName(e.target.value)}
                     placeholder="Dr. Sarah Johnson"
                   />
                 </div>
                 <div>
-                  <label className="label">Phone</label>
+                  <label className="label text-xs">Phone</label>
                   <input
                     type="text"
-                    className="input"
+                    className="input text-xs font-mono"
                     value={newPhone}
                     onChange={e => setNewPhone(e.target.value)}
                     placeholder="+91 98765 43210"
@@ -912,24 +820,17 @@ export default function AdminUsersPage() {
               </div>
 
               {/* Clinic Assignment */}
-              <div style={{
-                padding: '1rem',
-                borderRadius: '8px',
-                background: 'hsl(var(--color-surface))',
-                border: '1px solid hsl(var(--color-border))',
-              }}>
-                <div style={{ fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.75rem' }}>
-                  🏥 Assign to Clinic (Optional)
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem' }}>
+              <div className="p-3.5 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 space-y-2.5">
+                <div className="text-xs font-semibold text-[#F3F0E8]">🏥 Clinic Assignment (Optional)</div>
+                <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="label" style={{ fontSize: '0.75rem' }}>Clinic</label>
+                    <label className="label text-[11px]">Clinic</label>
                     <select
-                      className="input"
+                      className="input text-xs"
                       value={newOrgId}
                       onChange={e => setNewOrgId(e.target.value)}
                     >
-                      <option value="">-- None (Pending Onboarding) --</option>
+                      <option value="">-- None (Pending) --</option>
                       {organizations.map(org => (
                         <option key={org.id} value={org.id}>
                           {org.name} ({org.slug})
@@ -938,9 +839,9 @@ export default function AdminUsersPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="label" style={{ fontSize: '0.75rem' }}>Role</label>
+                    <label className="label text-[11px]">Role</label>
                     <select
-                      className="input"
+                      className="input text-xs"
                       value={newOrgRole}
                       onChange={e => setNewOrgRole(e.target.value as any)}
                       disabled={!newOrgId}
@@ -954,26 +855,23 @@ export default function AdminUsersPage() {
                 </div>
               </div>
 
-              {/* Super Admin Checkbox */}
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', cursor: 'pointer' }}>
+              <label className="flex items-start gap-2.5 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={newIsSuperAdmin}
                   onChange={e => setNewIsSuperAdmin(e.target.checked)}
-                  style={{ marginTop: '3px' }}
+                  className="mt-0.5"
                 />
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>👑 Grant Super Admin Privileges</div>
-                  <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                    User will have full access to platform revenue, user management, and system administration.
-                  </div>
+                  <div className="text-xs font-semibold text-[#D4AF37]">👑 Grant Super Admin Privileges</div>
+                  <div className="text-[11px] text-[#9E9B93]">Full multi-tenant access and database administration.</div>
                 </div>
               </label>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="btn btn-secondary text-xs"
                   onClick={() => setShowAddModal(false)}
                   disabled={isSubmitting}
                 >
@@ -981,7 +879,7 @@ export default function AdminUsersPage() {
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="btn btn-primary text-xs"
                   disabled={isSubmitting || !newEmail.trim() || !newPassword.trim()}
                 >
                   {isSubmitting ? 'Creating...' : 'Create Account'}
@@ -996,45 +894,23 @@ export default function AdminUsersPage() {
       {/* DELETE CONFIRMATION MODAL */}
       {/* ============================================================ */}
       {deletingUser && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.85)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem',
-        }}>
-          <div className="card" style={{ maxWidth: 450, width: '100%', padding: '1.75rem', border: '1px solid hsl(0 84% 60% / 0.5)' }}>
-            <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>⚠️</div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'hsl(0 84% 75%)' }}>Delete User Account?</h2>
-              <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.5rem' }}>
-                Are you sure you want to permanently delete <strong>{deletingUser.email}</strong>?
-              </p>
-              <div style={{
-                marginTop: '1rem',
-                padding: '0.75rem',
-                borderRadius: '6px',
-                background: 'hsl(0 84% 60% / 0.1)',
-                color: 'hsl(0 84% 80%)',
-                fontSize: '0.78rem',
-                textAlign: 'left',
-              }}>
-                • Removes their Supabase authentication record<br />
-                • Deletes their profile and clinic memberships<br />
-                • This action cannot be undone.
-              </div>
+        <div className="fixed inset-0 bg-[#080505]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="card max-w-sm w-full p-6 bg-[#171614] border border-[#E84B2C]/40 shadow-[0_20px_50px_rgba(232,75,44,0.2)] text-center animate-scale-in">
+            <div className="text-3xl mb-2">⚠️</div>
+            <h2 className="font-heading text-lg font-bold text-[#E84B2C]">Delete Account?</h2>
+            <p className="text-xs text-[#9E9B93] mt-2 leading-relaxed">
+              Are you sure you want to permanently delete <strong className="text-[#F3F0E8]">{deletingUser.email}</strong>?
+            </p>
+            <div className="my-4 p-3 rounded-xl bg-[#E84B2C]/10 border border-[#E84B2C]/20 text-[11px] text-[#D0CBC1] text-left leading-relaxed">
+              • Removes Supabase authentication credentials<br />
+              • Dissolves clinic memberships and profiles<br />
+              • Irreversible action
             </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+            <div className="flex justify-center gap-2.5">
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="btn btn-secondary text-xs"
                 onClick={() => setDeletingUser(null)}
                 disabled={isSubmitting}
               >
@@ -1042,12 +918,11 @@ export default function AdminUsersPage() {
               </button>
               <button
                 type="button"
-                className="btn btn-danger"
+                className="btn btn-danger text-xs"
                 onClick={handleDeleteUser}
                 disabled={isSubmitting}
-                style={{ background: 'hsl(0 84% 50%)', color: 'white' }}
               >
-                {isSubmitting ? 'Deleting...' : 'Yes, Permanently Delete'}
+                {isSubmitting ? 'Deleting...' : 'Permanently Delete'}
               </button>
             </div>
           </div>

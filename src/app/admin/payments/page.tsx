@@ -2,6 +2,7 @@
 
 // src/app/admin/payments/page.tsx
 // Platform Admin Payments Console — UPI transaction monitoring and manual UTR approval queue
+// Redesigned with Cinematic Obsidian × Phoenix Ember Design System
 
 import React, { useState, useEffect } from 'react';
 
@@ -45,7 +46,6 @@ export default function AdminPaymentsPage() {
           setSelectedOrgId(json.data.organizations[0].id);
         }
         if (json.data.plans?.length > 0) {
-          // Default to Pro or first plan
           const pro = json.data.plans.find((p: any) => p.slug === 'pro') || json.data.plans[0];
           setSelectedPlanId(pro.id);
         }
@@ -125,55 +125,62 @@ export default function AdminPaymentsPage() {
   };
 
   return (
-    <div>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800 }}>💳 UPI Payments & Manual Approvals</h1>
-        <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>
-          Verify and approve manual UPI payments, or directly assign and activate plans for any clinic.
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="border-b border-[#F3F0E8]/08 pb-6">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#E84B2C] shadow-[0_0_8px_#E84B2C]" />
+          <span className="text-[11px] font-mono tracking-widest text-[#E87A38] uppercase">
+            Settlement Verification Console
+          </span>
+        </div>
+        <h1 className="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-[#F3F0E8]">
+          UPI &amp; Crypto Settlement Queue
+        </h1>
+        <p className="text-sm text-[#9E9B93] mt-1">
+          Verify and approve manual UPI references, or directly assign and activate plans for any practice.
         </p>
       </div>
 
       {statusMessage && (
-        <div
-          style={{
-            marginBottom: '1.5rem',
-            padding: '0.85rem 1.25rem',
-            borderRadius: '8px',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            backgroundColor: statusMessage.type === 'success' ? 'hsl(142 71% 45% / 0.15)' : 'hsl(0 84% 60% / 0.15)',
-            color: statusMessage.type === 'success' ? 'hsl(142 71% 65%)' : 'hsl(0 84% 75%)',
-            border: `1px solid ${statusMessage.type === 'success' ? 'hsl(142 71% 45% / 0.3)' : 'hsl(0 84% 60% / 0.3)'}`,
-          }}
-        >
-          <span>{statusMessage.type === 'success' ? '✅' : '⚠️'}</span>
-          <span>{statusMessage.text}</span>
+        <div className={`p-4 rounded-xl text-xs flex items-center justify-between border ${
+          statusMessage.type === 'success'
+            ? 'bg-[#63C7A2]/10 border-[#63C7A2]/30 text-[#63C7A2]'
+            : 'bg-[#E84B2C]/10 border-[#E84B2C]/30 text-[#E84B2C]'
+        }`}>
+          <div className="flex items-center gap-2 font-medium">
+            <span>{statusMessage.type === 'success' ? '✓' : '⚠️'}</span>
+            <span>{statusMessage.text}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStatusMessage(null)}
+            className="text-inherit hover:opacity-75 transition-opacity"
+          >
+            ✕
+          </button>
         </div>
       )}
 
       {/* Direct Approval & Assignment Card */}
-      <div className="card" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <span style={{ fontSize: '1.25rem' }}>⚡</span>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Direct Plan & Payment Approval</h2>
+      <div className="card p-6 bg-[#171614] border border-[#F3F0E8]/12 relative overflow-hidden">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[#E87A38]">⚡</span>
+          <h2 className="font-heading text-base font-semibold text-[#F3F0E8]">
+            Direct Plan Assignment &amp; Offline Payment Override
+          </h2>
         </div>
-        <p style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', marginBottom: '1.25rem' }}>
-          Manually activate a plan or record an offline UPI payment for any clinic without waiting for a customer checkout order.
+        <p className="text-xs text-[#9E9B93] mb-5">
+          Instantly provision or extend clinic subscriptions without requiring an online checkout flow.
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.4rem', color: 'hsl(var(--color-text-secondary))' }}>
-              Select Clinic
-            </label>
+            <label className="label text-xs">Target Practice</label>
             <select
               value={selectedOrgId}
               onChange={(e) => setSelectedOrgId(e.target.value)}
-              className="input"
-              style={{ width: '100%', padding: '0.5rem 0.75rem', fontSize: '0.85rem', borderRadius: '6px' }}
+              className="input text-xs"
             >
               {organizations.map((org) => (
                 <option key={org.id} value={org.id}>
@@ -184,32 +191,26 @@ export default function AdminPaymentsPage() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.4rem', color: 'hsl(var(--color-text-secondary))' }}>
-              Select Plan
-            </label>
+            <label className="label text-xs">Subscription Tier</label>
             <select
               value={selectedPlanId}
               onChange={(e) => setSelectedPlanId(e.target.value)}
-              className="input"
-              style={{ width: '100%', padding: '0.5rem 0.75rem', fontSize: '0.85rem', borderRadius: '6px' }}
+              className="input text-xs"
             >
               {plans.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} — ₹{p.price_inr.toLocaleString('en-IN')}/mo ({p.included_ai_requests} AI req)
+                  {p.name} — ₹{p.price_inr.toLocaleString('en-IN')}/mo
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.4rem', color: 'hsl(var(--color-text-secondary))' }}>
-              Duration
-            </label>
+            <label className="label text-xs">Validity Period</label>
             <select
               value={durationDays}
               onChange={(e) => setDurationDays(Number(e.target.value))}
-              className="input"
-              style={{ width: '100%', padding: '0.5rem 0.75rem', fontSize: '0.85rem', borderRadius: '6px' }}
+              className="input text-xs font-mono"
             >
               <option value={30}>30 Days (1 Month)</option>
               <option value={90}>90 Days (Quarterly)</option>
@@ -219,41 +220,31 @@ export default function AdminPaymentsPage() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, marginBottom: '0.4rem', color: 'hsl(var(--color-text-secondary))' }}>
-              UPI UTR / Reference (Optional)
-            </label>
+            <label className="label text-xs">UPI UTR / Blockchain TxID (Optional)</label>
             <input
               type="text"
               placeholder="e.g. 439201948192"
               value={customUtr}
               onChange={(e) => setCustomUtr(e.target.value)}
-              className="input"
-              style={{ width: '100%', padding: '0.5rem 0.75rem', fontSize: '0.85rem', borderRadius: '6px' }}
-            />
+              className="input text-xs font-mono"
+            >
+            </input>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div className="flex gap-3 flex-wrap">
           <button
             type="button"
-            className="btn btn-primary"
-            style={{ fontSize: '0.85rem', padding: '0.5rem 1.25rem', fontWeight: 600 }}
+            className="btn btn-primary text-xs"
             disabled={submittingManual || !selectedOrgId || !selectedPlanId}
             onClick={() => handleManualPaymentApproval('create_and_approve_payment')}
           >
-            {submittingManual ? 'Processing...' : '💳 Approve UPI Payment & Activate'}
+            {submittingManual ? 'Processing...' : '💳 Approve Payment & Activate Plan'}
           </button>
 
           <button
             type="button"
-            className="btn"
-            style={{
-              fontSize: '0.85rem',
-              padding: '0.5rem 1.25rem',
-              fontWeight: 600,
-              backgroundColor: 'hsl(265 83% 65%)',
-              color: '#fff',
-            }}
+            className="btn btn-secondary text-xs"
             disabled={submittingManual || !selectedOrgId || !selectedPlanId}
             onClick={() => handleManualPaymentApproval('assign_plan')}
           >
@@ -263,111 +254,120 @@ export default function AdminPaymentsPage() {
       </div>
 
       {/* Orders Approval Queue */}
-      <div style={{ marginBottom: '0.75rem' }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Pending & Recent Orders Queue</h2>
-      </div>
+      <div className="card p-0 overflow-hidden">
+        <div className="p-4 border-b border-[#F3F0E8]/08">
+          <h2 className="font-heading text-sm font-semibold text-[#F3F0E8]">
+            Pending Checkout Orders &amp; Audit Queue
+          </h2>
+        </div>
 
-      <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>Clinic</th>
-              <th>Plan</th>
-              <th>Amount</th>
-              <th>Payment Method</th>
-              <th>Reference / TxID</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+        <div className="overflow-x-auto">
+          <table className="data-table">
+            <thead>
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'hsl(var(--color-text-muted))' }}>
-                  Loading payment transactions...
-                </td>
+                <th>Order Ref</th>
+                <th>Clinic</th>
+                <th>Plan Tier</th>
+                <th>Amount</th>
+                <th>Rail</th>
+                <th>UTR / Hash</th>
+                <th>State</th>
+                <th>Action</th>
               </tr>
-            ) : payments.length === 0 ? (
-              <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'hsl(var(--color-text-muted))' }}>
-                  No pending checkout orders. Use the form above to directly activate a clinic plan.
-                </td>
-              </tr>
-            ) : (
-              payments.map((p: any) => {
-                const isCrypto = p.currency === 'USD' || p.provider === 'crypto';
-                const explorerUrl = isCrypto && p.utr_number
-                  ? (p.utr_number.startsWith('0x')
-                      ? `https://etherscan.io/tx/${p.utr_number}`
-                      : `https://tronscan.org/#/transaction/${p.utr_number}`)
-                  : null;
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-12 text-[#9E9B93]">
+                    Loading payment queue...
+                  </td>
+                </tr>
+              ) : payments.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-12 text-[#9E9B93]">
+                    No pending checkout orders. All subscriptions reconciled.
+                  </td>
+                </tr>
+              ) : (
+                payments.map((p: any) => {
+                  const isCrypto = p.currency === 'USD' || p.provider === 'crypto';
+                  const explorerUrl = isCrypto && p.utr_number
+                    ? (p.utr_number.startsWith('0x')
+                        ? `https://etherscan.io/tx/${p.utr_number}`
+                        : `https://tronscan.org/#/transaction/${p.utr_number}`)
+                    : null;
 
-                return (
-                  <tr key={p.id}>
-                    <td style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{p.id.slice(0, 8)}...</td>
-                    <td style={{ fontWeight: 600 }}>{p.organizations?.name ?? 'Clinic'}</td>
-                    <td>{p.subscription_plans?.name ?? '—'}</td>
-                    <td style={{ fontWeight: 700, color: isCrypto ? '#4ade80' : 'white' }}>
-                      {isCrypto ? `$${p.metadata?.amount_usd || 100} USD` : `₹${Number(p.amount_inr).toLocaleString('en-IN')}`}
-                    </td>
-                    <td>
-                      {isCrypto ? (
-                        <span className="badge" style={{ background: 'hsla(263, 70%, 50%, 0.15)', color: '#c084fc', border: '1px solid rgba(192, 132, 252, 0.4)', fontSize: '0.75rem' }}>
-                          🪙 Crypto ({p.metadata?.crypto_network ? p.metadata.crypto_network.replace('_', ' ').toUpperCase() : 'USDT'})
-                        </span>
-                      ) : (
-                        <span className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>
-                          🇮🇳 UPI ({p.provider})
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ fontFamily: 'monospace', color: 'hsl(var(--color-primary))', fontWeight: 600, fontSize: '0.75rem' }}>
-                      {p.utr_number ? (
-                        explorerUrl ? (
-                          <a
-                            href={explorerUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: '#93c5fd', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
-                            title="View on Block Explorer"
-                          >
-                            <span>{p.utr_number.slice(0, 10)}...{p.utr_number.slice(-6)}</span>
-                            <span>↗</span>
-                          </a>
+                  return (
+                    <tr key={p.id} className="hover:bg-[#F3F0E8]/03 transition-colors">
+                      <td className="font-mono text-xs text-[#9E9B93]">{p.id.slice(0, 8)}...</td>
+                      <td className="font-medium text-xs text-[#F3F0E8]">{p.organizations?.name ?? 'Clinic'}</td>
+                      <td className="text-xs text-[#D0CBC1]">{p.subscription_plans?.name ?? '—'}</td>
+                      <td className="font-mono font-bold text-xs text-[#F3F0E8]">
+                        {isCrypto ? `$${p.metadata?.amount_usd || 100} USD` : `₹${Number(p.amount_inr).toLocaleString('en-IN')}`}
+                      </td>
+                      <td>
+                        {isCrypto ? (
+                          <span className="badge bg-[#C86938]/15 border border-[#C86938]/30 text-[#E87A38] text-[10px] font-mono">
+                            🪙 {p.metadata?.crypto_network ? p.metadata.crypto_network.replace('_', ' ').toUpperCase() : 'USDT'}
+                          </span>
                         ) : (
-                          p.utr_number
-                        )
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td>
-                      <span className={`badge badge-${p.status === 'success' || p.status === 'completed' ? 'success' : p.status === 'processing' ? 'warning' : 'muted'}`}>
-                        {p.status}
-                      </span>
-                    </td>
-                    <td>
-                      {p.status === 'processing' || p.status === 'pending' ? (
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
-                          disabled={approvingId === p.id}
-                          onClick={() => handleApprove(p.id)}
-                        >
-                          {approvingId === p.id ? 'Approving...' : isCrypto ? '✓ Verify Crypto & Activate' : '✓ Approve & Activate'}
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>Verified</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                          <span className="badge badge-neutral text-[10px] font-mono">
+                            ⚡ UPI
+                          </span>
+                        )}
+                      </td>
+                      <td className="font-mono text-xs">
+                        {p.utr_number ? (
+                          explorerUrl ? (
+                            <a
+                              href={explorerUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#E87A38] hover:underline inline-flex items-center gap-1"
+                              title="Inspect on Explorer"
+                            >
+                              <span>{p.utr_number.slice(0, 8)}...{p.utr_number.slice(-4)}</span>
+                              <span className="text-[10px]">↗</span>
+                            </a>
+                          ) : (
+                            <span className="text-[#F3F0E8]">{p.utr_number}</span>
+                          )
+                        ) : (
+                          <span className="text-[#9E9B93]">—</span>
+                        )}
+                      </td>
+                      <td>
+                        <span className={`badge ${
+                          p.status === 'success' || p.status === 'completed'
+                            ? 'badge-success'
+                            : p.status === 'processing'
+                            ? 'badge-warning'
+                            : 'badge-neutral'
+                        }`}>
+                          {p.status}
+                        </span>
+                      </td>
+                      <td>
+                        {p.status === 'processing' || p.status === 'pending' ? (
+                          <button
+                            type="button"
+                            className="btn btn-primary text-xs px-2.5 py-1 font-semibold"
+                            disabled={approvingId === p.id}
+                            onClick={() => handleApprove(p.id)}
+                          >
+                            {approvingId === p.id ? 'Approving...' : isCrypto ? '✓ Verify Crypto' : '✓ Approve UPI'}
+                          </button>
+                        ) : (
+                          <span className="text-[11px] font-mono text-[#63C7A2]">Verified</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

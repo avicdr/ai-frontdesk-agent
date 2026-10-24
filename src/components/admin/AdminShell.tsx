@@ -1,7 +1,7 @@
 'use client';
 
 // src/components/admin/AdminShell.tsx
-// Minimal editorial Admin Shell with warm cream palette, burnt orange accents, and clean typography
+// Cinematic Obsidian × Phoenix Ember Super Admin Shell
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
@@ -50,13 +50,13 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
   }, [mobileOpen]);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', position: 'relative', backgroundColor: '#FAF5EE' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', position: 'relative', backgroundColor: '#111110', color: '#F3F0E8' }}>
       {/* Mobile Topbar */}
       <header
         className="mobile-topbar"
         style={{
-          background: '#FAF5EE',
-          borderBottom: '1px solid #E9DED3',
+          background: '#0D0D0C',
+          borderBottom: '1px solid rgba(243, 240, 232, 0.08)',
         }}
       >
         <button
@@ -64,10 +64,10 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
           onClick={() => setMobileOpen(true)}
           aria-label="Open admin navigation menu"
           style={{
-            background: '#F6EFE5',
-            border: '1px solid #E9DED3',
+            background: '#171614',
+            border: '1px solid rgba(243, 240, 232, 0.12)',
             borderRadius: '8px',
-            color: '#201A17',
+            color: '#F3F0E8',
             width: '38px',
             height: '38px',
             display: 'flex',
@@ -88,7 +88,7 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
             width: 28,
             height: 28,
             borderRadius: '7px',
-            background: 'linear-gradient(135deg, #C4512A, #9E3D23)',
+            background: 'linear-gradient(135deg, #E84B2C, #C86938)',
             color: '#FFFFFF',
             display: 'flex',
             alignItems: 'center',
@@ -96,6 +96,7 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
             fontSize: '0.85rem',
             fontWeight: 700,
             flexShrink: 0,
+            boxShadow: '0 0 12px rgba(232, 75, 44, 0.35)',
           }}>
             👑
           </div>
@@ -104,14 +105,14 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
               fontFamily: 'var(--font-sans)',
               fontWeight: 600,
               fontSize: '0.875rem',
-              color: '#201A17',
+              color: '#F3F0E8',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
             }}>
               Admin Console
             </div>
-            <div style={{ fontSize: '0.65rem', color: '#756A62', fontWeight: 500 }}>
+            <div style={{ fontSize: '0.65rem', color: '#9E9B93', fontWeight: 500 }}>
               Platform Super Admin
             </div>
           </div>
@@ -137,13 +138,13 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
       <aside
         className={`sidebar ${mobileOpen ? 'open' : ''}`}
         style={{
-          background: '#F6EFE5',
-          borderRight: '1px solid #E9DED3',
+          background: '#0D0D0C',
+          borderRight: '1px solid rgba(243, 240, 232, 0.08)',
         }}
       >
         <div style={{
           padding: '1.25rem 1.15rem 1rem 1.15rem',
-          borderBottom: '1px solid #E9DED3',
+          borderBottom: '1px solid rgba(243, 240, 232, 0.08)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -154,19 +155,20 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
               width: 32,
               height: 32,
               borderRadius: '8px',
-              background: 'linear-gradient(135deg, #C4512A, #9E3D23)',
+              background: 'linear-gradient(135deg, #E84B2C, #C86938)',
               color: '#FFFFFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '0.85rem',
               flexShrink: 0,
+              boxShadow: '0 0 14px rgba(232, 75, 44, 0.35)',
             }}>👑</div>
             <div>
-              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.9rem', color: '#201A17' }}>
+              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.9rem', color: '#F3F0E8' }}>
                 Admin Console
               </div>
-              <div style={{ fontSize: '0.6875rem', color: '#756A62' }}>Platform Management</div>
+              <div style={{ fontSize: '0.6875rem', color: '#9E9B93' }}>Platform Management</div>
             </div>
           </div>
 
@@ -177,10 +179,10 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
             aria-label="Close admin menu"
             className="show-on-mobile"
             style={{
-              background: '#FFFFFF',
-              border: '1px solid #E9DED3',
+              background: '#171614',
+              border: '1px solid rgba(243, 240, 232, 0.1)',
               borderRadius: '6px',
-              color: '#756A62',
+              color: '#9E9B93',
               width: '30px',
               height: '30px',
               cursor: 'pointer',
@@ -215,11 +217,12 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
                   alignItems: 'center',
                   gap: '0.65rem',
                   textDecoration: 'none',
-                  transition: 'background 0.15s ease, color 0.15s ease',
-                  background: isActive ? 'rgba(196, 81, 42, 0.08)' : 'transparent',
-                  color: isActive ? '#C4512A' : '#756A62',
-                  border: isActive ? '1px solid rgba(196, 81, 42, 0.18)' : '1px solid transparent',
+                  transition: 'all 0.15s ease',
+                  background: isActive ? 'rgba(232, 75, 44, 0.12)' : 'transparent',
+                  color: isActive ? '#E87A38' : '#9E9B93',
+                  border: isActive ? '1px solid rgba(232, 75, 44, 0.28)' : '1px solid transparent',
                   fontWeight: isActive ? 600 : 500,
+                  boxShadow: isActive ? '0 0 16px rgba(232, 75, 44, 0.1)' : 'none',
                 }}
               >
                 <span style={{ fontSize: '1rem', opacity: isActive ? 1 : 0.8 }}>{item.icon}</span>
@@ -228,7 +231,7 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
             );
           })}
 
-          <div className="divider" style={{ margin: '0.75rem 0.5rem', background: '#E9DED3' }} />
+          <div className="divider" style={{ margin: '0.75rem 0.5rem', background: 'rgba(243, 240, 232, 0.08)' }} />
           <Link
             href="/dashboard"
             onClick={() => setMobileOpen(false)}
@@ -241,7 +244,7 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
               alignItems: 'center',
               gap: '0.65rem',
               textDecoration: 'none',
-              color: '#C4512A',
+              color: '#E87A38',
             }}
           >
             <span style={{ fontSize: '1rem' }}>🏠</span>
@@ -251,17 +254,17 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
 
         <div style={{
           padding: '1rem',
-          borderTop: '1px solid #E9DED3',
-          background: '#FAF5EE',
+          borderTop: '1px solid rgba(243, 240, 232, 0.08)',
+          background: '#080505',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
             <div style={{
               width: 32,
               height: 32,
               borderRadius: '50%',
-              background: '#ECE3D7',
-              border: '1px solid #DDD0C2',
-              color: '#201A17',
+              background: '#1C1916',
+              border: '1px solid rgba(243, 240, 232, 0.12)',
+              color: '#F3F0E8',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -275,7 +278,7 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
               <div style={{
                 fontSize: '0.8125rem',
                 fontWeight: 600,
-                color: '#201A17',
+                color: '#F3F0E8',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -284,13 +287,14 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
               </div>
               <div style={{
                 fontSize: '0.6875rem',
-                color: '#235A34',
+                color: '#63C7A2',
                 fontWeight: 500,
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.3rem',
+                marginTop: '0.1rem',
               }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#235A34' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#63C7A2', boxShadow: '0 0 8px rgba(99, 199, 162, 0.6)' }} />
                 Super Admin
               </div>
             </div>

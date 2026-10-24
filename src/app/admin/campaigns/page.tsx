@@ -2,6 +2,7 @@
 
 // src/app/admin/campaigns/page.tsx
 // WhatsApp Cold Outreach Campaign Manager & Real-Time AI Qualification Console
+// Redesigned with Cinematic Obsidian × Phoenix Ember Design System
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
@@ -79,7 +80,6 @@ export default function AdminCampaignsPage() {
           setNewCampaignOrgId(sendersList[0].organizationId);
         }
 
-        // Auto select first campaign if none selected
         if (!selectedCampaignId && camps.length > 0) {
           setSelectedCampaignId(camps[0].id);
         }
@@ -101,9 +101,7 @@ export default function AdminCampaignsPage() {
       if (json.data) {
         setLeads(json.data.leads || []);
         if (json.data.campaign) {
-          // Update in campaigns list
           setCampaigns(prev => prev.map(c => c.id === campaignId ? json.data.campaign : c));
-          // Prepopulate edit forms
           setEditTemplate(json.data.campaign.messageTemplate);
           setEditThreshold(json.data.campaign.responseThresholdSeconds);
           setEditDelay(json.data.campaign.delaySeconds);
@@ -138,52 +136,12 @@ export default function AdminCampaignsPage() {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [selectedCampaign?.status, selectedCampaign?.id]);
+  }, [selectedCampaign]);
 
-  // Handle Campaign Actions: Start / Pause / Reset
-  const handleCampaignAction = async (action: 'start' | 'pause' | 'reset') => {
-    if (!selectedCampaignId) return;
-    setActionInProgress(action);
-    setStatusMessage(null);
-
-    try {
-      const res = await fetch(`/api/v1/admin/campaigns/${selectedCampaignId}/actions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error?.message || `Failed to ${action} campaign`);
-      }
-
-      setStatusMessage({
-        type: 'success',
-        text: action === 'start'
-          ? '🚀 Campaign launched! Dispatching WhatsApp messages in background...'
-          : action === 'pause'
-          ? '⏸️ Campaign paused.'
-          : '🔄 All leads reset to Pending.',
-      });
-
-      // Reload
-      await loadCampaignDetails(selectedCampaignId);
-      await loadCampaigns(true);
-    } catch (e: any) {
-      console.error(e);
-      setStatusMessage({ type: 'error', text: e.message || `Action ${action} failed` });
-    } finally {
-      setActionInProgress(null);
-    }
-  };
-
-  // Handle Create Campaign
+  // Create Campaign Handler
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCampaignName.trim()) {
-      setStatusMessage({ type: 'error', text: 'Campaign name is required' });
-      return;
-    }
+    if (!newCampaignName.trim()) return;
 
     setSubmittingCreate(true);
     setStatusMessage(null);
@@ -194,24 +152,21 @@ export default function AdminCampaignsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: newCampaignName.trim(),
-          organizationId: newCampaignOrgId || 'default',
-          messageTemplate: newCampaignTemplate.trim(),
-          responseThresholdSeconds: Number(newCampaignThreshold),
-          delaySeconds: Number(newCampaignDelay),
+          organizationId: newCampaignOrgId || null,
+          messageTemplate: newCampaignTemplate,
+          responseThresholdSeconds: newCampaignThreshold,
+          delaySeconds: newCampaignDelay,
         }),
       });
 
       const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error?.message || 'Failed to create campaign');
-      }
+      if (!res.ok) throw new Error(json.error?.message || 'Failed to create campaign');
 
-      const created: Campaign = json.data.campaign;
-      setStatusMessage({ type: 'success', text: `Campaign "${created.name}" created successfully!` });
+      setStatusMessage({ type: 'success', text: `Campaign "${newCampaignName}" created successfully!` });
       setShowCreateModal(false);
       setNewCampaignName('');
       await loadCampaigns();
-      setSelectedCampaignId(created.id);
+      if (json.data?.id) setSelectedCampaignId(json.data.id);
     } catch (e: any) {
       console.error(e);
       setStatusMessage({ type: 'error', text: e.message || 'Error creating campaign' });
@@ -220,7 +175,7 @@ export default function AdminCampaignsPage() {
     }
   };
 
-  // Handle Add Leads
+  // Add Leads Handler
   const handleAddLeads = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCampaignId) return;
@@ -229,57 +184,66 @@ export default function AdminCampaignsPage() {
     setStatusMessage(null);
 
     try {
-      let payload: any = {};
+      const leadsPayload = [];
+
       if (addMode === 'bulk') {
-        if (!rawLeadsText.trim()) {
-          setStatusMessage({ type: 'error', text: 'Please paste lead phone numbers' });
-          setSubmittingLeads(false);
-          return;
+        const lines = rawLeadsText.split('\n');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          const parts = trimmed.split(',').map(p => p.trim());
+          const phone = parts[0]?.replace(/[^0-9]/g, '');
+          const name = parts[1] || 'Doctor';
+          const clinicName = parts[2] || 'Clinic';
+
+          if (phone && phone.length >= 8) {
+            leadsPayload.push({ phone, name, clinicName });
+          }
         }
-        payload = { rawText: rawLeadsText };
       } else {
-        if (!singleLeadPhone.trim()) {
-          setStatusMessage({ type: 'error', text: 'Please enter a valid phone number' });
-          setSubmittingLeads(false);
-          return;
-        }
-        payload = {
-          leads: [{
-            phone: singleLeadPhone.trim(),
+        const cleanPhone = singleLeadPhone.replace(/[^0-9]/g, '');
+        if (cleanPhone) {
+          leadsPayload.push({
+            phone: cleanPhone,
             name: singleLeadName.trim() || 'Doctor',
-            clinicName: singleClinicName.trim() || 'Dental Clinic',
-          }],
-        };
+            clinicName: singleClinicName.trim() || 'Clinic',
+          });
+        }
+      }
+
+      if (leadsPayload.length === 0) {
+        throw new Error('No valid leads detected. Ensure phone numbers have at least 8 digits.');
       }
 
       const res = await fetch(`/api/v1/admin/campaigns/${selectedCampaignId}/leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ leads: leadsPayload }),
       });
 
       const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error?.message || 'Failed to add leads');
-      }
+      if (!res.ok) throw new Error(json.error?.message || 'Failed to add leads');
 
-      setStatusMessage({ type: 'success', text: json.data?.message || 'Leads imported successfully!' });
+      setStatusMessage({
+        type: 'success',
+        text: `Successfully imported ${json.data?.insertedCount || leadsPayload.length} lead(s)!`,
+      });
       setShowAddLeadsModal(false);
       setRawLeadsText('');
       setSingleLeadPhone('');
       setSingleLeadName('');
       setSingleClinicName('');
-      await loadCampaignDetails(selectedCampaignId);
-      await loadCampaigns(true);
+      loadCampaignDetails(selectedCampaignId);
+      loadCampaigns(true);
     } catch (e: any) {
       console.error(e);
-      setStatusMessage({ type: 'error', text: e.message || 'Failed to import leads' });
+      setStatusMessage({ type: 'error', text: e.message || 'Error adding leads' });
     } finally {
       setSubmittingLeads(false);
     }
   };
 
-  // Handle Save Settings
+  // Save Settings Handler
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCampaignId) return;
@@ -292,21 +256,18 @@ export default function AdminCampaignsPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messageTemplate: editTemplate.trim(),
-          responseThresholdSeconds: Number(editThreshold),
-          delaySeconds: Number(editDelay),
+          messageTemplate: editTemplate,
+          responseThresholdSeconds: editThreshold,
+          delaySeconds: editDelay,
         }),
       });
 
       const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error?.message || 'Failed to update settings');
-      }
+      if (!res.ok) throw new Error(json.error?.message || 'Failed to update campaign');
 
-      setStatusMessage({ type: 'success', text: 'Campaign settings and template updated!' });
+      setStatusMessage({ type: 'success', text: 'Campaign settings saved successfully!' });
       setShowSettingsModal(false);
-      await loadCampaignDetails(selectedCampaignId);
-      await loadCampaigns(true);
+      loadCampaignDetails(selectedCampaignId);
     } catch (e: any) {
       console.error(e);
       setStatusMessage({ type: 'error', text: e.message || 'Error updating settings' });
@@ -315,38 +276,36 @@ export default function AdminCampaignsPage() {
     }
   };
 
-  // Handle Test Send
+  // Test Send Message Handler
   const handleTestSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCampaignId || !testPhone.trim()) {
-      setStatusMessage({ type: 'error', text: 'Please enter a test phone number' });
-      return;
-    }
+    if (!selectedCampaign || !testPhone.trim()) return;
 
     setSubmittingTest(true);
     setStatusMessage(null);
 
     try {
-      const res = await fetch(`/api/v1/admin/campaigns/${selectedCampaignId}/actions`, {
+      const cleanPhone = testPhone.replace(/[^0-9]/g, '');
+      const testMsg = selectedCampaign.messageTemplate
+        .replace(/\{\{\s*name\s*\}\}/gi, testName || 'Doctor')
+        .replace(/\{\{\s*clinic_name\s*\}\}/gi, testClinic || 'Dental Clinic')
+        .replace(/\{\{\s*clinic\s*\}\}/gi, testClinic || 'Dental Clinic')
+        .replace(/\{\{\s*phone\s*\}\}/gi, cleanPhone);
+
+      const res = await fetch('/api/v1/admin/campaigns/test-send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'test_send',
-          testPhone: testPhone.trim(),
-          testName: testName.trim(),
-          testClinicName: testClinic.trim(),
+          phone: cleanPhone,
+          message: testMsg,
+          organizationId: selectedCampaign.organizationId,
         }),
       });
 
       const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error?.message || 'Failed to send test message');
-      }
+      if (!res.ok) throw new Error(json.error?.message || 'Failed to dispatch test message');
 
-      setStatusMessage({
-        type: 'success',
-        text: `✅ Test WhatsApp message dispatched to ${testPhone}! Check your phone.`,
-      });
+      setStatusMessage({ type: 'success', text: `Test message dispatched to +${cleanPhone}!` });
       setShowTestModal(false);
     } catch (e: any) {
       console.error(e);
@@ -356,13 +315,66 @@ export default function AdminCampaignsPage() {
     }
   };
 
-  // Handle Delete Lead
-  const handleDeleteLead = async (leadId: string) => {
+  // Campaign Action Controller (Start / Pause / Reset)
+  const handleCampaignAction = async (action: 'start' | 'pause' | 'reset') => {
     if (!selectedCampaignId) return;
-    if (!confirm('Are you sure you want to remove this lead?')) return;
+
+    setActionInProgress(action);
+    setStatusMessage(null);
 
     try {
-      const res = await fetch(`/api/v1/admin/campaigns/${selectedCampaignId}/leads/${leadId}`, {
+      const res = await fetch(`/api/v1/admin/campaigns/${selectedCampaignId}/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error?.message || `Failed to ${action} campaign`);
+
+      setStatusMessage({
+        type: 'success',
+        text: json.data?.message || `Campaign ${action === 'start' ? 'started' : action === 'pause' ? 'paused' : 'reset'}!`,
+      });
+
+      loadCampaignDetails(selectedCampaignId);
+      loadCampaigns(true);
+    } catch (e: any) {
+      console.error(e);
+      setStatusMessage({ type: 'error', text: e.message || `Error executing ${action}` });
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
+  // Delete Campaign
+  const handleDeleteCampaign = async () => {
+    if (!selectedCampaignId || !confirm(`Are you sure you want to delete campaign "${selectedCampaign?.name}" and all its leads?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/v1/admin/campaigns/${selectedCampaignId}`, {
+        method: 'DELETE',
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error?.message || 'Failed to delete campaign');
+
+      setStatusMessage({ type: 'success', text: 'Campaign deleted.' });
+      setSelectedCampaignId(null);
+      loadCampaigns();
+    } catch (e: any) {
+      console.error(e);
+      setStatusMessage({ type: 'error', text: e.message || 'Error deleting campaign' });
+    }
+  };
+
+  // Delete individual lead
+  const handleDeleteLead = async (leadId: string) => {
+    if (!selectedCampaignId) return;
+
+    try {
+      const res = await fetch(`/api/v1/admin/campaigns/${selectedCampaignId}/leads?leadId=${leadId}`, {
         method: 'DELETE',
       });
       if (res.ok) {
@@ -370,32 +382,13 @@ export default function AdminCampaignsPage() {
         loadCampaigns(true);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Failed to delete lead:', e);
     }
   };
 
-  // Handle Delete Campaign
-  const handleDeleteCampaign = async () => {
-    if (!selectedCampaignId || !selectedCampaign) return;
-    if (!confirm(`Are you sure you want to delete campaign "${selectedCampaign.name}" and all its leads?`)) return;
-
-    try {
-      const res = await fetch(`/api/v1/admin/campaigns/${selectedCampaignId}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        setStatusMessage({ type: 'info', text: `Campaign "${selectedCampaign.name}" deleted.` });
-        setSelectedCampaignId(null);
-        await loadCampaigns();
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // Export Leads to CSV
+  // Export CSV Handler
   const handleExportCSV = () => {
-    if (!leads.length || !selectedCampaign) return;
+    if (!selectedCampaign || leads.length === 0) return;
 
     const headers = [
       'Phone',
@@ -471,103 +464,75 @@ export default function AdminCampaignsPage() {
   const activeSender = senders.find(s => s.status === 'connected') || senders[0];
 
   return (
-    <div style={{ maxWidth: 1400, margin: '0 auto', paddingBottom: '3rem' }}>
+    <div className="space-y-6 animate-fade-in pb-12">
       {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#F3F0E8]/08 pb-6">
         <div>
-          <h1 style={{
-            fontFamily: 'var(--font-serif)',
-            fontSize: 'clamp(1.75rem, 3.5vw, 2.25rem)',
-            fontWeight: 500,
-            letterSpacing: '-0.02em',
-            color: '#262522',
-            marginBottom: '0.4rem',
-          }}>
-            Outreach &amp; AI Lead Qualification
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E84B2C] shadow-[0_0_8px_#E84B2C]" />
+            <span className="text-[11px] font-mono tracking-widest text-[#E87A38] uppercase">
+              Cold Lead Qualification Engine
+            </span>
+          </div>
+          <h1 className="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-[#F3F0E8]">
+            Outreach &amp; AI Qualification
           </h1>
-          <p style={{ color: '#706C65', fontSize: '0.95rem', maxWidth: 800 }}>
-            Personalized WhatsApp campaigns with latency tracking down to the second to qualify clinics with <strong>Manual Receptionists (Hot Sales Leads)</strong> vs. <strong>AI Bots</strong>.
+          <p className="text-sm text-[#9E9B93] mt-1 max-w-2xl">
+            WhatsApp outreach with latency tracking down to the second to classify clinics with <strong className="text-[#63C7A2]">Manual Receptionists (Hot Sales Leads)</strong> vs. <strong className="text-[#D4AF37]">Existing AI Bots</strong>.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div className="flex items-center gap-2.5 flex-wrap">
           <button
             onClick={() => {
               loadCampaigns();
               if (selectedCampaignId) loadCampaignDetails(selectedCampaignId);
             }}
-            className="btn btn-secondary"
-            style={{ fontSize: '0.85rem' }}
+            className="btn btn-secondary text-xs"
           >
-            Refresh
+            🔄 Refresh
           </button>
 
           {selectedCampaign && leads.length > 0 && (
             <button
               onClick={handleExportCSV}
-              className="btn btn-secondary"
-              style={{ fontSize: '0.85rem' }}
+              className="btn btn-secondary text-xs"
             >
-              Export CSV
+              📥 Export CSV
             </button>
           )}
 
           {selectedCampaign && (
             <button
               onClick={() => setShowTestModal(true)}
-              className="btn btn-secondary"
-              style={{ fontSize: '0.85rem' }}
+              className="btn btn-secondary text-xs"
             >
-              Test Send
+              🧪 Test Send
             </button>
           )}
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="btn btn-primary"
-            style={{ fontSize: '0.85rem' }}
+            className="btn btn-primary text-xs"
           >
-            New Campaign
+            + New Campaign
           </button>
         </div>
       </div>
 
       {/* Global Status Banner */}
       {statusMessage && (
-        <div
-          style={{
-            marginBottom: '1.25rem',
-            padding: '0.85rem 1.25rem',
-            borderRadius: '8px',
-            background:
-              statusMessage.type === 'success'
-                ? '#EBF3ED'
-                : statusMessage.type === 'error'
-                ? '#FAEBEA'
-                : '#F8E8DE',
-            border: `1px solid ${
-              statusMessage.type === 'success'
-                ? '#D5E4D8'
-                : statusMessage.type === 'error'
-                ? '#F3CFCB'
-                : '#F0D5C7'
-            }`,
-            color:
-              statusMessage.type === 'success'
-                ? '#2A5A36'
-                : statusMessage.type === 'error'
-                ? '#A83830'
-                : '#C86646',
-            fontSize: '0.875rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
+        <div className={`p-4 rounded-xl text-xs flex items-center justify-between border ${
+          statusMessage.type === 'success'
+            ? 'bg-[#63C7A2]/10 border-[#63C7A2]/30 text-[#63C7A2]'
+            : statusMessage.type === 'error'
+            ? 'bg-[#E84B2C]/10 border-[#E84B2C]/30 text-[#E84B2C]'
+            : 'bg-[#E87A38]/10 border-[#E87A38]/30 text-[#E87A38]'
+        }`}>
           <span>{statusMessage.text}</span>
           <button
             onClick={() => setStatusMessage(null)}
-            style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: '1rem' }}
+            className="text-inherit hover:opacity-75 transition-opacity text-sm ml-2"
           >
             ✕
           </button>
@@ -575,74 +540,43 @@ export default function AdminCampaignsPage() {
       )}
 
       {/* WhatsApp Sender Status Banner */}
-      <div
-        className="card"
-        style={{
-          marginBottom: '1.5rem',
-          padding: '1rem 1.25rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          background: '#F4F1EB',
-          border: '1px solid #E7E2DA',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: '8px',
-              background: '#FFFFFF',
-              border: '1px solid #E7E2DA',
-              color: '#262522',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.15rem',
-            }}
-          >
+      <div className="card p-4 bg-[#171614] border border-[#F3F0E8]/08 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#1C1916] border border-[#F3F0E8]/10 flex items-center justify-center text-lg text-[#63C7A2]">
             💬
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontWeight: 600, fontSize: '0.95rem', color: '#262522' }}>WhatsApp Sender Line</span>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-xs text-[#F3F0E8]">WhatsApp Outbound Dispatch Line</span>
               {activeSender?.status === 'connected' ? (
-                <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>● Connected &amp; Ready</span>
+                <span className="badge badge-success text-[10px]">● Connected</span>
               ) : (
-                <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>Disconnected</span>
+                <span className="badge badge-warning text-[10px]">Disconnected</span>
               )}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#706C65', marginTop: '0.15rem' }}>
+            <div className="text-[11px] text-[#9E9B93] mt-0.5 font-mono">
               {activeSender?.phoneNumber ? (
-                <span>Outbound messages sent from <strong>{activeSender.phoneNumber}</strong> ({activeSender.clinicName})</span>
+                <span>Outbound node: <strong className="text-[#D0CBC1]">+{activeSender.phoneNumber}</strong> ({activeSender.clinicName})</span>
               ) : (
-                <span>No phone number registered yet. Connect WhatsApp in the clinic dashboard or scan QR code.</span>
+                <span>No phone number registered yet. Connect WhatsApp in clinic settings.</span>
               )}
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Link
-            href="/dashboard/onboarding"
-            className="btn btn-secondary"
-            style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
-          >
-            Manage Connections
-          </Link>
-        </div>
+        <Link
+          href="/dashboard/onboarding"
+          className="btn btn-secondary text-xs px-3 py-1.5"
+        >
+          Manage Connection →
+        </Link>
       </div>
 
       {/* Campaign Selector / Switcher */}
       {campaigns.length > 0 ? (
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#706C65' }}>Select Campaign:</span>
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+        <div>
+          <div className="text-xs font-mono text-[#9E9B93] mb-2 uppercase tracking-wider">Active Campaigns</div>
+          <div className="flex gap-3 overflow-x-auto pb-2">
             {campaigns.map(camp => {
               const isSelected = camp.id === selectedCampaignId;
               const isRunning = camp.status === 'running';
@@ -650,31 +584,23 @@ export default function AdminCampaignsPage() {
                 <button
                   key={camp.id}
                   onClick={() => setSelectedCampaignId(camp.id)}
-                  style={{
-                    background: isSelected ? '#F8E8DE' : '#FFFFFF',
-                    border: `1px solid ${isSelected ? '#D97757' : '#E7E2DA'}`,
-                    borderRadius: '8px',
-                    padding: '0.6rem 1rem',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    minWidth: '220px',
-                    transition: 'all 0.15s ease',
-                  }}
+                  className={`p-3.5 rounded-xl text-left transition-all min-w-[220px] shrink-0 border ${
+                    isSelected
+                      ? 'bg-[#1C1916] border-[#E84B2C] shadow-[0_0_12px_rgba(232,75,44,0.15)]'
+                      : 'bg-[#171614] border-[#F3F0E8]/08 hover:border-[#F3F0E8]/16'
+                  }`}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.875rem', color: isSelected ? '#C86646' : '#262522' }}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className={`font-semibold text-xs truncate mr-2 ${isSelected ? 'text-[#E87A38]' : 'text-[#F3F0E8]'}`}>
                       {camp.name}
                     </span>
-                    <span
-                      className={`badge ${
-                        isRunning ? 'badge-success' : camp.status === 'paused' ? 'badge-warning' : 'badge-neutral'
-                      }`}
-                      style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem' }}
-                    >
-                      {isRunning ? '● Running' : camp.status}
+                    <span className={`badge text-[9px] font-mono uppercase ${
+                      isRunning ? 'badge-success' : camp.status === 'paused' ? 'badge-warning' : 'badge-neutral'
+                    }`}>
+                      {isRunning ? '● RUNNING' : camp.status}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#706C65' }}>
+                  <div className="text-[11px] font-mono text-[#9E9B93]">
                     {camp.stats.totalLeads} leads • {camp.stats.repliedCount} replies
                   </div>
                 </button>
@@ -683,23 +609,16 @@ export default function AdminCampaignsPage() {
           </div>
         </div>
       ) : (
-        <div className="card" style={{ textAlign: 'center', padding: '3rem 1.5rem', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>✦</div>
-          <h2 style={{
-            fontFamily: 'var(--font-serif)',
-            fontSize: '1.25rem',
-            fontWeight: 500,
-            color: '#262522',
-            marginBottom: '0.5rem',
-          }}>
-            No Campaigns Found
+        <div className="card p-12 text-center">
+          <div className="text-3xl mb-2">✦</div>
+          <h2 className="font-heading text-lg font-semibold text-[#F3F0E8] mb-1">
+            No Active Campaigns Found
           </h2>
-          <p style={{ color: '#706C65', fontSize: '0.875rem', maxWidth: 500, margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
-            Get started by creating your first WhatsApp outreach campaign. You can import leads, set a custom message template,
-            and auto-qualify clinics in real-time.
+          <p className="text-xs text-[#9E9B93] max-w-md mx-auto mb-5 leading-relaxed">
+            Create your first cold outreach campaign to ingest clinic leads, deploy templated WhatsApp checks, and automatically classify manual receptionists.
           </p>
-          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
-            Create Your First Campaign
+          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary text-xs">
+            Create First Campaign
           </button>
         </div>
       )}
@@ -707,105 +626,82 @@ export default function AdminCampaignsPage() {
       {/* Selected Campaign Active Console */}
       {selectedCampaign && (
         <>
-          {/* Campaign Action Control Bar */}
-          <div
-            className="card"
-            style={{
-              padding: '1.25rem',
-              marginBottom: '1.5rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '1rem',
-            }}
-          >
+          {/* Action Control Bar */}
+          <div className="card p-5 bg-[#171614] border border-[#F3F0E8]/12 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                <h2 style={{
-                  fontFamily: 'var(--font-serif)',
-                  fontSize: '1.35rem',
-                  fontWeight: 500,
-                  color: '#262522',
-                }}>
+              <div className="flex items-center gap-2.5 mb-1">
+                <h2 className="font-heading text-lg font-semibold text-[#F3F0E8]">
                   {selectedCampaign.name}
                 </h2>
-                <span
-                  className={`badge ${
-                    selectedCampaign.status === 'running'
-                      ? 'badge-success'
-                      : selectedCampaign.status === 'paused'
-                      ? 'badge-warning'
-                      : 'badge-neutral'
-                  }`}
-                  style={{ fontSize: '0.75rem' }}
-                >
-                  {selectedCampaign.status === 'running' ? '● RUNNING IN BACKGROUND' : selectedCampaign.status.toUpperCase()}
+                <span className={`badge text-[10px] font-mono uppercase ${
+                  selectedCampaign.status === 'running'
+                    ? 'badge-success'
+                    : selectedCampaign.status === 'paused'
+                    ? 'badge-warning'
+                    : 'badge-neutral'
+                }`}>
+                  {selectedCampaign.status === 'running' ? '● RUNNING IN BACKGROUND' : selectedCampaign.status}
                 </span>
               </div>
-              <div style={{ fontSize: '0.78rem', color: '#706C65' }}>
-                AI Threshold: <strong>≤ {selectedCampaign.responseThresholdSeconds}s = Bot</strong> •
-                Safe Throttle: <strong>{selectedCampaign.delaySeconds}s delay</strong> •
-                Created: {new Date(selectedCampaign.createdAt).toLocaleDateString()}
+              <div className="text-xs font-mono text-[#9E9B93] flex items-center gap-2 flex-wrap">
+                <span>Threshold: <strong className="text-[#D0CBC1]">≤{selectedCampaign.responseThresholdSeconds}s Bot</strong></span>
+                <span>•</span>
+                <span>Throttle: <strong className="text-[#D0CBC1]">{selectedCampaign.delaySeconds}s delay</strong></span>
+                <span>•</span>
+                <span>Created {new Date(selectedCampaign.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setShowAddLeadsModal(true)}
-                className="btn btn-secondary"
-                style={{ fontSize: '0.85rem' }}
+                className="btn btn-secondary text-xs"
               >
-                Add Leads
+                + Add Leads
               </button>
 
               <button
                 onClick={() => setShowSettingsModal(true)}
-                className="btn btn-secondary"
-                style={{ fontSize: '0.85rem' }}
+                className="btn btn-secondary text-xs"
               >
-                Template &amp; Settings
+                ⚙️ Settings
               </button>
 
               {selectedCampaign.status !== 'running' ? (
                 <button
                   onClick={() => handleCampaignAction('start')}
                   disabled={actionInProgress === 'start' || selectedCampaign.stats.pendingCount === 0}
-                  className="btn btn-primary"
-                  style={{ fontSize: '0.85rem' }}
+                  className="btn btn-primary text-xs"
                 >
-                  {actionInProgress === 'start' ? 'Starting...' : 'Start Campaign'}
+                  {actionInProgress === 'start' ? 'Starting...' : '▶ Start Dispatch'}
                 </button>
               ) : (
                 <button
                   onClick={() => handleCampaignAction('pause')}
                   disabled={actionInProgress === 'pause'}
-                  className="btn"
-                  style={{ fontSize: '0.85rem', background: '#FAF3E7', color: '#8A5812', border: '1px solid #F0E1C6' }}
+                  className="btn btn-secondary text-xs text-[#E87A38]"
                 >
-                  {actionInProgress === 'pause' ? 'Pausing...' : 'Pause Campaign'}
+                  {actionInProgress === 'pause' ? 'Pausing...' : '⏸ Pause Dispatch'}
                 </button>
               )}
 
               <button
                 onClick={() => {
-                  if (confirm('Reset all leads back to Pending? This will allow you to re-run the campaign.')) {
+                  if (confirm('Reset all leads to Pending to re-run dispatch?')) {
                     handleCampaignAction('reset');
                   }
                 }}
                 disabled={actionInProgress === 'reset'}
-                className="btn btn-secondary"
-                title="Reset lead statuses to re-send"
-                style={{ fontSize: '0.85rem' }}
+                className="btn btn-secondary text-xs font-mono"
+                title="Reset lead statuses"
               >
                 Reset
               </button>
 
               <button
                 onClick={handleDeleteCampaign}
-                className="btn"
+                className="text-xs font-mono text-[#E84B2C] hover:underline px-2"
                 title="Delete Campaign"
-                style={{ fontSize: '0.85rem', color: '#A83830', background: '#FAEBEA', border: '1px solid #F3CFCB' }}
               >
                 Delete
               </button>
@@ -813,151 +709,80 @@ export default function AdminCampaignsPage() {
           </div>
 
           {/* KPI Stat Cards */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-              gap: '1rem',
-              marginBottom: '1.5rem',
-            }}
-          >
-            {/* Total Leads */}
-            <div className="stat-card">
-              <div className="stat-value">{selectedCampaign.stats.totalLeads}</div>
-              <div className="stat-label">Total Leads Audited</div>
-              <div style={{ fontSize: '0.72rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.35rem' }}>
-                {selectedCampaign.stats.pendingCount} queued for dispatch
-              </div>
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+            <div className="card p-3.5">
+              <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Total Leads</div>
+              <div className="font-mono text-2xl font-bold text-[#F3F0E8] mt-1">{selectedCampaign.stats.totalLeads}</div>
+              <div className="text-[10px] font-mono text-[#9E9B93] mt-0.5">{selectedCampaign.stats.pendingCount} queued</div>
             </div>
 
-            {/* Messages Sent */}
-            <div className="stat-card">
-              <div className="stat-value" style={{ color: 'hsl(var(--color-primary-glow))' }}>
-                {selectedCampaign.stats.sentCount}
-              </div>
-              <div className="stat-label">Messages Dispatched</div>
-              <div style={{ fontSize: '0.72rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.35rem' }}>
+            <div className="card p-3.5">
+              <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Dispatched</div>
+              <div className="font-mono text-2xl font-bold text-[#E87A38] mt-1">{selectedCampaign.stats.sentCount}</div>
+              <div className="text-[10px] font-mono text-[#9E9B93] mt-0.5">
                 {selectedCampaign.stats.totalLeads > 0
                   ? `${Math.round((selectedCampaign.stats.sentCount / selectedCampaign.stats.totalLeads) * 100)}% sent`
                   : '0%'}
               </div>
             </div>
 
-            {/* Replies */}
-            <div className="stat-card">
-              <div className="stat-value" style={{ color: 'hsl(199 89% 55%)' }}>
-                {selectedCampaign.stats.repliedCount}
-              </div>
-              <div className="stat-label">Replies Ingested</div>
-              <div style={{ fontSize: '0.72rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.35rem' }}>
+            <div className="card p-3.5">
+              <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Replies</div>
+              <div className="font-mono text-2xl font-bold text-[#F3F0E8] mt-1">{selectedCampaign.stats.repliedCount}</div>
+              <div className="text-[10px] font-mono text-[#9E9B93] mt-0.5">
                 {selectedCampaign.stats.sentCount > 0
-                  ? `${Math.round((selectedCampaign.stats.repliedCount / selectedCampaign.stats.sentCount) * 100)}% response rate`
-                  : 'Awaiting replies'}
+                  ? `${Math.round((selectedCampaign.stats.repliedCount / selectedCampaign.stats.sentCount) * 100)}% reply rate`
+                  : 'Awaiting'}
               </div>
             </div>
 
-            {/* HOT LEADS: No AI (Manual Front Desk) */}
-            <div
-              className="stat-card"
-              style={{
-                background: 'linear-gradient(135deg, hsl(142 71% 45% / 0.15) 0%, hsl(222 40% 8%) 100%)',
-                border: '1px solid hsl(142 71% 45% / 0.4)',
-              }}
-            >
-              <div className="stat-value" style={{ color: 'hsl(142 71% 55%)' }}>
+            <div className="card p-3.5 border-[#63C7A2]/40 bg-[#171614] shadow-[0_0_12px_rgba(99,199,162,0.1)]">
+              <div className="text-[10px] font-mono uppercase text-[#63C7A2]">Hot Leads (Manual)</div>
+              <div className="font-mono text-2xl font-bold text-[#63C7A2] mt-1">
                 🎯 {selectedCampaign.stats.noAiManualCount}
               </div>
-              <div className="stat-label" style={{ color: 'hsl(142 71% 65%)', fontWeight: 700 }}>
-                HOT LEADS (No AI / Manual)
-              </div>
-              <div style={{ fontSize: '0.72rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.35rem' }}>
-                Took &gt;{selectedCampaign.responseThresholdSeconds}s • Prime pitch target
-              </div>
+              <div className="text-[10px] font-mono text-[#9E9B93] mt-0.5">Prime pitch targets</div>
             </div>
 
-            {/* HAS AI BOT */}
-            <div
-              className="stat-card"
-              style={{
-                background: 'linear-gradient(135deg, hsl(265 83% 65% / 0.15) 0%, hsl(222 40% 8%) 100%)',
-                border: '1px solid hsl(265 83% 65% / 0.4)',
-              }}
-            >
-              <div className="stat-value" style={{ color: 'hsl(265 83% 75%)' }}>
+            <div className="card p-3.5 border-[#D4AF37]/30 bg-[#171614]">
+              <div className="text-[10px] font-mono uppercase text-[#D4AF37]">Has AI Automation</div>
+              <div className="font-mono text-2xl font-bold text-[#D4AF37] mt-1">
                 🤖 {selectedCampaign.stats.hasAiCount}
               </div>
-              <div className="stat-label" style={{ color: 'hsl(265 83% 75%)', fontWeight: 700 }}>
-                Has AI Automation
-              </div>
-              <div style={{ fontSize: '0.72rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.35rem' }}>
-                Replied in ≤{selectedCampaign.responseThresholdSeconds}s (Bot detected)
-              </div>
+              <div className="text-[10px] font-mono text-[#9E9B93] mt-0.5">Replied in ≤{selectedCampaign.responseThresholdSeconds}s</div>
             </div>
 
-            {/* Average Response Time */}
-            <div className="stat-card">
-              <div className="stat-value" style={{ color: 'hsl(38 92% 55%)' }}>
+            <div className="card p-3.5">
+              <div className="text-[10px] font-mono uppercase text-[#9E9B93]">Avg Latency</div>
+              <div className="font-mono text-2xl font-bold text-[#E87A38] mt-1">
                 {selectedCampaign.stats.avgResponseTimeSeconds != null
                   ? `${selectedCampaign.stats.avgResponseTimeSeconds}s`
                   : '—'}
               </div>
-              <div className="stat-label">Avg Response Latency</div>
-              <div style={{ fontSize: '0.72rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.35rem' }}>
-                Across all clinic replies
-              </div>
+              <div className="text-[10px] font-mono text-[#9E9B93] mt-0.5">Across all replies</div>
             </div>
           </div>
 
           {/* Qualification Logic Explainer Banner */}
-          <div
-            style={{
-              padding: '0.85rem 1.25rem',
-              borderRadius: 'var(--radius-md)',
-              background: 'hsl(var(--color-surface-2))',
-              border: '1px solid hsl(var(--color-border))',
-              marginBottom: '1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              flexWrap: 'wrap',
-              fontSize: '0.82rem',
-            }}
-          >
-            <span style={{ fontSize: '1.25rem' }}>💡</span>
-            <div style={{ flex: 1 }}>
-              <strong style={{ color: 'hsl(var(--color-text-primary))' }}>How Lead Qualification Works:</strong>{' '}
-              <span style={{ color: 'hsl(var(--color-text-secondary))' }}>
-                When a clinic replies, we compute elapsed seconds between dispatch and incoming reply.
-                If <strong>≤ {selectedCampaign.responseThresholdSeconds} seconds</strong>, they are flagged as{' '}
-                <span className="badge badge-secondary" style={{ fontSize: '0.65rem' }}>🤖 HAS AI AUTOMATION</span>{' '}
-                (automated WhatsApp bot). If <strong>&gt; {selectedCampaign.responseThresholdSeconds} seconds</strong>, they are flagged as{' '}
-                <span className="badge badge-success" style={{ fontSize: '0.65rem' }}>🎯 NO AI (MANUAL FRONT DESK)</span>{' '}
-                — these are your <strong>hottest sales prospects</strong> to pitch AI Front Desk!
-              </span>
+          <div className="p-4 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 flex items-start gap-3 text-xs leading-relaxed">
+            <span className="text-base text-[#E87A38]">💡</span>
+            <div className="text-[#9E9B93]">
+              <strong className="text-[#F3F0E8]">Lead Qualification Logic:</strong>{' '}
+              When a clinic replies, we measure the elapsed seconds from dispatch.
+              Replies within <strong className="text-[#D4AF37]">≤ {selectedCampaign.responseThresholdSeconds}s</strong> are classified as <span className="text-[#D4AF37] font-mono text-[11px]">🤖 HAS AI BOT</span>.
+              Replies taking <strong className="text-[#63C7A2]">&gt; {selectedCampaign.responseThresholdSeconds}s</strong> are qualified as <span className="text-[#63C7A2] font-mono text-[11px]">🎯 NO AI (MANUAL FRONT DESK)</span> — these clinics are your <strong>highest-value sales opportunities</strong>.
             </div>
           </div>
 
           {/* Leads Table Card */}
-          <div className="card" style={{ padding: '1.25rem' }}>
+          <div className="card p-0 overflow-hidden">
             {/* Table Filters & Search */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '1rem',
-                marginBottom: '1.25rem',
-                paddingBottom: '1rem',
-                borderBottom: '1px solid hsl(var(--color-border))',
-              }}
-            >
-              {/* Tabs */}
-              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            <div className="p-4 border-b border-[#F3F0E8]/08 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+              <div className="flex gap-1.5 flex-wrap">
                 {[
-                  { id: 'all', label: `All Leads (${leads.length})` },
-                  { id: 'no_ai_manual', label: `🎯 Hot Prospects (${selectedCampaign.stats.noAiManualCount})`, color: 'hsl(142 71% 45%)' },
-                  { id: 'has_ai', label: `🤖 Has AI (${selectedCampaign.stats.hasAiCount})`, color: 'hsl(265 83% 65%)' },
+                  { id: 'all', label: `All (${leads.length})` },
+                  { id: 'no_ai_manual', label: `🎯 Hot (${selectedCampaign.stats.noAiManualCount})`, color: '#63C7A2' },
+                  { id: 'has_ai', label: `🤖 Has AI (${selectedCampaign.stats.hasAiCount})`, color: '#D4AF37' },
                   { id: 'sent', label: `⏳ Sent (${selectedCampaign.stats.sentCount - selectedCampaign.stats.repliedCount})` },
                   { id: 'pending', label: `Pending (${selectedCampaign.stats.pendingCount})` },
                 ].map(tab => {
@@ -966,17 +791,11 @@ export default function AdminCampaignsPage() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id as any)}
-                      style={{
-                        padding: '0.4rem 0.85rem',
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        background: isActive ? (tab.color ? `${tab.color}33` : 'hsl(221 83% 58% / 0.2)') : 'transparent',
-                        color: isActive ? (tab.color || 'hsl(var(--color-primary-glow))') : 'hsl(var(--color-text-secondary))',
-                        border: `1px solid ${isActive ? (tab.color || 'hsl(var(--color-primary))') : 'transparent'}`,
-                        transition: 'all 0.15s ease',
-                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-mono transition-all ${
+                        isActive
+                          ? 'bg-[#E84B2C] text-[#F3F0E8] shadow-[0_0_8px_rgba(232,75,44,0.3)]'
+                          : 'bg-[#111110] text-[#9E9B93] border border-[#F3F0E8]/08 hover:border-[#F3F0E8]/16'
+                      }`}
                     >
                       {tab.label}
                     </button>
@@ -984,34 +803,18 @@ export default function AdminCampaignsPage() {
                 })}
               </div>
 
-              {/* Search Bar */}
-              <div style={{ position: 'relative', minWidth: '240px' }}>
+              <div className="relative min-w-[240px]">
                 <input
                   type="text"
                   placeholder="Search phone, doctor, clinic..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="input"
-                  style={{
-                    fontSize: '0.8rem',
-                    padding: '0.45rem 0.85rem',
-                    width: '100%',
-                    background: 'hsl(var(--color-surface-2))',
-                  }}
+                  className="input text-xs w-full pl-3 pr-8"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    style={{
-                      position: 'absolute',
-                      right: 8,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      color: 'hsl(var(--color-text-muted))',
-                      cursor: 'pointer',
-                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#9E9B93] hover:text-[#F3F0E8]"
                   >
                     ✕
                   </button>
@@ -1021,200 +824,134 @@ export default function AdminCampaignsPage() {
 
             {/* Table */}
             {leadsLoading ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: 'hsl(var(--color-text-muted))' }}>
-                Loading leads...
+              <div className="text-center py-12 text-xs text-[#9E9B93]">
+                Querying campaign leads...
               </div>
             ) : filteredLeads.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'hsl(var(--color-text-muted))' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📭</div>
-                <div style={{ fontWeight: 600 }}>No leads match the selected filter.</div>
+              <div className="text-center py-12 text-[#9E9B93]">
+                <div className="text-2xl mb-1">📭</div>
+                <div className="text-xs font-medium text-[#F3F0E8]">No leads match current filter</div>
                 {leads.length === 0 && (
                   <button
                     onClick={() => setShowAddLeadsModal(true)}
-                    className="btn btn-secondary"
-                    style={{ marginTop: '1rem', fontSize: '0.85rem' }}
+                    className="btn btn-secondary text-xs mt-3"
                   >
-                    ➕ Import Leads Now
+                    + Import Leads Now
                   </button>
                 )}
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+              <div className="overflow-x-auto">
+                <table className="data-table">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid hsl(var(--color-border))', color: 'hsl(var(--color-text-muted))' }}>
-                      <th style={{ padding: '0.75rem 0.5rem' }}>LEAD & CLINIC</th>
-                      <th style={{ padding: '0.75rem 0.5rem' }}>WHATSAPP NUMBER</th>
-                      <th style={{ padding: '0.75rem 0.5rem' }}>DISPATCH STATUS</th>
-                      <th style={{ padding: '0.75rem 0.5rem' }}>AI QUALIFICATION</th>
-                      <th style={{ padding: '0.75rem 0.5rem' }}>RESPONSE TIME</th>
-                      <th style={{ padding: '0.75rem 0.5rem' }}>INCOMING REPLY</th>
-                      <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>ACTIONS</th>
+                    <tr>
+                      <th>Lead &amp; Clinic</th>
+                      <th>WhatsApp Line</th>
+                      <th>Dispatch State</th>
+                      <th>AI Qualification</th>
+                      <th>Response Latency</th>
+                      <th>Incoming Reply</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredLeads.map(lead => {
                       const isNoAi = lead.qualificationStatus === 'no_ai_manual';
                       const isHasAi = lead.qualificationStatus === 'has_ai';
-                      const isReplied = lead.status === 'replied';
 
                       return (
                         <tr
                           key={lead.id}
-                          style={{
-                            borderBottom: '1px solid hsl(var(--color-border-subtle))',
-                            background: isNoAi
-                              ? 'hsl(142 71% 45% / 0.04)'
-                              : isHasAi
-                              ? 'hsl(265 83% 65% / 0.03)'
-                              : 'transparent',
-                          }}
+                          className={`hover:bg-[#F3F0E8]/03 transition-colors ${
+                            isNoAi ? 'bg-[#63C7A2]/03' : isHasAi ? 'bg-[#D4AF37]/03' : ''
+                          }`}
                         >
-                          {/* Lead & Clinic */}
-                          <td style={{ padding: '0.75rem 0.5rem' }}>
-                            <div style={{ fontWeight: 700, color: 'hsl(var(--color-text-primary))' }}>
-                              {lead.name}
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                              {lead.clinicName}
-                            </div>
+                          <td>
+                            <div className="font-medium text-xs text-[#F3F0E8]">{lead.name}</div>
+                            <div className="text-[11px] font-mono text-[#9E9B93]">{lead.clinicName}</div>
                           </td>
 
-                          {/* WhatsApp Phone */}
-                          <td style={{ padding: '0.75rem 0.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                              <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>+{lead.phone}</span>
+                          <td>
+                            <div className="flex items-center gap-1.5 font-mono text-xs">
+                              <span>+{lead.phone}</span>
                               <a
                                 href={`https://wa.me/${lead.phone}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 title="Open WhatsApp Chat"
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: 20,
-                                  height: 20,
-                                  borderRadius: 4,
-                                  background: 'hsl(142 71% 45% / 0.2)',
-                                  color: 'hsl(142 71% 55%)',
-                                  textDecoration: 'none',
-                                  fontSize: '0.7rem',
-                                }}
+                                className="text-[#63C7A2] hover:underline text-[10px]"
                               >
                                 ↗
                               </a>
                             </div>
                           </td>
 
-                          {/* Dispatch Status */}
-                          <td style={{ padding: '0.75rem 0.5rem' }}>
-                            {lead.status === 'pending' && <span className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>Pending</span>}
-                            {lead.status === 'sending' && <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>Sending...</span>}
-                            {lead.status === 'sent' && <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>Sent 📤</span>}
-                            {lead.status === 'replied' && <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>Replied 💬</span>}
-                            {lead.status === 'failed' && <span className="badge badge-error" style={{ fontSize: '0.7rem' }}>Failed ❌</span>}
+                          <td>
+                            <span className={`badge ${
+                              lead.status === 'replied'
+                                ? 'badge-success'
+                                : lead.status === 'sent'
+                                ? 'badge-warning'
+                                : lead.status === 'sending'
+                                ? 'badge-neutral'
+                                : lead.status === 'failed'
+                                ? 'badge-danger'
+                                : 'badge-neutral'
+                            }`}>
+                              {lead.status}
+                            </span>
                           </td>
 
-                          {/* Qualification Status */}
-                          <td style={{ padding: '0.75rem 0.5rem' }}>
+                          <td>
                             {isNoAi && (
-                              <span
-                                className="badge badge-success"
-                                title={lead.aiNotes || 'Manual human receptionist identified'}
-                                style={{
-                                  fontSize: '0.72rem',
-                                  fontWeight: 700,
-                                  background: 'hsl(142 71% 45% / 0.2)',
-                                  color: 'hsl(142 71% 60%)',
-                                  border: '1px solid hsl(142 71% 45% / 0.4)',
-                                  padding: '0.25rem 0.6rem',
-                                }}
-                              >
+                              <span className="badge bg-[#63C7A2]/15 border border-[#63C7A2]/30 text-[#63C7A2] font-mono text-[10px]">
                                 🎯 NO AI (MANUAL)
                               </span>
                             )}
                             {isHasAi && (
-                              <span
-                                className="badge badge-secondary"
-                                title={lead.aiNotes || 'AI Bot responded instantly'}
-                                style={{
-                                  fontSize: '0.72rem',
-                                  fontWeight: 700,
-                                  background: 'hsl(265 83% 65% / 0.2)',
-                                  color: 'hsl(265 83% 75%)',
-                                  border: '1px solid hsl(265 83% 65% / 0.4)',
-                                  padding: '0.25rem 0.6rem',
-                                }}
-                              >
-                                🤖 HAS AI AUTOMATION
+                              <span className="badge bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#D4AF37] font-mono text-[10px]">
+                                🤖 HAS AI BOT
                               </span>
                             )}
                             {!isNoAi && !isHasAi && (
-                              <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                                {lead.status === 'sent' ? '⏳ Awaiting reply' : '—'}
+                              <span className="text-[11px] font-mono text-[#9E9B93]">
+                                {lead.status === 'sent' ? '⏳ Awaiting' : '—'}
                               </span>
                             )}
                           </td>
 
-                          {/* Response Time */}
-                          <td style={{ padding: '0.75rem 0.5rem' }}>
+                          <td>
                             {lead.responseTimeSeconds != null ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                <span
-                                  style={{
-                                    fontWeight: 700,
-                                    fontFamily: 'monospace',
-                                    color: isNoAi ? 'hsl(142 71% 55%)' : 'hsl(265 83% 75%)',
-                                  }}
-                                >
-                                  {lead.responseTimeSeconds < 60
-                                    ? `⚡ ${lead.responseTimeSeconds}s`
-                                    : `⏱️ ${Math.floor(lead.responseTimeSeconds / 60)}m ${lead.responseTimeSeconds % 60}s`}
-                                </span>
-                              </div>
+                              <span className={`font-mono text-xs font-semibold ${
+                                isNoAi ? 'text-[#63C7A2]' : 'text-[#D4AF37]'
+                              }`}>
+                                {lead.responseTimeSeconds < 60
+                                  ? `${lead.responseTimeSeconds}s`
+                                  : `${Math.floor(lead.responseTimeSeconds / 60)}m ${lead.responseTimeSeconds % 60}s`}
+                              </span>
                             ) : (
-                              <span style={{ color: 'hsl(var(--color-text-muted))' }}>—</span>
+                              <span className="text-xs font-mono text-[#9E9B93]">—</span>
                             )}
                           </td>
 
-                          {/* Incoming Reply */}
-                          <td style={{ padding: '0.75rem 0.5rem', maxWidth: '280px' }}>
+                          <td className="max-w-xs">
                             {lead.replyText ? (
                               <div
-                                style={{
-                                  background: 'hsl(var(--color-surface-2))',
-                                  padding: '0.35rem 0.6rem',
-                                  borderRadius: '6px',
-                                  fontSize: '0.75rem',
-                                  color: 'hsl(var(--color-text-primary))',
-                                  border: '1px solid hsl(var(--color-border))',
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                }}
+                                className="p-1.5 rounded-lg bg-[#111110] border border-[#F3F0E8]/08 text-xs text-[#D0CBC1] truncate font-mono"
                                 title={lead.replyText}
                               >
                                 &ldquo;{lead.replyText}&rdquo;
                               </div>
                             ) : (
-                              <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.75rem' }}>No reply yet</span>
+                              <span className="text-xs text-[#9E9B93] italic">No reply yet</span>
                             )}
                           </td>
 
-                          {/* Actions */}
-                          <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>
+                          <td>
                             <button
                               onClick={() => handleDeleteLead(lead.id)}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'hsl(var(--color-text-muted))',
-                                cursor: 'pointer',
-                                fontSize: '0.9rem',
-                                padding: '0.2rem 0.4rem',
-                              }}
-                              title="Delete lead"
+                              className="text-[#E84B2C] hover:text-[#E87A38] text-xs p-1"
+                              title="Delete Lead"
                             >
                               🗑️
                             </button>
@@ -1232,93 +969,62 @@ export default function AdminCampaignsPage() {
 
       {/* MODAL 1: Create Campaign */}
       {showCreateModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.7)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '1rem',
-          }}
-        >
-          <div className="card" style={{ maxWidth: 580, width: '100%', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>➕ Create Outreach Campaign</h3>
+        <div className="fixed inset-0 bg-[#080505]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 bg-[#171614] border border-[#F3F0E8]/12 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scale-in">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-[#F3F0E8]/08">
+              <h3 className="font-heading text-lg font-semibold text-[#F3F0E8]">Create Outreach Campaign</h3>
               <button
                 onClick={() => setShowCreateModal(false)}
-                style={{ background: 'none', border: 'none', color: 'hsl(var(--color-text-muted))', cursor: 'pointer', fontSize: '1.2rem' }}
+                className="text-[#9E9B93] hover:text-[#F3F0E8] text-lg p-1"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateCampaign} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleCreateCampaign} className="space-y-4">
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  Campaign Name *
-                </label>
+                <label className="label text-xs">Campaign Name *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Mumbai Dental Clinics — Batch 1"
+                  placeholder="e.g. Mumbai Dental Practices — Cohort A"
                   value={newCampaignName}
                   onChange={e => setNewCampaignName(e.target.value)}
-                  className="input"
-                  style={{ width: '100%' }}
+                  className="input text-xs"
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  WhatsApp Sender Connection
-                </label>
+                <label className="label text-xs">WhatsApp Dispatch Line</label>
                 <select
                   value={newCampaignOrgId}
                   onChange={e => setNewCampaignOrgId(e.target.value)}
-                  className="input"
-                  style={{ width: '100%' }}
+                  className="input text-xs"
                 >
                   {senders.length > 0 ? (
                     senders.map(s => (
                       <option key={s.organizationId} value={s.organizationId}>
-                        {s.clinicName} ({s.phoneNumber || 'Connected Account'}) [{s.status}]
+                        {s.clinicName} ({s.phoneNumber || 'Connected'}) [{s.status}]
                       </option>
                     ))
                   ) : (
-                    <option value="default">Default WhatsApp Connection</option>
+                    <option value="default">Default WhatsApp Node</option>
                   )}
                 </select>
-                <span style={{ fontSize: '0.72rem', color: 'hsl(var(--color-text-muted))' }}>
-                  The WhatsApp account used to fire outreach texts.
-                </span>
               </div>
 
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Message Template *</label>
-                  <span style={{ fontSize: '0.72rem', color: 'hsl(var(--color-text-muted))' }}>
-                    Click variables to insert:
-                  </span>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="label text-xs">Message Template *</label>
+                  <span className="text-[10px] text-[#9E9B93] font-mono">Insert variables:</span>
                 </div>
-                <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                <div className="flex gap-1.5 mb-2 flex-wrap">
                   {['{{name}}', '{{clinic_name}}', '{{phone}}'].map(v => (
                     <button
                       key={v}
                       type="button"
                       onClick={() => setNewCampaignTemplate(prev => `${prev} ${v}`)}
-                      style={{
-                        padding: '0.2rem 0.5rem',
-                        borderRadius: 4,
-                        fontSize: '0.72rem',
-                        background: 'hsl(var(--color-surface-2))',
-                        border: '1px solid hsl(var(--color-border))',
-                        color: 'hsl(var(--color-primary-glow))',
-                        cursor: 'pointer',
-                      }}
+                      className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#111110] border border-[#F3F0E8]/10 text-[#E87A38] hover:border-[#E87A38]"
                     >
                       + {v}
                     </button>
@@ -1329,54 +1035,43 @@ export default function AdminCampaignsPage() {
                   rows={4}
                   value={newCampaignTemplate}
                   onChange={e => setNewCampaignTemplate(e.target.value)}
-                  className="input"
-                  style={{ width: '100%', fontFamily: 'inherit', resize: 'vertical' }}
+                  className="input text-xs font-body resize-y"
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    AI Qualification Threshold (Seconds)
-                  </label>
+                  <label className="label text-[11px]">AI Qualification Threshold (s)</label>
                   <input
                     type="number"
                     min={5}
                     max={600}
                     value={newCampaignThreshold}
                     onChange={e => setNewCampaignThreshold(Number(e.target.value))}
-                    className="input"
-                    style={{ width: '100%' }}
+                    className="input text-xs font-mono"
                   />
-                  <span style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))' }}>
-                    ≤ {newCampaignThreshold}s = Bot. &gt; {newCampaignThreshold}s = Manual front desk.
-                  </span>
+                  <span className="text-[10px] text-[#9E9B93]">≤ {newCampaignThreshold}s = Bot</span>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Safe Throttle Delay (Seconds)
-                  </label>
+                  <label className="label text-[11px]">Safe Dispatch Delay (s)</label>
                   <input
                     type="number"
                     min={2}
                     max={60}
                     value={newCampaignDelay}
                     onChange={e => setNewCampaignDelay(Number(e.target.value))}
-                    className="input"
-                    style={{ width: '100%' }}
+                    className="input text-xs font-mono"
                   />
-                  <span style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))' }}>
-                    Pause between sending each lead to avoid spam flags.
-                  </span>
+                  <span className="text-[10px] text-[#9E9B93]">Pause between texts</span>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setShowCreateModal(false)} className="btn btn-outline">
+              <div className="flex justify-end gap-2.5 pt-2">
+                <button type="button" onClick={() => setShowCreateModal(false)} className="btn btn-secondary text-xs">
                   Cancel
                 </button>
-                <button type="submit" disabled={submittingCreate} className="btn btn-primary">
+                <button type="submit" disabled={submittingCreate} className="btn btn-primary text-xs">
                   {submittingCreate ? 'Creating...' : 'Create Campaign'}
                 </button>
               </div>
@@ -1387,71 +1082,51 @@ export default function AdminCampaignsPage() {
 
       {/* MODAL 2: Add Leads */}
       {showAddLeadsModal && selectedCampaign && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.7)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '1rem',
-          }}
-        >
-          <div className="card" style={{ maxWidth: 620, width: '100%', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <div className="fixed inset-0 bg-[#080505]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 bg-[#171614] border border-[#F3F0E8]/12 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scale-in">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#F3F0E8]/08">
               <div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>➕ Add Leads to &ldquo;{selectedCampaign.name}&rdquo;</h3>
-                <p style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                  Import WhatsApp numbers to be messaged and audited.
-                </p>
+                <h3 className="font-heading text-lg font-semibold text-[#F3F0E8]">
+                  Import Leads to &ldquo;{selectedCampaign.name}&rdquo;
+                </h3>
+                <p className="text-xs text-[#9E9B93]">Import WhatsApp phone numbers for automated auditing.</p>
               </div>
               <button
                 onClick={() => setShowAddLeadsModal(false)}
-                style={{ background: 'none', border: 'none', color: 'hsl(var(--color-text-muted))', cursor: 'pointer', fontSize: '1.2rem' }}
+                className="text-[#9E9B93] hover:text-[#F3F0E8] text-lg p-1"
               >
                 ✕
               </button>
             </div>
 
-            {/* Mode Switcher */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+            <div className="flex gap-2 mb-4">
               <button
                 type="button"
                 onClick={() => setAddMode('bulk')}
-                className={`btn ${addMode === 'bulk' ? 'btn-primary' : 'btn-outline'}`}
-                style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                className={`btn text-xs px-3 py-1.5 ${addMode === 'bulk' ? 'btn-primary' : 'btn-secondary'}`}
               >
                 📋 Bulk Paste / CSV
               </button>
               <button
                 type="button"
                 onClick={() => setAddMode('single')}
-                className={`btn ${addMode === 'single' ? 'btn-primary' : 'btn-outline'}`}
-                style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                className={`btn text-xs px-3 py-1.5 ${addMode === 'single' ? 'btn-primary' : 'btn-secondary'}`}
               >
-                👤 Single Lead
+                👤 Single Practice
               </button>
             </div>
 
-            <form onSubmit={handleAddLeads} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleAddLeads} className="space-y-4">
               {addMode === 'bulk' ? (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                      Paste Leads (One per line)
-                    </label>
-                    <span style={{ fontSize: '0.72rem', color: 'hsl(var(--color-primary-glow))' }}>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="label text-xs">Paste Leads (One per line)</label>
+                    <span className="text-[11px] font-mono text-[#E87A38]">
                       {bulkLeadCount} lead(s) detected
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: 'hsl(var(--color-text-muted))', marginBottom: '0.5rem' }}>
-                    Accepted formats:
-                    <br />• <code>919876543210, Dr. Rajesh Sharma, Apex Dental Care</code>
-                    <br />• <code>9876543210, Dr. Rajesh</code>
-                    <br />• <code>9876543210</code> (Just phone number)
+                  <div className="text-[11px] text-[#9E9B93] mb-2 font-mono">
+                    Format: 919876543210, Dr. Rajesh, Apex Clinic
                   </div>
                   <textarea
                     required
@@ -1459,60 +1134,50 @@ export default function AdminCampaignsPage() {
                     placeholder={`919876543210, Dr. Rajesh, Apex Dental Clinic\n919812345678, Dr. Priya, Smile Care\n919899887766`}
                     value={rawLeadsText}
                     onChange={e => setRawLeadsText(e.target.value)}
-                    className="input"
-                    style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.8rem', resize: 'vertical' }}
+                    className="input text-xs font-mono resize-y"
                   />
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div className="space-y-3">
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                      WhatsApp Phone Number *
-                    </label>
+                    <label className="label text-xs">WhatsApp Phone Number *</label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. 919876543210 or 9876543210"
+                      placeholder="e.g. 919876543210"
                       value={singleLeadPhone}
                       onChange={e => setSingleLeadPhone(e.target.value)}
-                      className="input"
-                      style={{ width: '100%' }}
+                      className="input text-xs font-mono"
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                      Lead / Doctor Name
-                    </label>
+                    <label className="label text-xs">Lead / Doctor Name</label>
                     <input
                       type="text"
                       placeholder="e.g. Dr. Rajesh Sharma"
                       value={singleLeadName}
                       onChange={e => setSingleLeadName(e.target.value)}
-                      className="input"
-                      style={{ width: '100%' }}
+                      className="input text-xs"
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                      Clinic / Business Name
-                    </label>
+                    <label className="label text-xs">Clinic / Business Name</label>
                     <input
                       type="text"
                       placeholder="e.g. Apex Multispeciality Dental"
                       value={singleClinicName}
                       onChange={e => setSingleClinicName(e.target.value)}
-                      className="input"
-                      style={{ width: '100%' }}
+                      className="input text-xs"
                     />
                   </div>
                 </div>
               )}
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setShowAddLeadsModal(false)} className="btn btn-outline">
+              <div className="flex justify-end gap-2.5 pt-2">
+                <button type="button" onClick={() => setShowAddLeadsModal(false)} className="btn btn-secondary text-xs">
                   Cancel
                 </button>
-                <button type="submit" disabled={submittingLeads} className="btn btn-primary">
+                <button type="submit" disabled={submittingLeads} className="btn btn-primary text-xs">
                   {submittingLeads ? 'Importing...' : 'Import Leads'}
                 </button>
               </div>
@@ -1523,110 +1188,62 @@ export default function AdminCampaignsPage() {
 
       {/* MODAL 3: Edit Template & Settings */}
       {showSettingsModal && selectedCampaign && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.7)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '1rem',
-          }}
-        >
-          <div className="card" style={{ maxWidth: 580, width: '100%', padding: '1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>⚙️ Campaign Settings & Template</h3>
+        <div className="fixed inset-0 bg-[#080505]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 bg-[#171614] border border-[#F3F0E8]/12 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scale-in">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-[#F3F0E8]/08">
+              <h3 className="font-heading text-lg font-semibold text-[#F3F0E8]">⚙️ Campaign Configuration</h3>
               <button
                 onClick={() => setShowSettingsModal(false)}
-                style={{ background: 'none', border: 'none', color: 'hsl(var(--color-text-muted))', cursor: 'pointer', fontSize: '1.2rem' }}
+                className="text-[#9E9B93] hover:text-[#F3F0E8] text-lg p-1"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <form onSubmit={handleSaveSettings} className="space-y-4">
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Message Template</label>
-                  <span style={{ fontSize: '0.72rem', color: 'hsl(var(--color-text-muted))' }}>Insert tags:</span>
-                </div>
-                <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                  {['{{name}}', '{{clinic_name}}', '{{phone}}'].map(v => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setEditTemplate(prev => `${prev} ${v}`)}
-                      style={{
-                        padding: '0.2rem 0.5rem',
-                        borderRadius: 4,
-                        fontSize: '0.72rem',
-                        background: 'hsl(var(--color-surface-2))',
-                        border: '1px solid hsl(var(--color-border))',
-                        color: 'hsl(var(--color-primary-glow))',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      + {v}
-                    </button>
-                  ))}
-                </div>
+                <label className="label text-xs">Message Template</label>
                 <textarea
                   required
                   rows={4}
                   value={editTemplate}
                   onChange={e => setEditTemplate(e.target.value)}
-                  className="input"
-                  style={{ width: '100%', fontFamily: 'inherit', resize: 'vertical' }}
+                  className="input text-xs resize-y"
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    AI Qualification Threshold (Seconds)
-                  </label>
+                  <label className="label text-[11px]">AI Qualification Threshold (s)</label>
                   <input
                     type="number"
                     min={5}
                     max={600}
                     value={editThreshold}
                     onChange={e => setEditThreshold(Number(e.target.value))}
-                    className="input"
-                    style={{ width: '100%' }}
+                    className="input text-xs font-mono"
                   />
-                  <span style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))' }}>
-                    ≤ {editThreshold}s = Bot. &gt; {editThreshold}s = Manual.
-                  </span>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Safe Delay Between Sends (Seconds)
-                  </label>
+                  <label className="label text-[11px]">Safe Throttle Delay (s)</label>
                   <input
                     type="number"
                     min={2}
                     max={60}
                     value={editDelay}
                     onChange={e => setEditDelay(Number(e.target.value))}
-                    className="input"
-                    style={{ width: '100%' }}
+                    className="input text-xs font-mono"
                   />
-                  <span style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))' }}>
-                    Recommended: 5 to 10 seconds.
-                  </span>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setShowSettingsModal(false)} className="btn btn-outline">
+              <div className="flex justify-end gap-2.5 pt-2">
+                <button type="button" onClick={() => setShowSettingsModal(false)} className="btn btn-secondary text-xs">
                   Cancel
                 </button>
-                <button type="submit" disabled={submittingSettings} className="btn btn-primary">
-                  {submittingSettings ? 'Saving...' : 'Save Settings'}
+                <button type="submit" disabled={submittingSettings} className="btn btn-primary text-xs">
+                  {submittingSettings ? 'Saving...' : 'Save Configuration'}
                 </button>
               </div>
             </form>
@@ -1636,108 +1253,73 @@ export default function AdminCampaignsPage() {
 
       {/* MODAL 4: Test Send */}
       {showTestModal && selectedCampaign && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.7)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '1rem',
-          }}
-        >
-          <div className="card" style={{ maxWidth: 500, width: '100%', padding: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>🧪 Send Test WhatsApp Message</h3>
+        <div className="fixed inset-0 bg-[#080505]/85 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="card max-w-md w-full p-6 bg-[#171614] border border-[#F3F0E8]/12 shadow-[0_20px_50px_rgba(0,0,0,0.8)] animate-scale-in">
+            <div className="flex justify-between items-center mb-3 pb-3 border-b border-[#F3F0E8]/08">
+              <h3 className="font-heading text-lg font-semibold text-[#F3F0E8]">🧪 Test WhatsApp Dispatch</h3>
               <button
                 onClick={() => setShowTestModal(false)}
-                style={{ background: 'none', border: 'none', color: 'hsl(var(--color-text-muted))', cursor: 'pointer', fontSize: '1.2rem' }}
+                className="text-[#9E9B93] hover:text-[#F3F0E8] text-lg p-1"
               >
                 ✕
               </button>
             </div>
 
-            <p style={{ fontSize: '0.78rem', color: 'hsl(var(--color-text-muted))', marginBottom: '1rem' }}>
-              Verify how the outreach message looks and test delivery to your personal phone before running the campaign.
+            <p className="text-xs text-[#9E9B93] mb-4">
+              Send a test outreach message to your personal WhatsApp to verify rendering and variables.
             </p>
 
-            <form onSubmit={handleTestSend} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <form onSubmit={handleTestSend} className="space-y-3">
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                  Your WhatsApp Number *
-                </label>
+                <label className="label text-xs">WhatsApp Number *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. 919876543210"
                   value={testPhone}
                   onChange={e => setTestPhone(e.target.value)}
-                  className="input"
-                  style={{ width: '100%' }}
+                  className="input text-xs font-mono"
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Sample Name
-                  </label>
+                  <label className="label text-[11px]">Doctor Name</label>
                   <input
                     type="text"
                     value={testName}
                     onChange={e => setTestName(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
+                    className="input text-xs"
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-                    Sample Clinic Name
-                  </label>
+                  <label className="label text-[11px]">Clinic Name</label>
                   <input
                     type="text"
                     value={testClinic}
                     onChange={e => setTestClinic(e.target.value)}
-                    className="input"
-                    style={{ width: '100%' }}
+                    className="input text-xs"
                   />
                 </div>
               </div>
 
-              {/* Preview Box */}
-              <div
-                style={{
-                  padding: '0.75rem',
-                  borderRadius: 6,
-                  background: 'hsl(var(--color-surface-2))',
-                  border: '1px solid hsl(var(--color-border))',
-                  fontSize: '0.75rem',
-                  marginTop: '0.25rem',
-                }}
-              >
-                <strong style={{ display: 'block', marginBottom: '0.25rem', color: 'hsl(var(--color-primary-glow))' }}>
-                  Preview:
-                </strong>
-                <p style={{ margin: 0, color: 'hsl(var(--color-text-secondary))', fontStyle: 'italic' }}>
-                  &ldquo;
-                  {selectedCampaign.messageTemplate
-                    .replace(/\{\{\s*name\s*\}\}/gi, testName || 'Doctor')
-                    .replace(/\{\{\s*clinic_name\s*\}\}/gi, testClinic || 'Dental Clinic')
-                    .replace(/\{\{\s*clinic\s*\}\}/gi, testClinic || 'Dental Clinic')
-                    .replace(/\{\{\s*phone\s*\}\}/gi, testPhone || '919876543210')}
-                  &rdquo;
-                </p>
+              <div className="p-3 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 text-xs font-mono text-[#D0CBC1]">
+                <span className="text-[#E87A38] block mb-1 font-sans font-semibold">Preview:</span>
+                &ldquo;
+                {selectedCampaign.messageTemplate
+                  .replace(/\{\{\s*name\s*\}\}/gi, testName || 'Doctor')
+                  .replace(/\{\{\s*clinic_name\s*\}\}/gi, testClinic || 'Dental Clinic')
+                  .replace(/\{\{\s*clinic\s*\}\}/gi, testClinic || 'Dental Clinic')
+                  .replace(/\{\{\s*phone\s*\}\}/gi, testPhone || '919876543210')}
+                &rdquo;
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setShowTestModal(false)} className="btn btn-outline">
+              <div className="flex justify-end gap-2.5 pt-2">
+                <button type="button" onClick={() => setShowTestModal(false)} className="btn btn-secondary text-xs">
                   Cancel
                 </button>
-                <button type="submit" disabled={submittingTest} className="btn btn-secondary">
-                  {submittingTest ? 'Sending...' : 'Dispatch Test Message 📤'}
+                <button type="submit" disabled={submittingTest} className="btn btn-primary text-xs">
+                  {submittingTest ? 'Sending...' : 'Dispatch Test 📤'}
                 </button>
               </div>
             </form>

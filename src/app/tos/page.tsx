@@ -9,69 +9,57 @@ export const metadata: Metadata = {
 
 export default function TermsOfServicePage() {
   return (
-    <div style={{ minHeight: '100vh', background: '#FAF5EE', color: '#201A17' }}>
+    <div className="min-h-screen bg-[#111110] text-[#F3F0E8] relative overflow-hidden">
       <LandingNavbar />
 
       {/* Main Container */}
-      <main style={{ maxWidth: 840, margin: '0 auto', padding: '6.5rem 1.5rem 5rem 1.5rem', lineHeight: 1.75 }}>
+      <main className="max-w-4xl mx-auto px-6 pt-32 pb-24 leading-relaxed relative z-10 animate-fade-in">
         {/* Header */}
-        <div style={{ marginBottom: '2.5rem', borderBottom: '1px solid #E9DED3', paddingBottom: '1.75rem' }}>
-          <div className="badge badge-info" style={{ marginBottom: '0.75rem' }}>
-            Legal Terms & Conditions
+        <div className="mb-10 pb-6 border-b border-[#F3F0E8]/08">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E84B2C]/10 border border-[#E84B2C]/30 text-[#E87A38] text-[10px] font-mono uppercase tracking-widest font-semibold mb-3">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E84B2C] shadow-[0_0_8px_#E84B2C]" />
+            Legal Terms &amp; Conditions
           </div>
-          <h1 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(2rem, 3.5vw, 2.75rem)',
-            fontWeight: 400,
-            letterSpacing: '-0.025em',
-            marginBottom: '0.5rem',
-            color: '#201A17',
-          }}>
+          <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight text-[#F3F0E8] mb-2">
             Terms of Service
           </h1>
-          <p style={{ color: '#756A62', fontSize: '0.9rem' }}>
+          <p className="text-xs font-mono text-[#9E9B93]">
             Effective Date: October 20, 2024 &bull; Last Updated: October 2026
           </p>
         </div>
 
         {/* Medical & Emergency Disclaimer Alert Box */}
-        <div style={{
-          background: '#FDF2F2',
-          border: '1px solid #F8D7D5',
-          borderRadius: '16px',
-          padding: '1.5rem',
-          marginBottom: '2.5rem',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '1.25rem' }}>⚠️</span>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#9E3D23', margin: 0 }}>
-              Medical & Emergency Disclaimer
+        <div className="p-6 rounded-2xl bg-[#171614] border border-[#E84B2C]/30 mb-10 shadow-[0_4px_24px_rgba(232,75,44,0.08)]">
+          <div className="flex items-center gap-2.5 mb-2">
+            <span className="text-lg">⚠️</span>
+            <h3 className="font-heading text-base font-semibold text-[#E84B2C] m-0">
+              Medical &amp; Emergency Disclaimer
             </h3>
           </div>
-          <p style={{ fontSize: '0.875rem', color: '#756A62', margin: 0, lineHeight: 1.6 }}>
-            AI Front Desk is an <strong style={{ color: '#201A17' }}>administrative and scheduling automation software</strong>. It is <strong style={{ color: '#201A17' }}>NOT</strong> a medical diagnostic device, emergency dispatch system, or licensed healthcare provider. The automated assistant does not provide medical diagnoses or prescribe medications. In any life-threatening emergency, patients must immediately contact emergency services (112 / 911) or proceed to the nearest emergency room.
+          <p className="text-xs text-[#D0CBC1] leading-relaxed m-0">
+            AI Front Desk is an <strong className="text-[#F3F0E8]">administrative and scheduling automation software</strong>. It is <strong className="text-[#F3F0E8]">NOT</strong> a medical diagnostic device, emergency dispatch system, or licensed healthcare provider. The automated assistant does not provide medical diagnoses or prescribe medications. In any life-threatening emergency, patients must immediately contact emergency services (112 / 911) or proceed to the nearest emergency room.
           </p>
         </div>
 
         {/* Section 1 */}
-        <section style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 600, marginBottom: '0.75rem', color: '#201A17' }}>
+        <section className="mb-10">
+          <h2 className="font-heading text-lg font-semibold text-[#F3F0E8] mb-3">
             1. Acceptance of Terms
           </h2>
-          <p style={{ color: '#756A62', marginBottom: '1rem' }}>
-            By creating an account, connecting your clinic communication channels, or using the <strong>AI Front Desk</strong> platform (&ldquo;Service&rdquo;), you (&ldquo;Customer&rdquo;, &ldquo;Clinic&rdquo;, or &ldquo;You&rdquo;) agree to be legally bound by these Terms of Service. If you represent a clinic or organization, you confirm that you have the authority to bind that entity to these terms.
+          <p className="text-xs text-[#D0CBC1] leading-relaxed mb-3">
+            By creating an account, connecting your clinic communication channels, or using the <strong className="text-[#F3F0E8]">AI Front Desk</strong> platform (&ldquo;Service&rdquo;), you (&ldquo;Customer&rdquo;, &ldquo;Clinic&rdquo;, or &ldquo;You&rdquo;) agree to be legally bound by these Terms of Service. If you represent a clinic or organization, you confirm that you have the authority to bind that entity to these terms.
           </p>
         </section>
 
         {/* Section 2 */}
-        <section style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 600, marginBottom: '0.75rem', color: '#201A17' }}>
+        <section className="mb-10">
+          <h2 className="font-heading text-lg font-semibold text-[#F3F0E8] mb-3">
             2. Description of Service
           </h2>
-          <p style={{ color: '#756A62', marginBottom: '0.75rem' }}>
+          <p className="text-xs text-[#D0CBC1] leading-relaxed mb-3">
             AI Front Desk provides a cloud-based multi-tenant software platform that enables healthcare clinics, dentists, therapists, and appointment-based practices to:
           </p>
-          <ul style={{ paddingLeft: '1.5rem', color: '#756A62', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <ul className="space-y-2 text-xs text-[#D0CBC1] pl-4 list-disc">
             <li>Deploy an automated AI assistant on WhatsApp to answer patient inquiries, quote catalog procedures, and confirm operating hours.</li>
             <li>Coordinate patient appointment bookings, reschedules, and cancellations in real time.</li>
             <li>Synchronize confirmed patient bookings with the clinic&rsquo;s calendar (including Google Calendar 2-way sync).</li>
@@ -80,14 +68,14 @@ export default function TermsOfServicePage() {
         </section>
 
         {/* Section 3 */}
-        <section style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 600, marginBottom: '0.75rem', color: '#201A17' }}>
-            3. Clinic Responsibilities & Acceptable Use
+        <section className="mb-10">
+          <h2 className="font-heading text-lg font-semibold text-[#F3F0E8] mb-3">
+            3. Clinic Responsibilities &amp; Acceptable Use
           </h2>
-          <p style={{ color: '#756A62', marginBottom: '0.75rem' }}>
+          <p className="text-xs text-[#D0CBC1] leading-relaxed mb-3">
             As a subscribing clinic, you agree to:
           </p>
-          <ul style={{ paddingLeft: '1.5rem', color: '#756A62', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <ul className="space-y-2 text-xs text-[#D0CBC1] pl-4 list-disc">
             <li>Maintain accurate and current pricing, clinician availability, operating hours, and emergency instructions in your dashboard.</li>
             <li>Comply with all applicable patient privacy laws, healthcare regulations, and electronic communication guidelines.</li>
             <li>Obtain appropriate consent from patients prior to sending business messages via WhatsApp or third-party messaging networks.</li>
@@ -96,48 +84,50 @@ export default function TermsOfServicePage() {
         </section>
 
         {/* Section 4 */}
-        <section style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 600, marginBottom: '0.75rem', color: '#201A17' }}>
-            4. Third-Party Services & Integrations
+        <section className="mb-10">
+          <h2 className="font-heading text-lg font-semibold text-[#F3F0E8] mb-3">
+            4. Third-Party Services &amp; Integrations
           </h2>
-          <p style={{ color: '#756A62', marginBottom: '1rem' }}>
+          <p className="text-xs text-[#D0CBC1] leading-relaxed mb-3">
             Our Service integrates with external platforms, including:
           </p>
-          <ul style={{ paddingLeft: '1.5rem', color: '#756A62', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+          <ul className="space-y-3 text-xs text-[#D0CBC1] pl-4 list-disc">
             <li>
-              <strong style={{ color: '#201A17' }}>Google Calendar:</strong> You authorize AI Front Desk to read busy/free slots and write confirmed events. Your use of Google integrations is governed by Google&rsquo;s Terms of Service and Privacy Policy. You can disconnect calendar access anytime.
+              <strong className="text-[#F3F0E8]">Google Calendar:</strong> You authorize AI Front Desk to read busy/free slots and write confirmed events. Your use of Google integrations is governed by Google&rsquo;s Terms of Service and Privacy Policy. You can disconnect calendar access anytime.
             </li>
             <li>
-              <strong style={{ color: '#201A17' }}>Meta / WhatsApp:</strong> Message transmission depends on Meta WhatsApp policies and network connectivity. We are not liable for outages or carrier delivery failures outside our control.
+              <strong className="text-[#F3F0E8]">Meta / WhatsApp:</strong> Message transmission depends on Meta WhatsApp policies and network connectivity. We are not liable for outages or carrier delivery failures outside our control.
             </li>
           </ul>
         </section>
 
         {/* Section 5 */}
-        <section style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 600, marginBottom: '0.75rem', color: '#201A17' }}>
-            5. Subscriptions, Fees & Payment
+        <section className="mb-10">
+          <h2 className="font-heading text-lg font-semibold text-[#F3F0E8] mb-3">
+            5. Subscriptions, Fees &amp; Payment
           </h2>
-          <p style={{ color: '#756A62', marginBottom: '0.75rem' }}>
-            <strong style={{ color: '#201A17' }}>Billing Cycles:</strong> Subscription tiers (Starter, Pro, Growth) are billed on a recurring monthly or annual basis. Fees are non-refundable once the billing period has commenced, except where mandated by local law.
-          </p>
-          <p style={{ color: '#756A62', marginBottom: '0.75rem' }}>
-            <strong style={{ color: '#201A17' }}>UPI & Direct Payments:</strong> For instant platform activation, payments processed via UPI or direct gateway must be accompanied by valid transaction reference records (UTR) for verification.
-          </p>
-          <p style={{ color: '#756A62' }}>
-            <strong style={{ color: '#201A17' }}>Plan Cancellation:</strong> You may cancel your subscription at any time via your dashboard. Access remains active through the end of the paid billing period.
-          </p>
+          <div className="space-y-3 text-xs text-[#D0CBC1] leading-relaxed">
+            <p>
+              <strong className="text-[#F3F0E8]">Billing Cycles:</strong> Subscription tiers (Starter, Pro, Growth) are billed on a recurring monthly or annual basis. Fees are non-refundable once the billing period has commenced, except where mandated by local law.
+            </p>
+            <p>
+              <strong className="text-[#F3F0E8]">UPI &amp; Crypto Payments:</strong> For instant platform activation, payments processed via UPI or direct Web3 cryptocurrency settlement must be accompanied by valid transaction reference records (UTR / txHash) for automated verification.
+            </p>
+            <p>
+              <strong className="text-[#F3F0E8]">Plan Cancellation:</strong> You may cancel your subscription at any time via your clinic billing dashboard. Access remains active through the end of the paid billing period.
+            </p>
+          </div>
         </section>
 
         {/* Section 6 */}
-        <section style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 600, marginBottom: '0.75rem', color: '#201A17' }}>
+        <section className="mb-10">
+          <h2 className="font-heading text-lg font-semibold text-[#F3F0E8] mb-3">
             6. Limitation of Liability
           </h2>
-          <p style={{ color: '#756A62', marginBottom: '1rem' }}>
+          <p className="text-xs text-[#D0CBC1] leading-relaxed mb-3">
             To the maximum extent permitted by applicable law:
           </p>
-          <ul style={{ paddingLeft: '1.5rem', color: '#756A62', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <ul className="space-y-2 text-xs text-[#D0CBC1] pl-4 list-disc">
             <li>AI Front Desk is provided on an &ldquo;AS IS&rdquo; and &ldquo;AS AVAILABLE&rdquo; basis without warranties of any kind, whether express or implied.</li>
             <li>In no event shall AI Front Desk, its directors, employees, or partners be liable for indirect, incidental, consequential, special, or punitive damages, including loss of profits, loss of data, or clinic downtime.</li>
             <li>Our total cumulative liability arising out of or related to these terms shall not exceed the total fees paid by you to AI Front Desk in the twelve (12) months preceding the incident.</li>
@@ -145,37 +135,32 @@ export default function TermsOfServicePage() {
         </section>
 
         {/* Section 7 */}
-        <section style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 600, marginBottom: '0.75rem', color: '#201A17' }}>
+        <section className="mb-10">
+          <h2 className="font-heading text-lg font-semibold text-[#F3F0E8] mb-3">
             7. Termination
           </h2>
-          <p style={{ color: '#756A62' }}>
+          <p className="text-xs text-[#D0CBC1] leading-relaxed">
             We reserve the right to suspend or terminate accounts that violate these Terms, breach security protocols, or engage in abusive messaging practices. Upon termination, your right to use the Service immediately ceases, and you may request an export of your appointment data within 30 days.
           </p>
         </section>
 
         {/* Section 8 */}
-        <section style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 600, marginBottom: '0.75rem', color: '#201A17' }}>
-            8. Governing Law & Contact
+        <section className="mb-10">
+          <h2 className="font-heading text-lg font-semibold text-[#F3F0E8] mb-3">
+            8. Governing Law &amp; Contact
           </h2>
-          <p style={{ color: '#756A62', marginBottom: '1rem' }}>
+          <p className="text-xs text-[#D0CBC1] leading-relaxed mb-4">
             These Terms shall be governed by and construed in accordance with the laws of India, without regard to its conflict of law provisions.
           </p>
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: '14px',
-            padding: '1.5rem',
-            border: '1px solid #E9DED3',
-          }}>
-            <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600, color: '#201A17' }}>Questions regarding these Terms of Service?</p>
-            <p style={{ margin: 0, color: '#756A62' }}>
+          <div className="p-5 rounded-2xl bg-[#171614] border border-[#F3F0E8]/08 text-xs space-y-1.5">
+            <p className="font-semibold text-sm text-[#F3F0E8]">Questions regarding these Terms of Service?</p>
+            <p className="text-[#9E9B93]">
               Contact legal:{' '}
-              <a href="mailto:legal@aifrontdesk.com" style={{ color: '#C4512A', textDecoration: 'none', fontWeight: 500 }}>
+              <a href="mailto:legal@aifrontdesk.com" className="text-[#E87A38] hover:underline font-mono">
                 legal@aifrontdesk.com
               </a>
               {' '}&bull;{' '}
-              <a href="mailto:support@aifrontdesk.com" style={{ color: '#C4512A', textDecoration: 'none', fontWeight: 500 }}>
+              <a href="mailto:support@aifrontdesk.com" className="text-[#E87A38] hover:underline font-mono">
                 support@aifrontdesk.com
               </a>
             </p>
@@ -184,21 +169,14 @@ export default function TermsOfServicePage() {
       </main>
 
       {/* Footer */}
-      <footer style={{
-        padding: '2.5rem 2rem',
-        borderTop: '1px solid #E9DED3',
-        background: '#201A17',
-        textAlign: 'center',
-        color: 'rgba(255, 252, 247, 0.5)',
-        fontSize: '0.85rem',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-          <Link href="/privacy" style={{ color: 'rgba(255, 252, 247, 0.7)', textDecoration: 'none' }}>Privacy Policy</Link>
-          <Link href="/tos" style={{ color: '#F07843', textDecoration: 'none' }}>Terms of Service</Link>
-          <Link href="/" style={{ color: 'rgba(255, 252, 247, 0.7)', textDecoration: 'none' }}>Home</Link>
-          <Link href="/dashboard" style={{ color: 'rgba(255, 252, 247, 0.7)', textDecoration: 'none' }}>Dashboard</Link>
+      <footer className="border-t border-[#F3F0E8]/08 py-10 bg-[#0D0D0C] text-center text-xs text-[#9E9B93]">
+        <div className="flex justify-center gap-6 mb-4 flex-wrap">
+          <Link href="/privacy" className="text-[#9E9B93] hover:text-[#F3F0E8]">Privacy Policy</Link>
+          <Link href="/tos" className="text-[#E87A38]">Terms of Service</Link>
+          <Link href="/" className="text-[#9E9B93] hover:text-[#F3F0E8]">Home</Link>
+          <Link href="/dashboard" className="text-[#9E9B93] hover:text-[#F3F0E8]">Dashboard</Link>
         </div>
-        <p style={{ margin: 0 }}>&copy; {new Date().getFullYear()} AI Front Desk. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Arenova AI Front Desk. All rights reserved.</p>
       </footer>
     </div>
   );

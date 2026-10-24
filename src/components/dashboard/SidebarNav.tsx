@@ -1,7 +1,7 @@
 'use client';
 
 // src/components/dashboard/SidebarNav.tsx
-// Minimal editorial sidebar navigation with burnt orange active states
+// Cinematic Obsidian × Phoenix Ember sidebar navigation
 
 import React from 'react';
 import Link from 'next/link';
@@ -43,11 +43,12 @@ export function SidebarNav({ navItems, isSuperAdmin, onNavigate }: SidebarNavPro
               alignItems: 'center',
               gap: '0.65rem',
               textDecoration: 'none',
-              transition: 'background 0.15s ease, color 0.15s ease',
-              color: isActive ? '#C4512A' : '#756A62',
-              background: isActive ? 'rgba(196, 81, 42, 0.08)' : 'transparent',
-              border: isActive ? '1px solid rgba(196, 81, 42, 0.18)' : '1px solid transparent',
+              transition: 'all 0.15s ease',
+              color: isActive ? '#E87A38' : '#9E9B93',
+              background: isActive ? 'rgba(232, 75, 44, 0.12)' : 'transparent',
+              border: isActive ? '1px solid rgba(232, 75, 44, 0.28)' : '1px solid transparent',
               fontWeight: isActive ? 600 : 500,
+              boxShadow: isActive ? '0 0 16px rgba(232, 75, 44, 0.1)' : 'none',
             }}
           >
             <span style={{ fontSize: '1rem', opacity: isActive ? 1 : 0.8 }}>{item.icon}</span>
@@ -58,7 +59,7 @@ export function SidebarNav({ navItems, isSuperAdmin, onNavigate }: SidebarNavPro
 
       {isSuperAdmin && (
         <>
-          <div className="divider" style={{ margin: '0.75rem 0.5rem', background: '#E9DED3' }} />
+          <div className="divider" style={{ margin: '0.75rem 0.5rem', background: 'rgba(243, 240, 232, 0.08)' }} />
           <Link
             href="/admin"
             onClick={onNavigate}
@@ -71,9 +72,10 @@ export function SidebarNav({ navItems, isSuperAdmin, onNavigate }: SidebarNavPro
               alignItems: 'center',
               gap: '0.65rem',
               textDecoration: 'none',
-              color: pathname?.startsWith('/admin') ? '#C4512A' : '#756A62',
-              background: pathname?.startsWith('/admin') ? 'rgba(196, 81, 42, 0.08)' : 'transparent',
-              border: pathname?.startsWith('/admin') ? '1px solid rgba(196, 81, 42, 0.18)' : '1px solid transparent',
+              transition: 'all 0.15s ease',
+              color: pathname?.startsWith('/admin') ? '#E87A38' : '#9E9B93',
+              background: pathname?.startsWith('/admin') ? 'rgba(232, 75, 44, 0.12)' : 'transparent',
+              border: pathname?.startsWith('/admin') ? '1px solid rgba(232, 75, 44, 0.28)' : '1px solid transparent',
               fontWeight: pathname?.startsWith('/admin') ? 600 : 500,
             }}
           >

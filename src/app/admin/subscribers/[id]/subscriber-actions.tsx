@@ -1,5 +1,9 @@
 'use client';
 
+// src/app/admin/subscribers/[id]/subscriber-actions.tsx
+// Clinic super-admin action controls (suspend/activate, extend duration, assign plans)
+// Redesigned with Cinematic Obsidian × Phoenix Ember Design System
+
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -69,30 +73,21 @@ export default function SubscriberActions({
   const isSuspended = status === 'suspended';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'flex-start' }}>
-      {/* Action Buttons Row */}
-      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+    <div className="flex flex-col gap-3 items-start sm:items-end">
+      {/* Primary Action Buttons */}
+      <div className="flex gap-2 flex-wrap items-center">
         <button
           type="button"
           onClick={() => handleAction(isSuspended ? 'activate_clinic' : 'suspend_clinic')}
           disabled={loadingAction !== null}
-          className={`btn ${isSuspended ? 'btn-success' : 'btn-danger'}`}
-          style={{
-            fontSize: '0.85rem',
-            padding: '0.5rem 1rem',
-            background: isSuspended ? 'hsl(142 71% 45%)' : 'hsl(0 84% 60%)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: loadingAction ? 'not-allowed' : 'pointer',
-            fontWeight: 600,
-            opacity: loadingAction ? 0.7 : 1,
-          }}
+          className={`btn text-xs font-semibold px-3 py-1.5 ${
+            isSuspended ? 'btn-primary' : 'btn-danger'
+          }`}
         >
           {loadingAction === (isSuspended ? 'activate_clinic' : 'suspend_clinic')
             ? 'Processing...'
             : isSuspended
-            ? '✅ Activate Clinic'
+            ? '✓ Activate Clinic'
             : '⛔ Suspend Clinic'}
         </button>
 
@@ -102,38 +97,18 @@ export default function SubscriberActions({
               type="button"
               onClick={() => handleAction('extend_subscription', { extensionDays: 7 })}
               disabled={loadingAction !== null}
-              style={{
-                fontSize: '0.85rem',
-                padding: '0.5rem 1rem',
-                background: 'hsl(221 83% 58%)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: loadingAction ? 'not-allowed' : 'pointer',
-                fontWeight: 600,
-                opacity: loadingAction ? 0.7 : 1,
-              }}
+              className="btn btn-secondary text-xs px-3 py-1.5 font-mono"
             >
-              {loadingAction === 'extend_subscription' ? 'Extending...' : '⏰ +7 Days'}
+              {loadingAction === 'extend_subscription' ? 'Extending...' : '+7 Days'}
             </button>
 
             <button
               type="button"
               onClick={() => handleAction('extend_subscription', { extensionDays: 30 })}
               disabled={loadingAction !== null}
-              style={{
-                fontSize: '0.85rem',
-                padding: '0.5rem 1rem',
-                background: 'hsl(265 83% 65%)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: loadingAction ? 'not-allowed' : 'pointer',
-                fontWeight: 600,
-                opacity: loadingAction ? 0.7 : 1,
-              }}
+              className="btn btn-secondary text-xs px-3 py-1.5 font-mono"
             >
-              ⏰ +30 Days
+              +30 Days
             </button>
           </>
         )}
@@ -141,33 +116,15 @@ export default function SubscriberActions({
 
       {/* Plan Assignment Bar */}
       {plans.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            gap: '0.5rem',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            padding: '0.5rem 0.75rem',
-            borderRadius: '8px',
-            backgroundColor: 'hsl(var(--color-bg-card, 222 47% 11%))',
-            border: '1px solid hsl(var(--color-border, 220 13% 20%))',
-          }}
-        >
-          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'hsl(var(--color-text-secondary))' }}>
-            Assign Plan:
+        <div className="flex gap-2 items-center flex-wrap p-2 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 text-xs">
+          <span className="font-mono text-[#9E9B93] text-[11px] uppercase tracking-wider pl-1">
+            Assign:
           </span>
           <select
             value={selectedPlanId}
             onChange={(e) => setSelectedPlanId(e.target.value)}
             disabled={loadingAction !== null}
-            style={{
-              padding: '0.35rem 0.6rem',
-              fontSize: '0.8rem',
-              borderRadius: '4px',
-              backgroundColor: 'hsl(var(--color-bg-input, 222 47% 14%))',
-              color: '#fff',
-              border: '1px solid hsl(var(--color-border, 220 13% 25%))',
-            }}
+            className="input text-xs py-1 px-2.5 h-8 bg-[#171614]"
           >
             {plans.map((p) => (
               <option key={p.id} value={p.id}>
@@ -180,14 +137,7 @@ export default function SubscriberActions({
             value={durationDays}
             onChange={(e) => setDurationDays(Number(e.target.value))}
             disabled={loadingAction !== null}
-            style={{
-              padding: '0.35rem 0.6rem',
-              fontSize: '0.8rem',
-              borderRadius: '4px',
-              backgroundColor: 'hsl(var(--color-bg-input, 222 47% 14%))',
-              color: '#fff',
-              border: '1px solid hsl(var(--color-border, 220 13% 25%))',
-            }}
+            className="input text-xs py-1 px-2.5 h-8 bg-[#171614] font-mono"
           >
             <option value={30}>30 Days</option>
             <option value={90}>90 Days</option>
@@ -199,30 +149,21 @@ export default function SubscriberActions({
             type="button"
             onClick={() => handleAction('assign_plan', { planId: selectedPlanId, durationDays })}
             disabled={loadingAction !== null || !selectedPlanId}
-            style={{
-              fontSize: '0.8rem',
-              padding: '0.35rem 0.85rem',
-              background: 'hsl(142 71% 45%)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: loadingAction ? 'not-allowed' : 'pointer',
-              fontWeight: 600,
-            }}
+            className="btn btn-primary text-xs py-1 px-3 h-8 font-semibold"
           >
-            {loadingAction === 'assign_plan' ? 'Activating...' : '⚡ Activate Plan'}
+            {loadingAction === 'assign_plan' ? 'Applying...' : '⚡ Apply Tier'}
           </button>
         </div>
       )}
 
       {/* Feedback Messages */}
       {successMsg && (
-        <div style={{ fontSize: '0.8rem', color: 'hsl(142 71% 55%)', fontWeight: 600 }}>
+        <div className="text-xs font-mono text-[#63C7A2] bg-[#63C7A2]/10 px-2.5 py-1 rounded-lg border border-[#63C7A2]/20">
           ✓ {successMsg}
         </div>
       )}
       {errorMsg && (
-        <div style={{ fontSize: '0.8rem', color: 'hsl(0 84% 60%)', fontWeight: 600 }}>
+        <div className="text-xs font-mono text-[#E84B2C] bg-[#E84B2C]/10 px-2.5 py-1 rounded-lg border border-[#E84B2C]/20">
           ⚠️ {errorMsg}
         </div>
       )}

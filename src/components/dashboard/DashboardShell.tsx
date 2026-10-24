@@ -1,11 +1,10 @@
 'use client';
 
 // src/components/dashboard/DashboardShell.tsx
-// Premium editorial dashboard shell with warm cream styling, refined navigation, and burnt orange accents
+// Cinematic Obsidian × Phoenix Ember dashboard shell
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import Link from 'next/link';
 import Image from 'next/image';
 import { SidebarNav, NavItem } from '@/components/dashboard/SidebarNav';
 
@@ -58,18 +57,18 @@ export function DashboardShell({
   }, [mobileOpen]);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', position: 'relative', backgroundColor: '#FAF5EE' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', position: 'relative', backgroundColor: '#111110', color: '#F3F0E8' }}>
       {/* Mobile Topbar */}
-      <header className="mobile-topbar" style={{ background: '#FAF5EE', borderBottom: '1px solid #E9DED3' }}>
+      <header className="mobile-topbar" style={{ background: '#0D0D0C', borderBottom: '1px solid rgba(243, 240, 232, 0.08)' }}>
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
           aria-label="Open navigation menu"
           style={{
-            background: '#F6EFE5',
-            border: '1px solid #E9DED3',
+            background: '#171614',
+            border: '1px solid rgba(243, 240, 232, 0.12)',
             borderRadius: '8px',
-            color: '#201A17',
+            color: '#F3F0E8',
             width: '38px',
             height: '38px',
             display: 'flex',
@@ -104,15 +103,16 @@ export function DashboardShell({
               fontFamily: 'var(--font-sans)',
               fontWeight: 600,
               fontSize: '0.875rem',
-              color: '#201A17',
+              color: '#F3F0E8',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
             }}>
               {org?.name ?? 'AI Front Desk'}
             </div>
-            <div style={{ fontSize: '0.65rem', color: isExpired ? '#9E3D23' : '#235A34', fontWeight: 500 }}>
-              {isExpired ? '⚠️ Expired' : '● Live Receptionist'}
+            <div style={{ fontSize: '0.65rem', color: isExpired ? '#E84B2C' : '#63C7A2', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: isExpired ? '#E84B2C' : '#63C7A2', display: 'inline-block' }} />
+              {isExpired ? '⚠️ Expired' : 'Live Receptionist'}
             </div>
           </div>
         </div>
@@ -121,9 +121,9 @@ export function DashboardShell({
           width: 32,
           height: 32,
           borderRadius: '50%',
-          background: '#F6EFE5',
-          border: '1px solid #E9DED3',
-          color: '#201A17',
+          background: '#1C1916',
+          border: '1px solid rgba(243, 240, 232, 0.12)',
+          color: '#F3F0E8',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -143,43 +143,55 @@ export function DashboardShell({
       />
 
       {/* Sidebar Drawer */}
-      <aside className={`sidebar ${mobileOpen ? 'open' : ''}`} style={{ background: '#F6EFE5', borderRight: '1px solid #E9DED3' }}>
+      <aside className={`sidebar ${mobileOpen ? 'open' : ''}`} style={{ background: '#0D0D0C', borderRight: '1px solid rgba(243, 240, 232, 0.08)' }}>
         {/* Logo & Clinic Info */}
         <div style={{
           padding: '1.25rem 1.15rem 1rem 1.15rem',
-          borderBottom: '1px solid #E9DED3',
+          borderBottom: '1px solid rgba(243, 240, 232, 0.08)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '0.625rem',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
-            <Image
-              src="/arenova.png"
-              alt="Arenova"
-              width={32}
-              height={32}
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                objectFit: 'contain',
-                flexShrink: 0,
-              }}
-            />
+            <div style={{
+              position: 'relative',
+              width: 34,
+              height: 34,
+              borderRadius: '9px',
+              background: 'linear-gradient(135deg, rgba(232, 75, 44, 0.2), rgba(200, 105, 56, 0.08))',
+              border: '1px solid rgba(232, 75, 44, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Image
+                src="/arenova.png"
+                alt="Arenova"
+                width={26}
+                height={26}
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  borderRadius: '6px',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
             <div style={{ minWidth: 0 }}>
               <div style={{
                 fontFamily: 'var(--font-sans)',
                 fontWeight: 600,
                 fontSize: '0.9rem',
-                color: '#201A17',
+                color: '#F3F0E8',
                 letterSpacing: '-0.01em',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}>{org?.name ?? 'AI Front Desk'}</div>
-              <div style={{ fontSize: '0.6875rem', color: isExpired ? '#9E3D23' : '#235A34', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 500 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: isExpired ? '#9E3D23' : '#235A34', display: 'inline-block' }} />
+              <div style={{ fontSize: '0.6875rem', color: isExpired ? '#E84B2C' : '#63C7A2', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 500, marginTop: '0.1rem' }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: isExpired ? '#E84B2C' : '#63C7A2', display: 'inline-block', boxShadow: isExpired ? 'none' : '0 0 8px rgba(99, 199, 162, 0.6)' }} />
                 {isExpired ? 'Subscription expired' : 'Active Reception'}
               </div>
             </div>
@@ -192,10 +204,10 @@ export function DashboardShell({
             aria-label="Close navigation"
             className="show-on-mobile"
             style={{
-              background: '#FFFFFF',
-              border: '1px solid #E9DED3',
+              background: '#171614',
+              border: '1px solid rgba(243, 240, 232, 0.1)',
               borderRadius: '6px',
-              color: '#756A62',
+              color: '#9E9B93',
               width: '30px',
               height: '30px',
               cursor: 'pointer',
@@ -220,23 +232,23 @@ export function DashboardShell({
         {/* User info / Sign out */}
         <div style={{
           padding: '1rem',
-          borderTop: '1px solid #E9DED3',
-          background: '#FAF5EE',
+          borderTop: '1px solid rgba(243, 240, 232, 0.08)',
+          background: '#080505',
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: '0.65rem',
             padding: '0.35rem 0.4rem',
-            marginBottom: '0.6rem',
+            marginBottom: '0.65rem',
           }}>
             <div style={{
-              width: 30,
-              height: 30,
+              width: 32,
+              height: 32,
               borderRadius: '50%',
-              background: '#ECE3D7',
-              border: '1px solid #DDD0C2',
-              color: '#201A17',
+              background: '#1C1916',
+              border: '1px solid rgba(243, 240, 232, 0.12)',
+              color: '#F3F0E8',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -247,10 +259,10 @@ export function DashboardShell({
               {profile?.full_name?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? '?'}
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#201A17', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#F3F0E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {profile?.full_name ?? 'User'}
               </div>
-              <div style={{ fontSize: '0.6875rem', color: '#756A62', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: '0.6875rem', color: '#9E9B93', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user.email}
               </div>
             </div>

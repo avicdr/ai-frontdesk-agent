@@ -71,14 +71,14 @@ export function LandingNavbar() {
           right: 0,
           zIndex: 50,
           padding: '0 clamp(1rem, 4vw, 3rem)',
-          height: '64px',
+          height: '68px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           backdropFilter: scrolled ? 'blur(16px) saturate(1.2)' : 'none',
           WebkitBackdropFilter: scrolled ? 'blur(16px) saturate(1.2)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(233, 222, 211, 0.6)' : '1px solid transparent',
-          background: scrolled ? 'rgba(250, 245, 238, 0.85)' : 'transparent',
+          borderBottom: scrolled ? '1px solid rgba(243, 240, 232, 0.08)' : '1px solid transparent',
+          background: scrolled ? 'rgba(17, 17, 16, 0.88)' : 'transparent',
           transition: 'all 0.3s ease',
         }}
       >
@@ -89,32 +89,45 @@ export function LandingNavbar() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.6rem',
+            gap: '0.65rem',
             textDecoration: 'none',
             color: 'inherit',
           }}
         >
-          <Image
-            src="/arenova.png"
-            alt="Arenova"
-            width={34}
-            height={34}
-            style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '8px',
-              objectFit: 'contain',
-              flexShrink: 0,
-            }}
-            priority
-          />
+          <div style={{
+            position: 'relative',
+            width: 36,
+            height: 36,
+            borderRadius: '9px',
+            background: 'linear-gradient(135deg, rgba(232, 75, 44, 0.22), rgba(200, 105, 56, 0.08))',
+            border: '1px solid rgba(232, 75, 44, 0.32)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            boxShadow: '0 0 16px rgba(232, 75, 44, 0.2)',
+          }}>
+            <Image
+              src="/arenova.png"
+              alt="Arenova"
+              width={26}
+              height={26}
+              style={{
+                width: '26px',
+                height: '26px',
+                borderRadius: '6px',
+                objectFit: 'contain',
+              }}
+              priority
+            />
+          </div>
           <span
             style={{
               fontFamily: 'var(--font-display)',
-              fontWeight: 400,
-              fontSize: '1.2rem',
+              fontWeight: 500,
+              fontSize: '1.25rem',
               letterSpacing: '-0.02em',
-              color: '#201A17',
+              color: '#F3F0E8',
             }}
           >
             AI Front Desk
@@ -127,7 +140,7 @@ export function LandingNavbar() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '2rem',
+            gap: '2.25rem',
           }}
         >
           {navLinks.map((item) => (
@@ -135,7 +148,7 @@ export function LandingNavbar() {
               key={item.label}
               href={item.href}
               style={{
-                color: '#756A62',
+                color: '#9E9B93',
                 textDecoration: 'none',
                 fontSize: '0.875rem',
                 fontWeight: 500,
@@ -143,10 +156,10 @@ export function LandingNavbar() {
                 letterSpacing: '-0.01em',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#201A17';
+                e.currentTarget.style.color = '#F3F0E8';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#756A62';
+                e.currentTarget.style.color = '#9E9B93';
               }}
             >
               {item.label}
@@ -155,20 +168,20 @@ export function LandingNavbar() {
         </div>
 
         {/* Right CTA Actions & Hamburger Toggle */}
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
           {/* Desktop Auth CTAs */}
-          <div className="hide-on-mobile" style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+          <div className="hide-on-mobile" style={{ display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
             <Link
               href="/login"
               className="btn btn-ghost btn-sm"
-              style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem', color: '#756A62' }}
+              style={{ fontSize: '0.85rem', padding: '0.45rem 0.95rem' }}
             >
               Sign In
             </Link>
             <Link
               href="/register"
               className="btn btn-primary btn-sm"
-              style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}
+              style={{ fontSize: '0.85rem', padding: '0.48rem 1.15rem' }}
             >
               Start Free Trial
             </Link>
@@ -196,10 +209,10 @@ export function LandingNavbar() {
             aria-expanded={mobileMenuOpen}
             className="show-on-mobile"
             style={{
-              background: mobileMenuOpen ? '#ECE4D8' : '#F5EFE6',
-              border: '1px solid #E9DED3',
+              background: '#171614',
+              border: '1px solid rgba(243, 240, 232, 0.12)',
               borderRadius: '8px',
-              color: '#201A17',
+              color: '#F3F0E8',
               width: '40px',
               height: '40px',
               cursor: 'pointer',
@@ -237,65 +250,61 @@ export function LandingNavbar() {
       <aside
         className={`landing-drawer ${mobileMenuOpen ? 'open' : ''}`}
         aria-label="Mobile navigation menu"
+        style={{
+          background: '#0D0D0C',
+          borderLeft: '1px solid rgba(243, 240, 232, 0.08)',
+        }}
       >
         {/* Drawer Header */}
         <div
           style={{
-            padding: '1rem 1.25rem',
-            borderBottom: '1px solid #E9DED3',
+            padding: '1.25rem',
+            borderBottom: '1px solid rgba(243, 240, 232, 0.08)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
             <Image
               src="/arenova.png"
               alt="Arenova"
-              width={30}
-              height={30}
+              width={28}
+              height={28}
               style={{
-                width: '30px',
-                height: '30px',
-                borderRadius: '8px',
+                width: '28px',
+                height: '28px',
+                borderRadius: '7px',
                 objectFit: 'contain',
-                flexShrink: 0,
               }}
             />
-            <div>
-              <div
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 400,
-                  fontSize: '1.05rem',
-                  letterSpacing: '-0.02em',
-                  color: '#201A17',
-                }}
-              >
-                AI Front Desk
-              </div>
-              <div style={{ fontSize: '0.65rem', color: '#16A34A', fontWeight: 500 }}>
-                ● 24/7 AI Reception
-              </div>
-            </div>
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 500,
+                fontSize: '1.1rem',
+                color: '#F3F0E8',
+              }}
+            >
+              AI Front Desk
+            </span>
           </div>
 
           <button
             type="button"
             onClick={() => setMobileMenuOpen(false)}
-            aria-label="Close navigation"
+            aria-label="Close menu"
             style={{
-              background: '#F5EFE6',
-              border: '1px solid #E9DED3',
+              background: '#171614',
+              border: '1px solid rgba(243, 240, 232, 0.1)',
               borderRadius: '6px',
-              color: '#756A62',
+              color: '#9E9B93',
               width: '32px',
               height: '32px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: 0,
             }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -305,113 +314,57 @@ export function LandingNavbar() {
           </button>
         </div>
 
-        {/* Drawer Nav Links */}
-        <div style={{ padding: '1.25rem 1rem', flex: 1 }}>
-          <div
-            style={{
-              fontSize: '0.68rem',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              color: '#756A62',
-              padding: '0 0.5rem 0.75rem',
-            }}
-          >
-            Navigation
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            {navLinks.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                onClick={handleLinkClick}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.85rem',
-                  padding: '0.75rem 0.875rem',
-                  borderRadius: '10px',
-                  color: '#201A17',
-                  textDecoration: 'none',
-                  fontSize: '0.95rem',
-                  fontWeight: 500,
-                  transition: 'background 0.15s ease',
-                  background: 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#F5EFE6';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                }}
-              >
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </div>
-
-          <div className="divider" style={{ margin: '1.5rem 0.5rem' }} />
-
-          {/* Auth Actions in Drawer */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+        {/* Drawer Navigation Links */}
+        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+          {navLinks.map((item) => (
             <Link
-              href="/register"
+              key={item.label}
+              href={item.href}
               onClick={handleLinkClick}
-              className="btn btn-primary"
               style={{
-                width: '100%',
-                justifyContent: 'center',
-                textAlign: 'center',
-                padding: '0.75rem',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-              }}
-            >
-              Start Free Trial
-            </Link>
-
-            <Link
-              href="/login"
-              onClick={handleLinkClick}
-              className="btn btn-secondary"
-              style={{
-                width: '100%',
-                justifyContent: 'center',
-                textAlign: 'center',
-                padding: '0.75rem',
-                fontSize: '0.9rem',
+                padding: '0.75rem 0.85rem',
+                borderRadius: '8px',
+                fontSize: '0.95rem',
                 fontWeight: 500,
+                color: '#F3F0E8',
+                textDecoration: 'none',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(243, 240, 232, 0.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
               }}
             >
-              Sign In
+              {item.label}
             </Link>
-          </div>
+          ))}
+
+          <div className="divider" style={{ margin: '1rem 0' }} />
+
+          <Link
+            href="/login"
+            onClick={handleLinkClick}
+            className="btn btn-secondary"
+            style={{ width: '100%', justifyContent: 'center', marginBottom: '0.5rem' }}
+          >
+            Sign In
+          </Link>
+
+          <Link
+            href="/register"
+            onClick={handleLinkClick}
+            className="btn btn-primary"
+            style={{ width: '100%', justifyContent: 'center' }}
+          >
+            Start Free Trial →
+          </Link>
         </div>
 
-        {/* Drawer Footer Status */}
-        <div
-          style={{
-            padding: '1rem 1.25rem',
-            borderTop: '1px solid #E9DED3',
-            background: '#F5EFE6',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '0.75rem',
-              color: '#756A62',
-            }}
-          >
-            <span style={{ fontSize: '0.85rem' }}>💬</span>
-            <span>WhatsApp & Google Calendar AI</span>
-          </div>
-          <div style={{ fontSize: '0.6875rem', color: '#A39B92', marginTop: '0.25rem' }}>
-            No credit card required &bull; 3-day free trial
-          </div>
+        {/* Drawer Footer */}
+        <div style={{ padding: '1.25rem', borderTop: '1px solid rgba(243, 240, 232, 0.08)', fontSize: '0.75rem', color: '#9E9B93', textAlign: 'center' }}>
+          Intelligent AI Front Desk Platform
         </div>
       </aside>
     </>

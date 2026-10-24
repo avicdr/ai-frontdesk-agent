@@ -1,7 +1,7 @@
 'use client';
 
 // src/app/dashboard/configuration/page.tsx
-// Claude-inspired Clinic Configuration Page: Clinic Details, AI Persona, Services, Hours & Policies
+// Cinematic Obsidian × Phoenix Ember Clinic Configuration Page: Clinic Details, AI Persona, Services, Hours & Policies
 
 import React, { useState, useEffect } from 'react';
 import { CLINIC_TYPES, ClinicTypeId, getClinicTypeConfig } from '@/lib/constants/clinic-types';
@@ -285,8 +285,8 @@ export default function ConfigurationPage() {
   if (loading) {
     return (
       <div style={{ width: '100%', padding: '4rem 1rem', textAlign: 'center' }}>
-        <div style={{ fontSize: '1.5rem', marginBottom: '0.75rem', color: '#D97757' }}>✦</div>
-        <div style={{ color: '#706C65', fontSize: '0.9rem', fontWeight: 500 }}>Loading clinic configuration...</div>
+        <div style={{ fontSize: '1.5rem', marginBottom: '0.75rem', color: '#E87A38' }}>✦</div>
+        <div style={{ color: '#9E9B93', fontSize: '0.9rem', fontWeight: 500 }}>Loading clinic configuration...</div>
       </div>
     );
   }
@@ -296,11 +296,11 @@ export default function ConfigurationPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.75rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 500, fontFamily: 'var(--font-serif)', color: '#262522', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
+          <h1 style={{ fontSize: '2.1rem', fontWeight: 500, fontFamily: 'var(--font-display)', color: '#F3F0E8', letterSpacing: '-0.025em', marginBottom: '0.25rem' }}>
             Clinic Configuration
           </h1>
-          <p style={{ color: '#706C65', fontSize: '0.875rem' }}>
-            Manage clinic identity, AI receptionist persona, service catalog fees, and booking guardrails.
+          <p style={{ color: '#9E9B93', fontSize: '0.875rem' }}>
+            Manage practice identity, AI receptionist tone, service catalog fees, and booking guardrails.
           </p>
         </div>
 
@@ -321,12 +321,12 @@ export default function ConfigurationPage() {
         </div>
       </div>
 
-      {/* Navigation Tabs (Claude Pill Style) */}
+      {/* Navigation Tabs */}
       <div style={{
         display: 'flex',
         gap: '0.5rem',
         marginBottom: '1.75rem',
-        borderBottom: '1px solid #E7E2DA',
+        borderBottom: '1px solid rgba(243, 240, 232, 0.08)',
         paddingBottom: '0.75rem',
         overflowX: 'auto',
       }}>
@@ -346,9 +346,9 @@ export default function ConfigurationPage() {
               style={{
                 padding: '0.45rem 0.95rem',
                 borderRadius: '8px',
-                border: `1px solid ${isActive ? '#F0D5C7' : 'transparent'}`,
-                background: isActive ? '#F8E8DE' : 'transparent',
-                color: isActive ? '#C86646' : '#706C65',
+                border: `1px solid ${isActive ? 'rgba(232, 75, 44, 0.35)' : 'transparent'}`,
+                background: isActive ? 'rgba(232, 75, 44, 0.12)' : 'transparent',
+                color: isActive ? '#E87A38' : '#9E9B93',
                 fontWeight: isActive ? 600 : 500,
                 fontSize: '0.85rem',
                 cursor: 'pointer',
@@ -366,24 +366,24 @@ export default function ConfigurationPage() {
       {/* Tab 1: Profile */}
       {activeTab === 'profile' && (
         <div className="card">
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#262522', marginBottom: '0.35rem' }}>Clinic Essentials</h2>
-          <p style={{ color: '#706C65', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#F3F0E8', marginBottom: '0.35rem' }}>Clinic Essentials</h2>
+          <p style={{ color: '#9E9B93', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
             Basic clinic contact information used when addressing patients and sending booking confirmations.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {/* Clinic Specialty Selector */}
             <div style={{
-              background: '#F4F1EB',
+              background: '#1C1916',
               padding: '1.25rem',
               borderRadius: '12px',
-              border: '1px solid #E7E2DA',
+              border: '1px solid rgba(243, 240, 232, 0.08)',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <label className="label" style={{ fontWeight: 600, margin: 0, color: '#262522' }}>
+                <label className="label" style={{ fontWeight: 600, margin: 0, color: '#F3F0E8' }}>
                   <span>🩺</span> Clinic Specialty / Healthcare Type
                 </label>
-                <span style={{ fontSize: '0.8rem', color: '#D97757', fontWeight: 600 }}>
+                <span style={{ fontSize: '0.8rem', color: '#E87A38', fontWeight: 600 }}>
                   {currentConfig.icon} {currentConfig.label}
                 </span>
               </div>
@@ -394,7 +394,7 @@ export default function ConfigurationPage() {
                 style={{
                   cursor: 'pointer',
                   fontWeight: 600,
-                  background: '#FFFFFF',
+                  background: '#171614',
                 }}
               >
                 {CLINIC_TYPES.map(t => (
@@ -403,36 +403,36 @@ export default function ConfigurationPage() {
                   </option>
                 ))}
               </select>
-              <div style={{ fontSize: '0.78rem', color: '#706C65', marginTop: '0.45rem' }}>
+              <div style={{ fontSize: '0.78rem', color: '#9E9B93', marginTop: '0.45rem' }}>
                 ✦ {currentConfig.specialtyDescription}
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
-              <div className="form-field">
+              <div>
                 <label className="label"><span>🏥</span> Clinic Name</label>
                 <input className="input" value={clinicName} onChange={e => setClinicName(e.target.value)} />
-                <span className="form-hint">Official practice name displayed to patients</span>
+                <span style={{ fontSize: '0.72rem', color: '#9E9B93', marginTop: '0.25rem', display: 'block' }}>Official practice name displayed to patients</span>
               </div>
-              <div className="form-field">
+              <div>
                 <label className="label"><span>📞</span> Contact Phone</label>
                 <input className="input" value={phone} onChange={e => setPhone(e.target.value)} />
-                <span className="form-hint">Direct line for emergencies & manual staff transfers</span>
+                <span style={{ fontSize: '0.72rem', color: '#9E9B93', marginTop: '0.25rem', display: 'block' }}>Direct line for emergencies & manual staff transfers</span>
               </div>
             </div>
 
-            <div className="form-field">
+            <div>
               <label className="label"><span>📍</span> Address</label>
               <input className="input" value={address} onChange={e => setAddress(e.target.value)} />
-              <span className="form-hint">Physical clinic address provided upon appointment booking</span>
+              <span style={{ fontSize: '0.72rem', color: '#9E9B93', marginTop: '0.25rem', display: 'block' }}>Physical clinic address provided upon appointment booking</span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
-              <div className="form-field">
+              <div>
                 <label className="label"><span>🏙️</span> City / Area</label>
                 <input className="input" value={city} onChange={e => setCity(e.target.value)} />
               </div>
-              <div className="form-field">
+              <div>
                 <label className="label"><span>🌐</span> Timezone</label>
                 <select className="input" value={timezone} onChange={e => setTimezone(e.target.value)}>
                   <option value="Asia/Kolkata">Asia/Kolkata (IST — UTC+5:30)</option>
@@ -450,23 +450,23 @@ export default function ConfigurationPage() {
       {/* Tab 2: AI Agent Persona */}
       {activeTab === 'agent' && (
         <div className="card">
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#262522', marginBottom: '0.35rem' }}>AI Receptionist Persona</h2>
-          <p style={{ color: '#706C65', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-            Customize how your virtual receptionist introduces itself and converses with patients.
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#F3F0E8', marginBottom: '0.35rem' }}>AI Receptionist Persona</h2>
+          <p style={{ color: '#9E9B93', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+            Customize how your virtual receptionist introduces itself and converses with patients on WhatsApp.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div className="form-field" style={{ maxWidth: 400 }}>
+            <div style={{ maxWidth: 400 }}>
               <label className="label"><span>🤖</span> Assistant Name</label>
               <input className="input" value={assistantName} onChange={e => setAssistantName(e.target.value)} />
-              <span className="form-hint">Virtual receptionist&apos;s name on WhatsApp</span>
+              <span style={{ fontSize: '0.72rem', color: '#9E9B93', marginTop: '0.25rem', display: 'block' }}>Virtual receptionist name displayed in conversations</span>
             </div>
 
-            <div className="form-field">
+            <div>
               <label className="label"><span>🎭</span> Conversational Tone</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
                 {[
-                  { id: 'friendly', title: '🌸 Warm & Friendly', desc: 'Gentle, polite & empathetic' },
+                  { id: 'friendly', title: '🌸 Warm & Empathetic', desc: 'Gentle, polite & patient' },
                   { id: 'professional', title: '👔 Professional', desc: 'Formal, clinical precision' },
                   { id: 'concise', title: '⚡ Fast & Concise', desc: 'Direct, speedy slot quotes' },
                 ].map(t => {
@@ -476,18 +476,18 @@ export default function ConfigurationPage() {
                       key={t.id}
                       onClick={() => setTone(t.id as any)}
                       style={{
-                        padding: '1rem',
-                        borderRadius: '10px',
-                        border: `1.5px solid ${isSelected ? '#D97757' : '#E7E2DA'}`,
-                        background: isSelected ? '#F8E8DE' : '#FFFFFF',
+                        padding: '1.15rem',
+                        borderRadius: '12px',
+                        border: `1.5px solid ${isSelected ? '#E84B2C' : 'rgba(243, 240, 232, 0.08)'}`,
+                        background: isSelected ? 'rgba(232, 75, 44, 0.12)' : '#1C1916',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease',
                       }}
                     >
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem', color: isSelected ? '#C86646' : '#262522', marginBottom: '0.2rem' }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', color: isSelected ? '#E87A38' : '#F3F0E8', marginBottom: '0.25rem' }}>
                         {t.title}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: '#706C65' }}>
+                      <div style={{ fontSize: '0.78rem', color: '#9E9B93' }}>
                         {t.desc}
                       </div>
                     </div>
@@ -496,7 +496,7 @@ export default function ConfigurationPage() {
               </div>
             </div>
 
-            <div className="form-field">
+            <div>
               <label className="label"><span>💬</span> Welcome Greeting Message</label>
               <textarea
                 className="input"
@@ -504,20 +504,20 @@ export default function ConfigurationPage() {
                 value={greeting}
                 onChange={e => setGreeting(e.target.value)}
               />
-              <span className="form-hint">Sent automatically whenever a new patient sends an initial greeting</span>
+              <span style={{ fontSize: '0.72rem', color: '#9E9B93', marginTop: '0.25rem', display: 'block' }}>Sent automatically whenever a new patient sends an initial greeting</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Tab 3: Dental Services & Pricing */}
+      {/* Tab 3: Services & Pricing */}
       {activeTab === 'services' && (
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
             <div>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#262522', marginBottom: '0.35rem' }}>Services & Pricing</h2>
-              <p style={{ color: '#706C65', fontSize: '0.85rem' }}>
-                All prices and durations below are <strong style={{ color: '#262522' }}>directly editable inline</strong>. AI receptionist quotes these fees in WhatsApp chats.
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#F3F0E8', marginBottom: '0.35rem' }}>Services & Pricing</h2>
+              <p style={{ color: '#9E9B93', fontSize: '0.85rem' }}>
+                All prices and durations below are <strong style={{ color: '#F3F0E8' }}>directly editable inline</strong>. AI receptionist quotes these fees in WhatsApp chats.
               </p>
             </div>
             <span className="badge badge-success">
@@ -527,7 +527,7 @@ export default function ConfigurationPage() {
 
           {/* Quick Presets */}
           <div style={{ marginBottom: '1.25rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#706C65', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#9E9B93', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               + Popular {currentConfig.label.split('&')[0].trim()} Procedures:
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -541,7 +541,7 @@ export default function ConfigurationPage() {
                 >
                   <span>+</span>
                   <span>{p.name}</span>
-                  <span style={{ color: '#487B57', fontWeight: 600 }}>₹{p.price}</span>
+                  <span style={{ color: '#63C7A2', fontWeight: 600 }}>₹{p.price}</span>
                 </button>
               ))}
             </div>
@@ -549,9 +549,9 @@ export default function ConfigurationPage() {
 
           {/* Add Service Bar */}
           <div style={{
-            background: '#F4F1EB',
+            background: '#1C1916',
             borderRadius: '12px',
-            border: '1px solid #E7E2DA',
+            border: '1px solid rgba(243, 240, 232, 0.08)',
             padding: '0.85rem',
             display: 'flex',
             gap: '0.75rem',
@@ -606,10 +606,10 @@ export default function ConfigurationPage() {
 
           {/* Services Table */}
           <div className="table-responsive" style={{
-            border: '1px solid #E7E2DA',
+            border: '1px solid rgba(243, 240, 232, 0.08)',
             borderRadius: '12px',
             overflowX: 'auto',
-            background: '#FFFFFF',
+            background: '#171614',
           }}>
             <table>
               <thead>
@@ -630,7 +630,6 @@ export default function ConfigurationPage() {
                         value={s.name}
                         onChange={e => handleUpdateName(idx, e.target.value)}
                         title="Click to rename service"
-                        style={{ color: '#262522' }}
                       />
                     </td>
                     <td>
@@ -641,7 +640,6 @@ export default function ConfigurationPage() {
                           step="5"
                           value={s.duration}
                           onChange={e => handleUpdateDuration(idx, parseInt(e.target.value, 10) || 15)}
-                          style={{ color: '#262522' }}
                         />
                         <span className="unit-tag">mins</span>
                       </div>
@@ -655,7 +653,6 @@ export default function ConfigurationPage() {
                           step="50"
                           value={s.price}
                           onChange={e => handleUpdatePrice(idx, e.target.value)}
-                          style={{ color: '#262522' }}
                         />
                       </div>
                     </td>
@@ -676,7 +673,7 @@ export default function ConfigurationPage() {
                         style={{
                           background: 'transparent',
                           border: 'none',
-                          color: '#C44E45',
+                          color: '#E84B2C',
                           cursor: 'pointer',
                           padding: '0.35rem 0.5rem',
                           borderRadius: '6px',
@@ -693,22 +690,22 @@ export default function ConfigurationPage() {
             </table>
           </div>
 
-          <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#706C65' }}>
+          <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#9E9B93' }}>
             <span>{services.length} services configured</span>
             <span>Remember to click &ldquo;Save Changes&rdquo; at the top right to apply updates</span>
           </div>
         </div>
       )}
 
-      {/* Tab: Working Hours & Booking Days */}
+      {/* Tab 4: Working Hours & Booking Days */}
       {activeTab === 'hours' && (
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
             <div>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#262522', marginBottom: '0.35rem' }}>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#F3F0E8', marginBottom: '0.35rem' }}>
                 Weekly Working Hours & Booking Days
               </h2>
-              <p style={{ color: '#706C65', fontSize: '0.85rem' }}>
+              <p style={{ color: '#9E9B93', fontSize: '0.85rem' }}>
                 Set your operating hours for each day of the week, or toggle off bookings completely for any day. The AI receptionist checks these hours in real time when scheduling appointments.
               </p>
             </div>
@@ -774,15 +771,15 @@ export default function ConfigurationPage() {
                     flexWrap: 'wrap',
                     gap: '1rem',
                     padding: '0.85rem 1.25rem',
-                    background: dayConfig.isOpen ? '#FFFFFF' : '#F4F1EB',
-                    border: `1px solid ${dayConfig.isOpen ? '#E7E2DA' : '#EDE8DF'}`,
+                    background: dayConfig.isOpen ? '#1C1916' : '#141311',
+                    border: `1px solid ${dayConfig.isOpen ? 'rgba(243, 240, 232, 0.08)' : 'rgba(243, 240, 232, 0.04)'}`,
                     borderRadius: '10px',
                     transition: 'all 0.15s ease',
                   }}
                 >
                   {/* Left: Day Name & Toggle Switch */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', minWidth: '220px' }}>
-                    <div style={{ width: '100px', fontWeight: 600, fontSize: '0.9rem', color: dayConfig.isOpen ? '#262522' : '#706C65' }}>
+                    <div style={{ width: '100px', fontWeight: 600, fontSize: '0.9rem', color: dayConfig.isOpen ? '#F3F0E8' : '#9E9B93' }}>
                       {d.name}
                     </div>
 
@@ -798,7 +795,7 @@ export default function ConfigurationPage() {
                         width: '40px',
                         height: '22px',
                         borderRadius: '999px',
-                        background: dayConfig.isOpen ? '#487B57' : '#E7E2DA',
+                        background: dayConfig.isOpen ? '#63C7A2' : 'rgba(243, 240, 232, 0.15)',
                         position: 'relative',
                         transition: 'all 0.2s ease',
                       }}>
@@ -806,18 +803,18 @@ export default function ConfigurationPage() {
                           width: '16px',
                           height: '16px',
                           borderRadius: '50%',
-                          background: 'white',
+                          background: '#F3F0E8',
                           position: 'absolute',
                           top: '3px',
                           left: dayConfig.isOpen ? '21px' : '3px',
                           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
                         }} />
                       </div>
                       <span style={{
                         fontSize: '0.8rem',
                         fontWeight: 600,
-                        color: dayConfig.isOpen ? '#487B57' : '#706C65',
+                        color: dayConfig.isOpen ? '#63C7A2' : '#9E9B93',
                       }}>
                         {dayConfig.isOpen ? 'Open for Bookings' : 'Closed'}
                       </span>
@@ -828,7 +825,7 @@ export default function ConfigurationPage() {
                   {dayConfig.isOpen ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#706C65', fontWeight: 500 }}>Opens:</span>
+                        <span style={{ fontSize: '0.75rem', color: '#9E9B93', fontWeight: 500 }}>Opens:</span>
                         <input
                           type="time"
                           value={dayConfig.openTime}
@@ -838,17 +835,17 @@ export default function ConfigurationPage() {
                             fontSize: '0.85rem',
                             fontWeight: 600,
                             borderRadius: '8px',
-                            background: '#FFFFFF',
-                            border: '1px solid #E7E2DA',
-                            color: '#262522',
+                            background: '#171614',
+                            border: '1px solid rgba(243, 240, 232, 0.12)',
+                            color: '#F3F0E8',
                           }}
                         />
                       </div>
 
-                      <span style={{ color: '#706C65', fontSize: '0.85rem' }}>to</span>
+                      <span style={{ color: '#9E9B93', fontSize: '0.85rem' }}>to</span>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#706C65', fontWeight: 500 }}>Closes:</span>
+                        <span style={{ fontSize: '0.75rem', color: '#9E9B93', fontWeight: 500 }}>Closes:</span>
                         <input
                           type="time"
                           value={dayConfig.closeTime}
@@ -858,9 +855,9 @@ export default function ConfigurationPage() {
                             fontSize: '0.85rem',
                             fontWeight: 600,
                             borderRadius: '8px',
-                            background: '#FFFFFF',
-                            border: '1px solid #E7E2DA',
-                            color: '#262522',
+                            background: '#171614',
+                            border: '1px solid rgba(243, 240, 232, 0.12)',
+                            color: '#F3F0E8',
                           }}
                         />
                       </div>
@@ -868,12 +865,12 @@ export default function ConfigurationPage() {
                       {/* Formatted Badge */}
                       <span style={{
                         fontSize: '0.75rem',
-                        background: '#F4F1EB',
-                        color: '#706C65',
+                        background: '#171614',
+                        color: '#D0CBC1',
                         padding: '0.3rem 0.65rem',
                         borderRadius: '6px',
                         fontWeight: 600,
-                        border: '1px solid #E7E2DA',
+                        border: '1px solid rgba(243, 240, 232, 0.08)',
                         whiteSpace: 'nowrap',
                       }}>
                         {formatTime12h(dayConfig.openTime)} – {formatTime12h(dayConfig.closeTime)} ({durationLabel})
@@ -882,12 +879,12 @@ export default function ConfigurationPage() {
                   ) : (
                     <div style={{
                       fontSize: '0.8rem',
-                      color: '#706C65',
+                      color: '#9E9B93',
                       fontStyle: 'italic',
                       padding: '0.35rem 0.75rem',
-                      background: '#FFFFFF',
+                      background: '#171614',
                       borderRadius: '6px',
-                      border: '1px dashed #E7E2DA',
+                      border: '1px dashed rgba(243, 240, 232, 0.08)',
                     }}>
                       No bookings accepted • Clinic marked as closed
                     </div>
@@ -897,7 +894,7 @@ export default function ConfigurationPage() {
             })}
           </div>
 
-          <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: '#706C65' }}>
+          <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: '#9E9B93' }}>
             <span>
               {workingHours.filter(h => h.isOpen).length} of 7 days open for patient appointments
             </span>
@@ -906,16 +903,16 @@ export default function ConfigurationPage() {
         </div>
       )}
 
-      {/* Tab 4: Booking Policies */}
+      {/* Tab 5: Booking Policies */}
       {activeTab === 'policies' && (
         <div className="card">
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#262522', marginBottom: '0.35rem' }}>Booking Guardrails & Policies</h2>
-          <p style={{ color: '#706C65', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#F3F0E8', marginBottom: '0.35rem' }}>Booking Guardrails & Policies</h2>
+          <p style={{ color: '#9E9B93', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
             Configure automatic constraints governing appointment scheduling, cancellations, and operatory turnover.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
-            <div className="card" style={{ padding: '1.25rem', background: '#F4F1EB' }}>
+            <div className="card-elevated" style={{ padding: '1.25rem' }}>
               <label className="label"><span>⏱️</span> Minimum Advance Notice</label>
               <div className="input-addon-group" style={{ marginBottom: '0.5rem' }}>
                 <input
@@ -926,10 +923,10 @@ export default function ConfigurationPage() {
                 />
                 <div className="input-addon-suffix">Hours</div>
               </div>
-              <span className="form-hint">Prevents patients booking slots too close to current time</span>
+              <span style={{ fontSize: '0.72rem', color: '#9E9B93' }}>Prevents patients booking slots too close to current time</span>
             </div>
 
-            <div className="card" style={{ padding: '1.25rem', background: '#F4F1EB' }}>
+            <div className="card-elevated" style={{ padding: '1.25rem' }}>
               <label className="label"><span>📅</span> Maximum Booking Horizon</label>
               <div className="input-addon-group" style={{ marginBottom: '0.5rem' }}>
                 <input
@@ -941,10 +938,10 @@ export default function ConfigurationPage() {
                 />
                 <div className="input-addon-suffix">Days</div>
               </div>
-              <span className="form-hint">Furthest days in advance a patient is allowed to book</span>
+              <span style={{ fontSize: '0.72rem', color: '#9E9B93' }}>Furthest days in advance a patient is allowed to book</span>
             </div>
 
-            <div className="card" style={{ padding: '1.25rem', background: '#F4F1EB' }}>
+            <div className="card-elevated" style={{ padding: '1.25rem' }}>
               <label className="label"><span>🚫</span> Cancellation Cutoff Window</label>
               <div className="input-addon-group" style={{ marginBottom: '0.5rem' }}>
                 <input
@@ -955,10 +952,10 @@ export default function ConfigurationPage() {
                 />
                 <div className="input-addon-suffix">Hours</div>
               </div>
-              <span className="form-hint">Notice required before patient can cancel/reschedule</span>
+              <span style={{ fontSize: '0.72rem', color: '#9E9B93' }}>Notice required before patient can cancel/reschedule</span>
             </div>
 
-            <div className="card" style={{ padding: '1.25rem', background: '#F4F1EB' }}>
+            <div className="card-elevated" style={{ padding: '1.25rem' }}>
               <label className="label"><span>🧼</span> Buffer Between Appointments</label>
               <div className="input-addon-group" style={{ marginBottom: '0.5rem' }}>
                 <input
@@ -970,7 +967,7 @@ export default function ConfigurationPage() {
                 />
                 <div className="input-addon-suffix">Mins</div>
               </div>
-              <span className="form-hint">Operatory sterilization and room turnaround gap</span>
+              <span style={{ fontSize: '0.72rem', color: '#9E9B93' }}>Operatory sterilization and room turnaround gap</span>
             </div>
           </div>
         </div>

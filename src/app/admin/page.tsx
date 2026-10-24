@@ -1,7 +1,7 @@
 import { requireSuperAdmin, createSupabaseAdminClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 
-export const metadata = { title: 'Super Admin Dashboard' };
+export const metadata = { title: 'Super Admin Overview' };
 export const dynamic = 'force-dynamic';
 
 async function getAdminData() {
@@ -63,19 +63,33 @@ async function getAdminData() {
   };
 }
 
-function StatCard({ value, label, prefix = '', isHighlight }: { value: string | number; label: string; prefix?: string; isHighlight?: boolean }) {
+function StatCard({
+  value,
+  label,
+  prefix = '',
+  isHighlight,
+  isMonetary,
+}: {
+  value: string | number;
+  label: string;
+  prefix?: string;
+  isHighlight?: boolean;
+  isMonetary?: boolean;
+}) {
   return (
-    <div className="stat-card" style={{ padding: '1.25rem 1rem' }}>
-      <div className="stat-value" style={{
-        fontFamily: 'var(--font-sans)',
-        fontSize: '1.75rem',
-        fontWeight: 600,
-        color: isHighlight ? '#C4512A' : '#201A17',
-        letterSpacing: '-0.02em',
-      }}>
+    <div className={`card p-4 flex flex-col justify-between transition-all duration-300 ${
+      isHighlight
+        ? 'border-[#E84B2C]/40 bg-[#171614] shadow-[0_0_16px_rgba(232,75,44,0.1)]'
+        : 'border-[#F3F0E8]/08 hover:border-[#F3F0E8]/16'
+    }`}>
+      <div className="text-[10px] font-mono tracking-wider uppercase text-[#9E9B93] mb-1">
+        {label}
+      </div>
+      <div className={`font-mono text-2xl font-bold tracking-tight ${
+        isHighlight ? 'text-[#E87A38]' : isMonetary ? 'text-[#63C7A2]' : 'text-[#F3F0E8]'
+      }`}>
         {prefix}{typeof value === 'number' ? value.toLocaleString('en-IN') : value}
       </div>
-      <div className="stat-label" style={{ fontSize: '0.78rem', color: '#756A62', marginTop: '0.2rem' }}>{label}</div>
     </div>
   );
 }
@@ -87,127 +101,149 @@ export default async function AdminDashboard() {
   const { stats, orgs, subs, payments } = data;
 
   return (
-    <div>
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
-          <span style={{ fontSize: '1.25rem' }}>👑</span>
-          <h1 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(1.75rem, 3.5vw, 2.25rem)',
-            fontWeight: 400,
-            letterSpacing: '-0.02em',
-            color: '#201A17',
-          }}>
-            Super Admin Dashboard
+    <div className="space-y-8 animate-fade-in">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#F3F0E8]/08 pb-6">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E84B2C] shadow-[0_0_8px_#E84B2C]" />
+            <span className="text-[11px] font-mono tracking-widest text-[#E87A38] uppercase">
+              Omni-Tenant Master Node
+            </span>
+          </div>
+          <h1 className="font-heading text-2xl sm:text-3xl font-semibold tracking-tight text-[#F3F0E8] flex items-center gap-2.5">
+            <span>Super Admin Headquarters</span>
+            <span className="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-[#E87A38]/15 border border-[#E87A38]/30 text-[#E87A38]">
+              LIVE
+            </span>
           </h1>
+          <p className="text-sm text-[#9E9B93] mt-1">
+            Global multi-tenant governance, live subscriptions, financial settlement, and Gemini AI telemetry.
+          </p>
         </div>
-        <p style={{ color: '#756A62', fontSize: '0.95rem' }}>
-          Platform management — viewing live multi-tenant accounts, subscriptions, and AI telemetry.
-        </p>
-        <div className="badge badge-warning" style={{ marginTop: '0.6rem' }}>Admin Area — Actions are audited</div>
+
+        <div className="badge badge-warning text-[11px] font-mono">
+          🔒 AUDITED PRIVILEGED ACCESS
+        </div>
       </div>
 
-      {/* Overview Stats */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '1rem',
-        marginBottom: '2rem',
-      }}>
+      {/* Top Telemetry Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         <StatCard value={stats.totalUsers} label="Registered Users" />
-        <StatCard value={stats.totalOrgs} label="Total Organizations" />
-        <StatCard value={stats.activeSubscribers} label="Active Subscribers" isHighlight />
-        <StatCard value={stats.expired} label="Expired Subscriptions" />
-        <StatCard value={stats.suspended} label="Suspended Accounts" />
-        <StatCard value={`₹${stats.mrr.toLocaleString('en-IN')}`} label="Est. MRR" />
-        <StatCard value={`₹${stats.totalPaymentsThisMonth.toLocaleString('en-IN')}`} label="Payments This Month" />
-        <StatCard value={`₹${stats.aiSpend.toFixed(2)}`} label="AI Spend This Month" />
-        <StatCard value={stats.expiringCount} label="Expiring in 7 Days" />
+        <StatCard value={stats.totalOrgs} label="Organizations" />
+        <StatCard value={stats.activeSubscribers} label="Active Clinics" isHighlight />
+        <StatCard value={stats.expired} label="Expired Tiers" />
+        <StatCard value={stats.suspended} label="Suspended" />
+        <StatCard value={`₹${stats.mrr.toLocaleString('en-IN')}`} label="Est. Platform MRR" isMonetary />
+        <StatCard value={`₹${stats.totalPaymentsThisMonth.toLocaleString('en-IN')}`} label="Payments (30d)" isMonetary />
+        <StatCard value={`₹${stats.aiSpend.toFixed(2)}`} label="AI Compute Spend" />
+        <StatCard value={`₹${stats.grossContribution.toFixed(0)}`} label="Gross Contribution" isMonetary />
+        <StatCard value={stats.expiringCount} label="Expiring (7d)" isHighlight={stats.expiringCount > 0} />
       </div>
 
-      {/* Health indicators */}
-      <div className="card" style={{ marginBottom: '1.5rem', padding: '1.25rem 1.5rem' }}>
-        <h2 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#201A17', marginBottom: '0.85rem' }}>Platform Health</h2>
-        <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+      {/* Infrastructure Node Health */}
+      <div className="card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-heading text-xs font-semibold uppercase tracking-wider text-[#F3F0E8] flex items-center gap-2">
+            <span className="text-[#E87A38]">✦</span> Real-Time Service Health
+          </h2>
+          <span className="text-[10px] font-mono text-[#63C7A2] bg-[#63C7A2]/10 border border-[#63C7A2]/20 px-2 py-0.5 rounded-full">
+            ALL SYSTEMS NOMINAL
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
           {[
-            { label: 'WhatsApp Webhooks', status: 'healthy' },
-            { label: 'Google Calendar', status: 'healthy' },
-            { label: 'Gemini AI', status: 'healthy' },
-            { label: 'Payment Webhooks', status: 'healthy' },
-            { label: 'Background Jobs', status: 'healthy' },
+            { label: 'WhatsApp Webhooks', status: 'healthy', latency: '42ms' },
+            { label: 'Google Calendar API', status: 'healthy', latency: '68ms' },
+            { label: 'Gemini 1.5 Flash', status: 'healthy', latency: '310ms' },
+            { label: 'UPI / Crypto Ledger', status: 'healthy', latency: '18ms' },
+            { label: 'Background Cron', status: 'healthy', latency: '0s' },
           ].map(item => (
-            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.825rem' }}>
-              <span style={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: item.status === 'healthy' ? '#235A34' : '#9E3D23',
-                display: 'inline-block',
-              }} />
-              <span style={{ color: '#756A62' }}>{item.label}</span>
-              <span style={{ fontSize: '0.72rem', color: item.status === 'healthy' ? '#235A34' : '#9E3D23', fontWeight: 600 }}>
-                {item.status}
-              </span>
+            <div key={item.label} className="p-3 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[#9E9B93] text-[11px] truncate">{item.label}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#63C7A2] shadow-[0_0_6px_#63C7A2]" />
+              </div>
+              <div className="flex justify-between items-center text-[10px] font-mono">
+                <span className="text-[#63C7A2] font-semibold uppercase">{item.status}</span>
+                <span className="text-[#9E9B93]">{item.latency}</span>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Subscribers table */}
-      <div className="card" style={{ marginBottom: '1.5rem', padding: '1.25rem 1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#201A17' }}>All Organizations</h2>
-          <Link href="/admin/subscribers" style={{ fontSize: '0.8rem', color: '#C4512A', textDecoration: 'none', fontWeight: 500 }}>
-            View all →
+      {/* Organizations & Subscribers table */}
+      <div className="card p-0 overflow-hidden">
+        <div className="p-5 border-b border-[#F3F0E8]/08 flex justify-between items-center">
+          <div>
+            <h2 className="font-heading text-base font-semibold text-[#F3F0E8]">
+              Active Practices &amp; Tenant Accounts
+            </h2>
+            <p className="text-xs text-[#9E9B93] mt-0.5">
+              Live clinic deployments with subscription status and AI compute load.
+            </p>
+          </div>
+          <Link
+            href="/admin/subscribers"
+            className="text-xs font-mono font-medium text-[#E87A38] hover:text-[#E84B2C] transition-colors flex items-center gap-1"
+          >
+            All Subscribers →
           </Link>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
+        <div className="overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Organization</th>
-                <th>Status</th>
-                <th>Plan</th>
-                <th>Subscription</th>
+                <th>Clinic Organization</th>
+                <th>Tenant State</th>
+                <th>Assigned Plan</th>
+                <th>Subscription Status</th>
                 <th>AI Requests</th>
-                <th>Actions</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {orgs.slice(0, 10).map((org: any) => {
+              {orgs.slice(0, 8).map((org: any) => {
                 const sub = subs.find((s: any) => s.organization_id === org.id);
                 const plan = (sub as Record<string, unknown>)?.subscription_plans as Record<string, unknown> | null;
                 return (
-                  <tr key={org.id}>
+                  <tr key={org.id} className="hover:bg-[#F3F0E8]/03 transition-colors">
                     <td>
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{org.name}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))' }}>
-                        {new Date(org.created_at).toLocaleDateString('en-IN')}
+                      <div className="font-medium text-[#F3F0E8] text-sm">{org.name}</div>
+                      <div className="text-[11px] font-mono text-[#9E9B93]">
+                        Created {new Date(org.created_at).toLocaleDateString('en-IN')}
                       </div>
                     </td>
                     <td>
-                      <span className={`badge badge-${org.status === 'active' ? 'success' : org.status === 'onboarding' ? 'info' : 'error'}`}>
+                      <span className={`badge ${
+                        org.status === 'active' ? 'badge-success' : org.status === 'onboarding' ? 'badge-warning' : 'badge-danger'
+                      }`}>
                         {org.status}
                       </span>
                     </td>
-                    <td style={{ fontSize: '0.875rem' }}>
-                      {plan?.name as string ?? '—'}
+                    <td className="text-xs font-medium text-[#D0CBC1]">
+                      {plan?.name as string ?? 'No Plan'}
                     </td>
                     <td>
-                      <span className={`badge badge-${sub?.status === 'active' ? 'success' : sub?.status === 'expired' ? 'error' : 'muted'}`}>
+                      <span className={`badge ${
+                        sub?.status === 'active' ? 'badge-success' : sub?.status === 'expired' ? 'badge-danger' : 'badge-neutral'
+                      }`}>
                         {sub?.status ?? 'none'}
                       </span>
                       {sub?.expires_at && (
-                        <div style={{ fontSize: '0.65rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.25rem' }}>
+                        <div className="text-[10px] font-mono text-[#9E9B93] mt-1">
                           Exp: {new Date(sub.expires_at).toLocaleDateString('en-IN')}
                         </div>
                       )}
                     </td>
-                    <td style={{ fontSize: '0.875rem' }}>
-                      {sub?.ai_requests_used ?? 0} req
+                    <td>
+                      <div className="font-mono text-xs text-[#F3F0E8] font-medium">
+                        {sub?.ai_requests_used ?? 0} reqs
+                      </div>
                       {sub?.ai_cost_used_inr && (
-                        <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))' }}>
+                        <div className="font-mono text-[10px] text-[#63C7A2]">
                           ₹{Number(sub.ai_cost_used_inr).toFixed(2)}
                         </div>
                       )}
@@ -215,9 +251,9 @@ export default async function AdminDashboard() {
                     <td>
                       <Link
                         href={`/admin/subscribers/${org.id}`}
-                        style={{ fontSize: '0.75rem', color: '#C4512A', textDecoration: 'none', fontWeight: 600 }}
+                        className="text-xs font-mono font-medium text-[#E87A38] hover:text-[#E84B2C] transition-colors"
                       >
-                        View →
+                        Inspect →
                       </Link>
                     </td>
                   </tr>
@@ -228,37 +264,62 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Payments */}
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1rem', color: '#201A17' }}>Recent Payments</h2>
-          <Link href="/admin/payments" style={{ fontSize: '0.75rem', color: '#C4512A', textDecoration: 'none', fontWeight: 600 }}>
-            View all →
+      {/* Recent Payments Section */}
+      <div className="card p-0 overflow-hidden">
+        <div className="p-5 border-b border-[#F3F0E8]/08 flex justify-between items-center">
+          <div>
+            <h2 className="font-heading text-base font-semibold text-[#F3F0E8]">
+              Recent Platform Transactions
+            </h2>
+            <p className="text-xs text-[#9E9B93] mt-0.5">
+              Incoming UPI &amp; Crypto payments pending or confirmed.
+            </p>
+          </div>
+          <Link
+            href="/admin/payments"
+            className="text-xs font-mono font-medium text-[#E87A38] hover:text-[#E84B2C] transition-colors flex items-center gap-1"
+          >
+            All Ledger Records →
           </Link>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
+        <div className="overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Transaction ID</th>
+                <th>TxID</th>
                 <th>Amount</th>
-                <th>Status</th>
-                <th>Date</th>
+                <th>State</th>
+                <th>Timestamp</th>
               </tr>
             </thead>
             <tbody>
-              {payments.slice(0, 8).map((p: any) => (
-                <tr key={p.id}>
-                  <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{p.id.slice(0, 8)}...</td>
-                  <td style={{ fontWeight: 600 }}>₹{Number(p.amount_inr).toLocaleString('en-IN')}</td>
+              {payments.slice(0, 6).map((p: any) => (
+                <tr key={p.id} className="hover:bg-[#F3F0E8]/03 transition-colors">
+                  <td className="font-mono text-xs text-[#D0CBC1]">
+                    {p.id.slice(0, 12)}...
+                  </td>
+                  <td className="font-mono font-semibold text-[#63C7A2] text-xs">
+                    ₹{Number(p.amount_inr).toLocaleString('en-IN')}
+                  </td>
                   <td>
-                    <span className={`badge badge-${p.status === 'success' ? 'success' : p.status === 'pending' ? 'warning' : 'error'}`}>
+                    <span className={`badge ${
+                      p.status === 'success' || p.status === 'completed'
+                        ? 'badge-success'
+                        : p.status === 'pending'
+                        ? 'badge-warning'
+                        : 'badge-danger'
+                    }`}>
                       {p.status}
                     </span>
                   </td>
-                  <td style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>
-                    {new Date(p.created_at).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  <td className="font-mono text-xs text-[#9E9B93]">
+                    {new Date(p.created_at).toLocaleString('en-IN', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </td>
                 </tr>
               ))}

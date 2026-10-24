@@ -70,24 +70,25 @@ async function getDashboardData(userId: string, userEmail?: string) {
 }
 
 function StatusDot({ status }: { status: string }) {
-  const dotStyles: Record<string, { bg: string; border: string }> = {
-    connected: { bg: '#235A34', border: '#CEE8D8' },
-    active: { bg: '#235A34', border: '#CEE8D8' },
-    error: { bg: '#9E3D23', border: '#F8D7D5' },
-    disconnected: { bg: '#988F86', border: '#E9DED3' },
-    expired: { bg: '#9E3D23', border: '#F8D7D5' },
-    suspended: { bg: '#8C5611', border: '#F8E4C4' },
+  const dotStyles: Record<string, { bg: string; border: string; glow?: string }> = {
+    connected: { bg: '#63C7A2', border: 'rgba(99, 199, 162, 0.4)', glow: '0 0 8px rgba(99, 199, 162, 0.6)' },
+    active: { bg: '#63C7A2', border: 'rgba(99, 199, 162, 0.4)', glow: '0 0 8px rgba(99, 199, 162, 0.6)' },
+    error: { bg: '#E84B2C', border: 'rgba(232, 75, 44, 0.4)', glow: '0 0 8px rgba(232, 75, 44, 0.6)' },
+    disconnected: { bg: '#9E9B93', border: 'rgba(243, 240, 232, 0.15)' },
+    expired: { bg: '#E84B2C', border: 'rgba(232, 75, 44, 0.4)' },
+    suspended: { bg: '#E87A38', border: 'rgba(232, 122, 56, 0.4)' },
   };
 
-  const current = dotStyles[status] ?? { bg: '#988F86', border: '#E9DED3' };
+  const current = dotStyles[status] ?? { bg: '#9E9B93', border: 'rgba(243, 240, 232, 0.15)' };
 
   return (
     <span style={{
-      width: 7,
-      height: 7,
+      width: 8,
+      height: 8,
       borderRadius: '50%',
       backgroundColor: current.bg,
       border: `1.5px solid ${current.border}`,
+      boxShadow: current.glow ?? 'none',
       display: 'inline-block',
       flexShrink: 0,
     }} />
@@ -135,8 +136,8 @@ export default async function DashboardPage() {
       {!onboardingComplete && (
         <div style={{
           padding: '1.25rem 1.5rem',
-          background: 'rgba(196, 81, 42, 0.08)',
-          border: '1px solid rgba(196, 81, 42, 0.2)',
+          background: 'linear-gradient(135deg, rgba(232, 75, 44, 0.12), rgba(200, 105, 56, 0.06))',
+          border: '1px solid rgba(232, 75, 44, 0.3)',
           borderRadius: '14px',
           marginBottom: '2rem',
           display: 'flex',
@@ -144,13 +145,16 @@ export default async function DashboardPage() {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1rem',
+          boxShadow: '0 0 24px rgba(232, 75, 44, 0.1)',
         }}>
           <div>
-            <div style={{ fontWeight: 600, color: '#201A17', marginBottom: '0.2rem' }}>Complete Your Setup</div>
-            <div style={{ fontSize: '0.85rem', color: '#756A62' }}>
-              Finish onboarding to activate your AI receptionist. Step {profile?.onboarding_step ?? 1} of 8.
+            <div style={{ fontWeight: 600, color: '#F3F0E8', marginBottom: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <span style={{ color: '#E87A38' }}>✦</span> Complete Your Receptionist Setup
             </div>
-            <div className="progress-bar" style={{ width: 220, marginTop: '0.6rem' }}>
+            <div style={{ fontSize: '0.85rem', color: '#D0CBC1' }}>
+              Finish onboarding to activate WhatsApp automated booking. Step {profile?.onboarding_step ?? 1} of 8.
+            </div>
+            <div className="progress-bar" style={{ width: 220, marginTop: '0.75rem' }}>
               <div className="progress-fill" style={{ width: `${((profile?.onboarding_step ?? 1) / 8) * 100}%` }} />
             </div>
           </div>
@@ -162,8 +166,8 @@ export default async function DashboardPage() {
       {daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
         <div style={{
           padding: '1.15rem 1.5rem',
-          background: '#FEF7EC',
-          border: '1px solid #F8E4C4',
+          background: 'rgba(232, 122, 56, 0.12)',
+          border: '1px solid rgba(232, 122, 56, 0.3)',
           borderRadius: '14px',
           marginBottom: '2rem',
           display: 'flex',
@@ -172,9 +176,9 @@ export default async function DashboardPage() {
           flexWrap: 'wrap',
           gap: '0.75rem',
         }}>
-          <div style={{ fontSize: '0.875rem', color: '#8C5611' }}>
+          <div style={{ fontSize: '0.875rem', color: '#E87A38' }}>
             ⚠️ Your subscription expires in <strong>{daysUntilExpiry} day{daysUntilExpiry !== 1 ? 's' : ''}</strong>.
-            Renew to avoid service interruption.
+            Renew to keep your AI front desk active.
           </div>
           <Link href="/dashboard/billing" className="btn btn-primary btn-sm">
             Renew Now
@@ -183,20 +187,30 @@ export default async function DashboardPage() {
       )}
 
       {/* Page Header */}
-      <div style={{ marginBottom: '2.25rem' }}>
-        <h1 style={{
-          fontSize: '2.2rem',
-          fontWeight: 400,
-          fontFamily: 'var(--font-display)',
-          color: '#201A17',
-          letterSpacing: '-0.02em',
-          marginBottom: '0.35rem',
-        }}>
-          Welcome back
-        </h1>
-        <p style={{ color: '#756A62', fontSize: '0.9rem' }}>
-          {org?.name} &mdash; {new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric' })}
-        </p>
+      <div style={{ marginBottom: '2.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 style={{
+            fontSize: '2.25rem',
+            fontWeight: 500,
+            fontFamily: 'var(--font-display)',
+            color: '#F3F0E8',
+            letterSpacing: '-0.025em',
+            marginBottom: '0.35rem',
+          }}>
+            Welcome back
+          </h1>
+          <p style={{ color: '#9E9B93', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span>{org?.name}</span>
+            <span style={{ color: 'rgba(243, 240, 232, 0.2)' }}>&bull;</span>
+            <span>{new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <span className="badge badge-success" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}>
+            ● AI Desk Active
+          </span>
+        </div>
       </div>
 
       {/* Stats row */}
@@ -209,67 +223,67 @@ export default async function DashboardPage() {
       }}>
         {/* Agent Status */}
         <div className="stat-card" style={{ width: '100%' }}>
-          <div style={{ fontSize: '0.75rem', color: '#756A62', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.72rem', color: '#9E9B93', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Agent Status
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginTop: '0.35rem' }}>
             <StatusDot status={onboardingComplete && subscription?.status === 'active' ? 'active' : 'disconnected'} />
-            <span style={{ fontWeight: 600, fontSize: '1.25rem', color: '#201A17' }}>
+            <span style={{ fontWeight: 600, fontSize: '1.35rem', color: '#F3F0E8' }}>
               {onboardingComplete && subscription?.status === 'active' ? 'Live' : 'Inactive'}
             </span>
           </div>
-          <div className="stat-label" style={{ fontSize: '0.8rem', color: '#756A62', marginTop: '0.25rem' }}>
-            {onboardingComplete ? 'Setup complete' : 'Setup required'}
+          <div className="stat-label" style={{ fontSize: '0.8rem', color: '#9E9B93', marginTop: '0.35rem' }}>
+            {onboardingComplete ? 'Setup complete & operational' : 'Setup required'}
           </div>
         </div>
 
         {/* WhatsApp */}
         <div className="stat-card" style={{ width: '100%' }}>
-          <div style={{ fontSize: '0.75rem', color: '#756A62', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            WhatsApp
+          <div style={{ fontSize: '0.72rem', color: '#9E9B93', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            WhatsApp Channel
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginTop: '0.35rem' }}>
             <StatusDot status={whatsapp?.status ?? 'disconnected'} />
-            <span style={{ fontWeight: 600, fontSize: '1.25rem', color: '#201A17' }}>
-              {whatsapp?.status === 'connected' ? 'Connected' : 'Not connected'}
+            <span style={{ fontWeight: 600, fontSize: '1.35rem', color: '#F3F0E8' }}>
+              {whatsapp?.status === 'connected' ? 'Connected' : 'Disconnected'}
             </span>
           </div>
-          <div className="stat-label" style={{ fontSize: '0.8rem', color: '#756A62', marginTop: '0.25rem' }}>
-            {whatsapp?.status === 'connected' ? 'Receiving messages' : 'Connect to go live'}
+          <div className="stat-label" style={{ fontSize: '0.8rem', color: '#9E9B93', marginTop: '0.35rem' }}>
+            {whatsapp?.status === 'connected' ? 'Listening & booking' : 'Connect via Integrations'}
           </div>
         </div>
 
         {/* Calendar */}
         <div className="stat-card" style={{ width: '100%' }}>
-          <div style={{ fontSize: '0.75rem', color: '#756A62', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            Calendar
+          <div style={{ fontSize: '0.72rem', color: '#9E9B93', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Google Calendar
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginTop: '0.35rem' }}>
             <StatusDot status={calendar?.status ?? 'disconnected'} />
-            <span style={{ fontWeight: 600, fontSize: '1.25rem', color: '#201A17' }}>
-              {calendar?.status === 'connected' ? 'Connected' : 'Not connected'}
+            <span style={{ fontWeight: 600, fontSize: '1.35rem', color: '#F3F0E8' }}>
+              {calendar?.status === 'connected' ? 'Synced' : 'Not synced'}
             </span>
           </div>
-          <div className="stat-label" style={{ fontSize: '0.8rem', color: '#756A62', marginTop: '0.25rem' }}>
-            Google Calendar
+          <div className="stat-label" style={{ fontSize: '0.8rem', color: '#9E9B93', marginTop: '0.35rem' }}>
+            Real-time schedule check
           </div>
         </div>
 
         {/* Subscription */}
         <div className="stat-card" style={{ width: '100%' }}>
-          <div style={{ fontSize: '0.75rem', color: '#756A62', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            Subscription
+          <div style={{ fontSize: '0.72rem', color: '#9E9B93', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Subscription Tier
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginTop: '0.35rem' }}>
             <StatusDot status={subscription?.status ?? 'expired'} />
-            <span style={{ fontWeight: 600, fontSize: '1.25rem', color: '#201A17' }}>
+            <span style={{ fontWeight: 600, fontSize: '1.35rem', color: '#F3F0E8' }}>
               {(plan as Record<string, string> | null)?.name ?? 'No plan'}
             </span>
           </div>
-          <div className="stat-label" style={{ fontSize: '0.8rem', color: '#756A62', marginTop: '0.25rem' }}>
+          <div className="stat-label" style={{ fontSize: '0.8rem', color: '#9E9B93', marginTop: '0.35rem' }}>
             {expiresAt
-              ? `Expires ${new Date(expiresAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}`
-              : 'No active subscription'}
+              ? `Renews ${new Date(expiresAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}`
+              : 'No active plan'}
           </div>
         </div>
       </div>
@@ -279,16 +293,18 @@ export default async function DashboardPage() {
         <div className="card" style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
             <div>
-              <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#201A17' }}>AI Usage This Month</div>
-              <div style={{ fontSize: '0.8rem', color: '#756A62', marginTop: '0.15rem' }}>
-                {(subscription as Record<string, number>).ai_requests_used} / {planLimit.toLocaleString()} AI requests used
+              <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#F3F0E8', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <span style={{ color: '#E87A38' }}>✦</span> AI Consumption This Cycle
+              </div>
+              <div style={{ fontSize: '0.8rem', color: '#9E9B93', marginTop: '0.2rem' }}>
+                {(subscription as Record<string, number>).ai_requests_used} of {planLimit.toLocaleString()} monthly AI requests utilized
               </div>
             </div>
             <div style={{
-              fontSize: '1.15rem',
+              fontSize: '1.25rem',
               fontWeight: 700,
               fontFamily: 'var(--font-sans)',
-              color: usagePercent >= 90 ? '#9E3D23' : '#201A17',
+              color: usagePercent >= 90 ? '#E84B2C' : '#E87A38',
             }}>
               {usagePercent}%
             </div>
@@ -298,13 +314,13 @@ export default async function DashboardPage() {
               className="progress-fill"
               style={{
                 width: `${usagePercent}%`,
-                background: usagePercent >= 95 ? '#9E3D23' : usagePercent >= 80 ? '#F4A261' : '#C4512A',
+                background: usagePercent >= 95 ? '#E84B2C' : usagePercent >= 80 ? 'linear-gradient(90deg, #E87A38, #E84B2C)' : 'linear-gradient(90deg, #E84B2C, #E87A38)',
               }}
             />
           </div>
           {usagePercent >= 80 && (
-            <div style={{ fontSize: '0.78rem', color: usagePercent >= 95 ? '#9E3D23' : '#8C5611', marginTop: '0.6rem' }}>
-              {usagePercent >= 95 ? '⚠️ Quota nearly exhausted — upgrade your plan to avoid interruption.' : '⚡ Usage is at 80% — consider upgrading.'}
+            <div style={{ fontSize: '0.78rem', color: usagePercent >= 95 ? '#E84B2C' : '#E87A38', marginTop: '0.65rem' }}>
+              {usagePercent >= 95 ? '⚠️ Quota nearly exhausted — upgrade your plan to maintain 24/7 coverage.' : '⚡ Quota at 80% capacity — consider tier upgrade.'}
             </div>
           )}
         </div>
@@ -321,43 +337,46 @@ export default async function DashboardPage() {
         {/* Upcoming Appointments */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#201A17', fontFamily: 'var(--font-sans)' }}>Upcoming Appointments</h2>
-            <Link href="/dashboard/appointments" style={{ fontSize: '0.8rem', color: '#C4512A', fontWeight: 500, textDecoration: 'none' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#F3F0E8', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <span>📅</span> Upcoming Appointments
+            </h2>
+            <Link href="/dashboard/appointments" style={{ fontSize: '0.8rem', color: '#E87A38', fontWeight: 500, textDecoration: 'none' }}>
               View all →
             </Link>
           </div>
 
           {appointments.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#756A62', fontSize: '0.875rem' }}>
-              No upcoming appointments scheduled
+            <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#9E9B93', fontSize: '0.875rem' }}>
+              No upcoming appointments scheduled yet
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {appointments.map((appt: Record<string, unknown>) => (
                 <div key={appt.id as string} style={{
                   padding: '0.85rem 1rem',
-                  background: '#FAF5EE',
-                  border: '1px solid #E9DED3',
+                  background: '#1C1916',
+                  border: '1px solid rgba(243, 240, 232, 0.08)',
                   borderRadius: '12px',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
+                  transition: 'border-color 0.15s ease',
                 }}>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#201A17' }}>{appt.patient_name as string}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#756A62', marginTop: '0.15rem' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#F3F0E8' }}>{appt.patient_name as string}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#9E9B93', marginTop: '0.15rem' }}>
                       {(appt.services as Record<string, unknown> | null)?.name as string ?? 'Appointment'}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.8rem', color: '#201A17', fontWeight: 600 }}>
+                    <div style={{ fontSize: '0.8rem', color: '#E87A38', fontWeight: 600 }}>
                       {new Date(appt.starts_at as string).toLocaleDateString('en-IN', {
                         timeZone: 'Asia/Kolkata',
                         month: 'short',
                         day: 'numeric',
                       })}
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: '#756A62', marginTop: '0.15rem' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#9E9B93', marginTop: '0.15rem' }}>
                       {new Date(appt.starts_at as string).toLocaleTimeString('en-US', {
                         timeZone: 'Asia/Kolkata',
                         hour: '2-digit',
@@ -375,51 +394,53 @@ export default async function DashboardPage() {
         {/* Recent Conversations */}
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#201A17', fontFamily: 'var(--font-sans)' }}>Recent Conversations</h2>
-            <Link href="/dashboard/conversations" style={{ fontSize: '0.8rem', color: '#C4512A', fontWeight: 500, textDecoration: 'none' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#F3F0E8', fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <span>💬</span> Recent Conversations
+            </h2>
+            <Link href="/dashboard/conversations" style={{ fontSize: '0.8rem', color: '#E87A38', fontWeight: 500, textDecoration: 'none' }}>
               View all →
             </Link>
           </div>
 
           {conversations.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#756A62', fontSize: '0.875rem' }}>
-              No conversations yet
+            <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#9E9B93', fontSize: '0.875rem' }}>
+              No patient conversations recorded yet
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {conversations.map((conv: Record<string, unknown>) => (
                 <div key={conv.id as string} style={{
                   padding: '0.85rem 1rem',
-                  background: '#FAF5EE',
-                  border: '1px solid #E9DED3',
+                  background: '#1C1916',
+                  border: '1px solid rgba(243, 240, 232, 0.08)',
                   borderRadius: '12px',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{
-                      width: 32,
-                      height: 32,
+                      width: 34,
+                      height: 34,
                       borderRadius: '50%',
-                      background: '#ECE3D7',
-                      border: '1px solid #DDD0C2',
-                      color: '#201A17',
+                      background: 'rgba(232, 75, 44, 0.12)',
+                      border: '1px solid rgba(232, 75, 44, 0.25)',
+                      color: '#E87A38',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '0.8rem',
+                      fontSize: '0.825rem',
                       fontWeight: 600,
                       flexShrink: 0,
                     }}>
                       {(conv.patient_name as string)?.[0]?.toUpperCase() ?? '?'}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#201A17' }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#F3F0E8' }}>
                         {(conv.patient_name as string | null) ?? conv.patient_phone as string}
                       </div>
-                      <div style={{ fontSize: '0.72rem', color: '#756A62', marginTop: '0.15rem' }}>
-                        {conv.owner === 'human' ? '👤 Human' : '🤖 AI Receptionist'}
+                      <div style={{ fontSize: '0.72rem', color: '#9E9B93', marginTop: '0.15rem' }}>
+                        {conv.owner === 'human' ? '👤 Staff Member' : '🤖 AI Receptionist'}
                         {conv.status === 'handed_off' && ' · Needs attention'}
                       </div>
                     </div>
@@ -438,13 +459,14 @@ export default async function DashboardPage() {
 
       {/* Quick Actions */}
       <div className="card">
-        <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#201A17', marginBottom: '1rem', fontFamily: 'var(--font-sans)' }}>Quick Actions</h2>
-        <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
-          <Link href="/onboarding" className="btn btn-secondary btn-sm">⚙️ Configuration</Link>
-          <Link href="/dashboard/conversations" className="btn btn-secondary btn-sm">💬 Conversations</Link>
-          <Link href="/dashboard/appointments" className="btn btn-secondary btn-sm">📅 Appointments</Link>
-          <Link href="/dashboard/billing" className="btn btn-secondary btn-sm">💳 Billing</Link>
-          <Link href="/dashboard/agent-test" className="btn btn-secondary btn-sm">🧪 Test Agent</Link>
+        <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#F3F0E8', marginBottom: '1rem', fontFamily: 'var(--font-sans)' }}>Operations & Tools</h2>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Link href="/onboarding" className="btn btn-secondary btn-sm">⚙️ Clinic Profile & Persona</Link>
+          <Link href="/dashboard/conversations" className="btn btn-secondary btn-sm">💬 Patient Inbox</Link>
+          <Link href="/dashboard/appointments" className="btn btn-secondary btn-sm">📅 Calendar Schedule</Link>
+          <Link href="/dashboard/agent-test" className="btn btn-secondary btn-sm">🧪 Test Receptionist</Link>
+          <Link href="/dashboard/integrations" className="btn btn-secondary btn-sm">🔗 WhatsApp & Calendar</Link>
+          <Link href="/dashboard/billing" className="btn btn-secondary btn-sm">💳 Plan & Invoicing</Link>
         </div>
       </div>
     </div>
