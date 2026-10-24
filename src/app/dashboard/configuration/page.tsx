@@ -1,7 +1,7 @@
 'use client';
 
 // src/app/dashboard/configuration/page.tsx
-// Clinic Configuration Page: Clinic Details, AI Persona, Services, Hours & Policies
+// Claude-inspired Clinic Configuration Page: Clinic Details, AI Persona, Services, Hours & Policies
 
 import React, { useState, useEffect } from 'react';
 import { CLINIC_TYPES, ClinicTypeId, getClinicTypeConfig } from '@/lib/constants/clinic-types';
@@ -98,81 +98,54 @@ export default function ConfigurationPage() {
   const [bufferMinutes, setBufferMinutes] = useState('10');
 
   useEffect(() => {
-    let isMounted = true;
-    async function loadConfig() {
+    async function loadData() {
       try {
-        const res = await fetch('/api/v1/onboarding');
+        const res = await fetch('/api/v1/clinic/config');
         const json = await res.json();
-        if (json?.success && json?.data && isMounted) {
-          const { clinicProfile, agentConfig, services: loadedServices, bookingPolicy, organizationName } = json.data;
-          if (clinicProfile?.clinic_name || organizationName) {
-            setClinicName(clinicProfile?.clinic_name || organizationName);
-          }
-          if (clinicProfile?.business_type) {
-            setBusinessType(clinicProfile.business_type as ClinicTypeId);
-          }
-          if (clinicProfile?.phone) setPhone(clinicProfile.phone);
-          if (clinicProfile?.address_line1) setAddress(clinicProfile.address_line1);
-          if (clinicProfile?.city) setCity(clinicProfile.city);
-          if (clinicProfile?.timezone) setTimezone(clinicProfile.timezone);
-
-          if (agentConfig?.assistant_name) setAssistantName(agentConfig.assistant_name);
-          if (agentConfig?.tone) setTone(agentConfig.tone);
-          if (agentConfig?.greeting_message) setGreeting(agentConfig.greeting_message);
-
-          if (Array.isArray(loadedServices) && loadedServices.length > 0) {
-            const seen = new Set<string>();
-            const cleaned: Service[] = [];
-            for (const s of loadedServices) {
-              const norm = (s.name || '').toLowerCase().trim();
-              if (!norm || seen.has(norm)) continue;
-              seen.add(norm);
-
-              const rawPrice = s.price_display
-                ? String(s.price_display).replace(/[^0-9.]/g, '')
-                : (s.price_min != null ? String(s.price_min) : (s.price_minor_units ? String(s.price_minor_units / 100) : '0'));
-
-              cleaned.push({
-                name: s.name,
-                duration: s.duration_minutes ?? 30,
-                price: rawPrice || '0',
-                isBookable: s.is_bookable !== false && s.is_active !== false,
-              });
-            }
-            if (cleaned.length > 0) {
-              setServices(cleaned);
+        if (json.data) {
+          const { clinic, agent, services: svcList, workingHours: whList, bookingPolicy } = json.data;
+          if (clinic) {
+            setClinicName(clinic.name || '');
+            setPhone(clinic.phone || '');
+            setAddress(clinic.address || '');
+            setCity(clinic.city || '');
+            setTimezone(clinic.timezone || 'Asia/Kolkata');
+            if (clinic.businessType && CLINIC_TYPES.some(t => t.id === clinic.businessType)) {
+              setBusinessType(clinic.businessType as ClinicTypeId);
             }
           }
-
+          if (agent) {
+            setAssistantName(agent.assistantName || 'Roma');
+            setTone(agent.tone || 'friendly');
+            setGreeting(agent.greeting || '');
+          }
+          if (svcList && svcList.length > 0) {
+            setServices(svcList);
+          } else {
+            setServices(currentConfig.defaultServices.map(s => ({ ...s, isBookable: true })));
+          }
+          if (whList && whList.length > 0) {
+            setWorkingHours(whList.map((h: any) => ({
+              dayOfWeek: h.dayOfWeek,
+              isOpen: Boolean(h.isOpen),
+              openTime: h.openTime || '09:00',
+              closeTime: h.closeTime || '18:00',
+            })));
+          }
           if (bookingPolicy) {
-            if (bookingPolicy.min_advance_hours != null) setMinAdvanceHours(String(bookingPolicy.min_advance_hours));
-            if (bookingPolicy.max_advance_days != null) setMaxAdvanceDays(String(bookingPolicy.max_advance_days));
-            if (bookingPolicy.cancellation_hours != null) setCancellationHours(String(bookingPolicy.cancellation_hours));
-            if (bookingPolicy.buffer_minutes != null) setBufferMinutes(String(bookingPolicy.buffer_minutes));
-          }
-
-          if (Array.isArray(json.data.workingHours) && json.data.workingHours.length > 0) {
-            const hoursMap = new Map<number, any>(json.data.workingHours.map((h: any) => [h.day_of_week, h]));
-            const loaded = DAYS_OF_WEEK.map(d => {
-              const existing: any = hoursMap.get(d.dayOfWeek);
-              return {
-                dayOfWeek: d.dayOfWeek,
-                isOpen: existing ? !!existing.is_open : (d.dayOfWeek >= 1 && d.dayOfWeek <= 5),
-                openTime: existing?.open_time ? String(existing.open_time).slice(0, 5) : '09:00',
-                closeTime: existing?.close_time ? String(existing.close_time).slice(0, 5) : '18:00',
-              };
-            });
-            setWorkingHours(loaded);
+            setMinAdvanceHours(String(bookingPolicy.minAdvanceHours || 2));
+            setMaxAdvanceDays(String(bookingPolicy.maxAdvanceDays || 30));
+            setCancellationHours(String(bookingPolicy.cancellationHours || 12));
+            setBufferMinutes(String(bookingPolicy.bufferMinutes || 10));
           }
         }
-      } catch (err) {
-        console.error('Failed to load clinic configuration:', err);
+      } catch (e) {
+        console.error('Error loading clinic config:', e);
       } finally {
-        if (isMounted) setLoading(false);
+        setLoading(false);
       }
     }
-    loadConfig();
-    return () => { isMounted = false; };
+    loadData();
   }, []);
 
   const handleSave = async () => {
@@ -180,13 +153,29 @@ export default function ConfigurationPage() {
     setSaveSuccess(false);
 
     try {
-      await fetch('/api/v1/onboarding', {
-        method: 'PUT',
+      await fetch('/api/v1/clinic/config', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          clinicInfo: { clinicName, businessType, phone, address, city, timezone },
-          agentConfig: { assistantName, tone, greetingMessage: greeting },
-          services,
+          clinic: {
+            name: clinicName,
+            phone,
+            address,
+            city,
+            timezone,
+            businessType,
+          },
+          agent: {
+            assistantName,
+            tone,
+            greeting,
+          },
+          services: services.map(s => ({
+            name: s.name,
+            duration: s.duration,
+            price: s.price,
+            isBookable: s.isBookable,
+          })),
           workingHours: workingHours.map(h => ({
             dayOfWeek: h.dayOfWeek,
             isOpen: h.isOpen,
@@ -262,7 +251,6 @@ export default function ConfigurationPage() {
     ]);
     setNewSvcName('');
     setNewSvcPrice('');
-    setNewSvcDuration('30');
   };
 
   const handleUpdatePrice = (index: number, newPrice: string) => {
@@ -296,41 +284,30 @@ export default function ConfigurationPage() {
 
   if (loading) {
     return (
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '4rem 1rem', textAlign: 'center' }}>
-        <div style={{ fontSize: '2rem', marginBottom: '1rem', animation: 'spin 1.5s linear infinite' }}>⏳</div>
-        <div style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.95rem', fontWeight: 600 }}>Loading clinic configuration...</div>
+      <div style={{ width: '100%', padding: '4rem 1rem', textAlign: 'center' }}>
+        <div style={{ fontSize: '1.5rem', marginBottom: '0.75rem', color: '#D97757' }}>✦</div>
+        <div style={{ color: '#706C65', fontSize: '0.9rem', fontWeight: 500 }}>Loading clinic configuration...</div>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ width: '100%', maxWidth: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.75rem' }}>
         <div>
-          <h1 style={{ fontSize: 'clamp(1.25rem, 3vw, 1.75rem)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
-            ⚙️ Clinic Configuration
+          <h1 style={{ fontSize: '2rem', fontWeight: 500, fontFamily: 'var(--font-serif)', color: '#262522', letterSpacing: '-0.02em', marginBottom: '0.25rem' }}>
+            Clinic Configuration
           </h1>
-          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>
-            Manage clinic identity, AI receptionist persona, service catalog prices, and booking guardrails.
+          <p style={{ color: '#706C65', fontSize: '0.875rem' }}>
+            Manage clinic identity, AI receptionist persona, service catalog fees, and booking guardrails.
           </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           {saveSuccess && (
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              color: '#4ade80',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              background: 'hsla(142, 71%, 45%, 0.15)',
-              padding: '0.35rem 0.75rem',
-              borderRadius: '8px',
-              border: '1px solid hsla(142, 71%, 45%, 0.3)',
-            }}>
-              ✓ Changes saved!
+            <span className="badge badge-success" style={{ padding: '0.35rem 0.75rem' }}>
+              ✓ Changes saved
             </span>
           )}
           <button
@@ -338,22 +315,20 @@ export default function ConfigurationPage() {
             className="btn btn-primary"
             onClick={handleSave}
             disabled={saving}
-            style={{ padding: '0.625rem 1.25rem', fontWeight: 700 }}
           >
-            {saving ? 'Saving...' : '💾 Save Changes'}
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
+      {/* Navigation Tabs (Claude Pill Style) */}
       <div style={{
         display: 'flex',
         gap: '0.5rem',
-        marginBottom: '1.5rem',
-        borderBottom: '1px solid hsl(var(--color-border))',
+        marginBottom: '1.75rem',
+        borderBottom: '1px solid #E7E2DA',
         paddingBottom: '0.75rem',
         overflowX: 'auto',
-        WebkitOverflowScrolling: 'touch',
       }}>
         {[
           { id: 'profile', label: '🏥 Clinic Profile' },
@@ -369,13 +344,13 @@ export default function ConfigurationPage() {
               type="button"
               onClick={() => setActiveTab(tab.id as any)}
               style={{
-                padding: '0.55rem 1rem',
-                borderRadius: '10px',
-                border: `1px solid ${isActive ? 'hsl(var(--color-primary))' : 'transparent'}`,
-                background: isActive ? 'hsla(221, 83%, 58%, 0.15)' : 'transparent',
-                color: isActive ? '#93c5fd' : 'hsl(var(--color-text-secondary))',
-                fontWeight: 600,
-                fontSize: '0.825rem',
+                padding: '0.45rem 0.95rem',
+                borderRadius: '8px',
+                border: `1px solid ${isActive ? '#F0D5C7' : 'transparent'}`,
+                background: isActive ? '#F8E8DE' : 'transparent',
+                color: isActive ? '#C86646' : '#706C65',
+                fontWeight: isActive ? 600 : 500,
+                fontSize: '0.85rem',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
                 whiteSpace: 'nowrap',
@@ -390,25 +365,25 @@ export default function ConfigurationPage() {
 
       {/* Tab 1: Profile */}
       {activeTab === 'profile' && (
-        <div className="card" style={{ padding: '2rem', background: 'hsl(var(--color-surface))' }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Clinic Essentials</h2>
-          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+        <div className="card">
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#262522', marginBottom: '0.35rem' }}>Clinic Essentials</h2>
+          <p style={{ color: '#706C65', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
             Basic clinic contact information used when addressing patients and sending booking confirmations.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {/* Clinic Specialty Selector */}
-            <div className="form-field" style={{
-              background: 'hsla(221, 83%, 58%, 0.08)',
+            <div style={{
+              background: '#F4F1EB',
               padding: '1.25rem',
               borderRadius: '12px',
-              border: '1px solid hsla(221, 83%, 58%, 0.25)',
+              border: '1px solid #E7E2DA',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <label className="label" style={{ fontWeight: 700, margin: 0 }}>
+                <label className="label" style={{ fontWeight: 600, margin: 0, color: '#262522' }}>
                   <span>🩺</span> Clinic Specialty / Healthcare Type
                 </label>
-                <span style={{ fontSize: '0.8rem', color: '#93c5fd', fontWeight: 600 }}>
+                <span style={{ fontSize: '0.8rem', color: '#D97757', fontWeight: 600 }}>
                   {currentConfig.icon} {currentConfig.label}
                 </span>
               </div>
@@ -419,18 +394,17 @@ export default function ConfigurationPage() {
                 style={{
                   cursor: 'pointer',
                   fontWeight: 600,
-                  background: 'hsl(var(--color-surface))',
-                  border: '1px solid hsla(221, 83%, 58%, 0.4)',
+                  background: '#FFFFFF',
                 }}
               >
                 {CLINIC_TYPES.map(t => (
-                  <option key={t.id} value={t.id} style={{ background: '#0f172a', color: '#fff' }}>
+                  <option key={t.id} value={t.id}>
                     {t.icon} {t.label}
                   </option>
                 ))}
               </select>
-              <div style={{ fontSize: '0.775rem', color: '#93c5fd', marginTop: '0.5rem' }}>
-                ✨ {currentConfig.specialtyDescription}
+              <div style={{ fontSize: '0.78rem', color: '#706C65', marginTop: '0.45rem' }}>
+                ✦ {currentConfig.specialtyDescription}
               </div>
             </div>
 
@@ -475,9 +449,9 @@ export default function ConfigurationPage() {
 
       {/* Tab 2: AI Agent Persona */}
       {activeTab === 'agent' && (
-        <div className="card" style={{ padding: '2rem', background: 'hsl(var(--color-surface))' }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>AI Receptionist Persona</h2>
-          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+        <div className="card">
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#262522', marginBottom: '0.35rem' }}>AI Receptionist Persona</h2>
+          <p style={{ color: '#706C65', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
             Customize how your virtual receptionist introduces itself and converses with patients.
           </p>
 
@@ -485,7 +459,7 @@ export default function ConfigurationPage() {
             <div className="form-field" style={{ maxWidth: 400 }}>
               <label className="label"><span>🤖</span> Assistant Name</label>
               <input className="input" value={assistantName} onChange={e => setAssistantName(e.target.value)} />
-              <span className="form-hint">Virtual receptionist's name on WhatsApp</span>
+              <span className="form-hint">Virtual receptionist&apos;s name on WhatsApp</span>
             </div>
 
             <div className="form-field">
@@ -503,17 +477,17 @@ export default function ConfigurationPage() {
                       onClick={() => setTone(t.id as any)}
                       style={{
                         padding: '1rem',
-                        borderRadius: '12px',
-                        border: `1.5px solid ${isSelected ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))'}`,
-                        background: isSelected ? 'hsla(221, 83%, 58%, 0.12)' : 'hsl(var(--color-surface-2))',
+                        borderRadius: '10px',
+                        border: `1.5px solid ${isSelected ? '#D97757' : '#E7E2DA'}`,
+                        background: isSelected ? '#F8E8DE' : '#FFFFFF',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease',
                       }}
                     >
-                      <div style={{ fontWeight: 700, fontSize: '0.875rem', color: isSelected ? '#93c5fd' : '#f8fafc', marginBottom: '0.25rem' }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem', color: isSelected ? '#C86646' : '#262522', marginBottom: '0.2rem' }}>
                         {t.title}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#706C65' }}>
                         {t.desc}
                       </div>
                     </div>
@@ -536,32 +510,24 @@ export default function ConfigurationPage() {
         </div>
       )}
 
-      {/* Tab 3: Dental Services & Pricing (EDITABLE PRICES) */}
+      {/* Tab 3: Dental Services & Pricing */}
       {activeTab === 'services' && (
-        <div className="card" style={{ padding: '2rem', background: 'hsl(var(--color-surface))' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
             <div>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.35rem' }}>Dental Services & Pricing</h2>
-              <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>
-                All prices and durations below are <strong style={{ color: '#4ade80' }}>directly editable inline</strong>. AI receptionist quotes these fees in WhatsApp chats.
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#262522', marginBottom: '0.35rem' }}>Services & Pricing</h2>
+              <p style={{ color: '#706C65', fontSize: '0.85rem' }}>
+                All prices and durations below are <strong style={{ color: '#262522' }}>directly editable inline</strong>. AI receptionist quotes these fees in WhatsApp chats.
               </p>
             </div>
-            <div style={{
-              padding: '0.35rem 0.75rem',
-              borderRadius: '8px',
-              background: 'hsla(142, 71%, 45%, 0.12)',
-              border: '1px solid hsla(142, 71%, 45%, 0.3)',
-              color: '#4ade80',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-            }}>
+            <span className="badge badge-success">
               ✏️ Click any price to edit
-            </div>
+            </span>
           </div>
 
           {/* Quick Presets */}
           <div style={{ marginBottom: '1.25rem' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'hsl(var(--color-text-muted))', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#706C65', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               + Popular {currentConfig.label.split('&')[0].trim()} Procedures:
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -570,11 +536,12 @@ export default function ConfigurationPage() {
                   key={i}
                   type="button"
                   onClick={() => handleAddPreset(p)}
-                  className="preset-chip"
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
                 >
                   <span>+</span>
                   <span>{p.name}</span>
-                  <span style={{ color: '#4ade80', fontWeight: 700 }}>₹{p.price}</span>
+                  <span style={{ color: '#487B57', fontWeight: 600 }}>₹{p.price}</span>
                 </button>
               ))}
             </div>
@@ -582,10 +549,10 @@ export default function ConfigurationPage() {
 
           {/* Add Service Bar */}
           <div style={{
-            background: 'hsl(var(--color-surface-2))',
-            borderRadius: '14px',
-            border: '1px solid hsl(var(--color-border))',
-            padding: '0.875rem',
+            background: '#F4F1EB',
+            borderRadius: '12px',
+            border: '1px solid #E7E2DA',
+            padding: '0.85rem',
             display: 'flex',
             gap: '0.75rem',
             alignItems: 'center',
@@ -597,7 +564,7 @@ export default function ConfigurationPage() {
                 className="input"
                 value={newSvcName}
                 onChange={e => setNewSvcName(e.target.value)}
-                placeholder="Procedure name (e.g. Invisible Aligners)..."
+                placeholder="Procedure name (e.g. Teeth Whitening)..."
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddService(); } }}
               />
             </div>
@@ -631,7 +598,7 @@ export default function ConfigurationPage() {
               type="button"
               className="btn btn-primary"
               onClick={handleAddService}
-              style={{ flex: '0 0 auto', padding: '0.75rem 1.25rem' }}
+              style={{ flex: '0 0 auto' }}
             >
               + Add Service
             </button>
@@ -639,17 +606,17 @@ export default function ConfigurationPage() {
 
           {/* Services Table */}
           <div className="table-responsive" style={{
-            border: '1px solid hsl(var(--color-border))',
-            borderRadius: '14px',
+            border: '1px solid #E7E2DA',
+            borderRadius: '12px',
             overflowX: 'auto',
-            background: 'hsl(var(--color-surface))',
+            background: '#FFFFFF',
           }}>
-            <table className="data-table" style={{ width: '100%' }}>
+            <table>
               <thead>
                 <tr>
                   <th style={{ minWidth: 260 }}>Service Name</th>
                   <th style={{ width: 130, whiteSpace: 'nowrap' }}>Duration</th>
-                  <th style={{ width: 150, whiteSpace: 'nowrap' }}>Price (₹) <span style={{ color: '#4ade80' }}>• Editable</span></th>
+                  <th style={{ width: 150, whiteSpace: 'nowrap' }}>Price (₹)</th>
                   <th style={{ width: 110, textAlign: 'center', whiteSpace: 'nowrap' }}>Bookable</th>
                   <th style={{ width: 50, textAlign: 'right' }}></th>
                 </tr>
@@ -663,6 +630,7 @@ export default function ConfigurationPage() {
                         value={s.name}
                         onChange={e => handleUpdateName(idx, e.target.value)}
                         title="Click to rename service"
+                        style={{ color: '#262522' }}
                       />
                     </td>
                     <td>
@@ -673,6 +641,7 @@ export default function ConfigurationPage() {
                           step="5"
                           value={s.duration}
                           onChange={e => handleUpdateDuration(idx, parseInt(e.target.value, 10) || 15)}
+                          style={{ color: '#262522' }}
                         />
                         <span className="unit-tag">mins</span>
                       </div>
@@ -686,6 +655,7 @@ export default function ConfigurationPage() {
                           step="50"
                           value={s.price}
                           onChange={e => handleUpdatePrice(idx, e.target.value)}
+                          style={{ color: '#262522' }}
                         />
                       </div>
                     </td>
@@ -693,8 +663,8 @@ export default function ConfigurationPage() {
                       <button
                         type="button"
                         onClick={() => handleToggleBookable(idx)}
-                        className={`switch-pill ${s.isBookable ? 'active' : 'inactive'}`}
-                        title={s.isBookable ? 'Click to pause' : 'Click to enable booking'}
+                        className={`badge ${s.isBookable ? 'badge-success' : 'badge-neutral'}`}
+                        style={{ cursor: 'pointer', border: 'none' }}
                       >
                         <span>{s.isBookable ? '✓ Active' : '✕ Paused'}</span>
                       </button>
@@ -706,7 +676,7 @@ export default function ConfigurationPage() {
                         style={{
                           background: 'transparent',
                           border: 'none',
-                          color: '#ef4444',
+                          color: '#C44E45',
                           cursor: 'pointer',
                           padding: '0.35rem 0.5rem',
                           borderRadius: '6px',
@@ -723,22 +693,22 @@ export default function ConfigurationPage() {
             </table>
           </div>
 
-          <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
+          <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#706C65' }}>
             <span>{services.length} services configured</span>
-            <span>Remember to click "Save Changes" at the top right to apply updates</span>
+            <span>Remember to click &ldquo;Save Changes&rdquo; at the top right to apply updates</span>
           </div>
         </div>
       )}
 
       {/* Tab: Working Hours & Booking Days */}
       {activeTab === 'hours' && (
-        <div className="card" style={{ padding: '2rem', background: 'hsl(var(--color-surface))' }}>
+        <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
             <div>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                🕒 Weekly Working Hours & Booking Days
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#262522', marginBottom: '0.35rem' }}>
+                Weekly Working Hours & Booking Days
               </h2>
-              <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>
+              <p style={{ color: '#706C65', fontSize: '0.85rem' }}>
                 Set your operating hours for each day of the week, or toggle off bookings completely for any day. The AI receptionist checks these hours in real time when scheduling appointments.
               </p>
             </div>
@@ -748,44 +718,40 @@ export default function ConfigurationPage() {
               <button
                 type="button"
                 onClick={() => handleApplyPreset('standard')}
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
-                title="Mon-Fri 9:00 AM - 6:00 PM, Sat-Sun Closed"
+                className="btn btn-secondary btn-sm"
+                style={{ fontSize: '0.75rem' }}
               >
-                ⚡ Mon-Fri (9 AM – 6 PM)
+                Mon-Fri (9 AM – 6 PM)
               </button>
               <button
                 type="button"
                 onClick={() => handleApplyPreset('tuesday11to5')}
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
-                title="Set open days to 11:00 AM - 5:00 PM"
+                className="btn btn-secondary btn-sm"
+                style={{ fontSize: '0.75rem' }}
               >
-                ⚡ 11 AM – 5 PM
+                11 AM – 5 PM
               </button>
               <button
                 type="button"
                 onClick={() => handleApplyPreset('allOpen')}
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
-                title="Enable bookings on all 7 days"
+                className="btn btn-secondary btn-sm"
+                style={{ fontSize: '0.75rem' }}
               >
-                ⚡ Open All 7 Days
+                Open All 7 Days
               </button>
               <button
                 type="button"
                 onClick={() => handleApplyPreset('copyMonday')}
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
-                title="Copy Monday's hours to all other open days"
+                className="btn btn-secondary btn-sm"
+                style={{ fontSize: '0.75rem' }}
               >
-                📋 Copy Monday Hours
+                Copy Monday Hours
               </button>
             </div>
           </div>
 
           {/* Days List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {DAYS_OF_WEEK.map(d => {
               const dayConfig = workingHours.find(h => h.dayOfWeek === d.dayOfWeek) || {
                 dayOfWeek: d.dayOfWeek,
@@ -807,16 +773,16 @@ export default function ConfigurationPage() {
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
                     gap: '1rem',
-                    padding: '1rem 1.25rem',
-                    background: dayConfig.isOpen ? 'hsl(var(--color-surface-2))' : 'hsla(0, 0%, 50%, 0.05)',
-                    border: `1px solid ${dayConfig.isOpen ? 'hsl(var(--color-border))' : 'hsla(0, 0%, 50%, 0.15)'}`,
-                    borderRadius: '12px',
+                    padding: '0.85rem 1.25rem',
+                    background: dayConfig.isOpen ? '#FFFFFF' : '#F4F1EB',
+                    border: `1px solid ${dayConfig.isOpen ? '#E7E2DA' : '#EDE8DF'}`,
+                    borderRadius: '10px',
                     transition: 'all 0.15s ease',
                   }}
                 >
                   {/* Left: Day Name & Toggle Switch */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', minWidth: '220px' }}>
-                    <div style={{ width: '100px', fontWeight: 800, fontSize: '0.95rem', color: dayConfig.isOpen ? 'white' : 'hsl(var(--color-text-muted))' }}>
+                    <div style={{ width: '100px', fontWeight: 600, fontSize: '0.9rem', color: dayConfig.isOpen ? '#262522' : '#706C65' }}>
                       {d.name}
                     </div>
 
@@ -829,30 +795,29 @@ export default function ConfigurationPage() {
                         style={{ display: 'none' }}
                       />
                       <div style={{
-                        width: '44px',
-                        height: '24px',
+                        width: '40px',
+                        height: '22px',
                         borderRadius: '999px',
-                        background: dayConfig.isOpen ? '#22c55e' : 'rgba(255, 255, 255, 0.15)',
-                        border: `1px solid ${dayConfig.isOpen ? '#16a34a' : 'rgba(255, 255, 255, 0.2)'}`,
+                        background: dayConfig.isOpen ? '#487B57' : '#E7E2DA',
                         position: 'relative',
                         transition: 'all 0.2s ease',
                       }}>
                         <div style={{
-                          width: '18px',
-                          height: '18px',
+                          width: '16px',
+                          height: '16px',
                           borderRadius: '50%',
                           background: 'white',
                           position: 'absolute',
-                          top: '2px',
-                          left: dayConfig.isOpen ? '22px' : '2px',
+                          top: '3px',
+                          left: dayConfig.isOpen ? '21px' : '3px',
                           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
                         }} />
                       </div>
                       <span style={{
                         fontSize: '0.8rem',
-                        fontWeight: 700,
-                        color: dayConfig.isOpen ? '#4ade80' : 'hsl(var(--color-text-muted))',
+                        fontWeight: 600,
+                        color: dayConfig.isOpen ? '#487B57' : '#706C65',
                       }}>
                         {dayConfig.isOpen ? 'Open for Bookings' : 'Closed'}
                       </span>
@@ -863,39 +828,39 @@ export default function ConfigurationPage() {
                   {dayConfig.isOpen ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', fontWeight: 600 }}>Opens:</span>
+                        <span style={{ fontSize: '0.75rem', color: '#706C65', fontWeight: 500 }}>Opens:</span>
                         <input
                           type="time"
                           value={dayConfig.openTime}
                           onChange={(e) => handleTimeChange(d.dayOfWeek, 'openTime', e.target.value)}
                           style={{
-                            padding: '0.4rem 0.65rem',
+                            padding: '0.35rem 0.6rem',
                             fontSize: '0.85rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             borderRadius: '8px',
-                            background: 'hsl(var(--color-surface))',
-                            border: '1px solid hsl(var(--color-border))',
-                            color: 'white',
+                            background: '#FFFFFF',
+                            border: '1px solid #E7E2DA',
+                            color: '#262522',
                           }}
                         />
                       </div>
 
-                      <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem', fontWeight: 600 }}>to</span>
+                      <span style={{ color: '#706C65', fontSize: '0.85rem' }}>to</span>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', fontWeight: 600 }}>Closes:</span>
+                        <span style={{ fontSize: '0.75rem', color: '#706C65', fontWeight: 500 }}>Closes:</span>
                         <input
                           type="time"
                           value={dayConfig.closeTime}
                           onChange={(e) => handleTimeChange(d.dayOfWeek, 'closeTime', e.target.value)}
                           style={{
-                            padding: '0.4rem 0.65rem',
+                            padding: '0.35rem 0.6rem',
                             fontSize: '0.85rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             borderRadius: '8px',
-                            background: 'hsl(var(--color-surface))',
-                            border: '1px solid hsl(var(--color-border))',
-                            color: 'white',
+                            background: '#FFFFFF',
+                            border: '1px solid #E7E2DA',
+                            color: '#262522',
                           }}
                         />
                       </div>
@@ -903,12 +868,12 @@ export default function ConfigurationPage() {
                       {/* Formatted Badge */}
                       <span style={{
                         fontSize: '0.75rem',
-                        background: 'hsla(221, 83%, 58%, 0.12)',
-                        color: '#93c5fd',
-                        padding: '0.35rem 0.65rem',
+                        background: '#F4F1EB',
+                        color: '#706C65',
+                        padding: '0.3rem 0.65rem',
                         borderRadius: '6px',
-                        fontWeight: 700,
-                        border: '1px solid hsla(221, 83%, 58%, 0.25)',
+                        fontWeight: 600,
+                        border: '1px solid #E7E2DA',
                         whiteSpace: 'nowrap',
                       }}>
                         {formatTime12h(dayConfig.openTime)} – {formatTime12h(dayConfig.closeTime)} ({durationLabel})
@@ -917,12 +882,12 @@ export default function ConfigurationPage() {
                   ) : (
                     <div style={{
                       fontSize: '0.8rem',
-                      color: 'hsl(var(--color-text-muted))',
+                      color: '#706C65',
                       fontStyle: 'italic',
                       padding: '0.35rem 0.75rem',
-                      background: 'rgba(255, 255, 255, 0.02)',
+                      background: '#FFFFFF',
                       borderRadius: '6px',
-                      border: '1px dashed hsla(0, 0%, 50%, 0.25)',
+                      border: '1px dashed #E7E2DA',
                     }}>
                       No bookings accepted • Clinic marked as closed
                     </div>
@@ -932,25 +897,25 @@ export default function ConfigurationPage() {
             })}
           </div>
 
-          <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
+          <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: '#706C65' }}>
             <span>
               {workingHours.filter(h => h.isOpen).length} of 7 days open for patient appointments
             </span>
-            <span>Remember to click <strong>"💾 Save Changes"</strong> at the top right to apply updates</span>
+            <span>Remember to click &ldquo;Save Changes&rdquo; at the top right to apply updates</span>
           </div>
         </div>
       )}
 
       {/* Tab 4: Booking Policies */}
       {activeTab === 'policies' && (
-        <div className="card" style={{ padding: '2rem', background: 'hsl(var(--color-surface))' }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Booking Guardrails & Policies</h2>
-          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+        <div className="card">
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: '#262522', marginBottom: '0.35rem' }}>Booking Guardrails & Policies</h2>
+          <p style={{ color: '#706C65', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
             Configure automatic constraints governing appointment scheduling, cancellations, and operatory turnover.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
-            <div className="card" style={{ padding: '1.25rem', background: 'hsl(var(--color-surface-2))' }}>
+            <div className="card" style={{ padding: '1.25rem', background: '#F4F1EB' }}>
               <label className="label"><span>⏱️</span> Minimum Advance Notice</label>
               <div className="input-addon-group" style={{ marginBottom: '0.5rem' }}>
                 <input
@@ -964,7 +929,7 @@ export default function ConfigurationPage() {
               <span className="form-hint">Prevents patients booking slots too close to current time</span>
             </div>
 
-            <div className="card" style={{ padding: '1.25rem', background: 'hsl(var(--color-surface-2))' }}>
+            <div className="card" style={{ padding: '1.25rem', background: '#F4F1EB' }}>
               <label className="label"><span>📅</span> Maximum Booking Horizon</label>
               <div className="input-addon-group" style={{ marginBottom: '0.5rem' }}>
                 <input
@@ -979,7 +944,7 @@ export default function ConfigurationPage() {
               <span className="form-hint">Furthest days in advance a patient is allowed to book</span>
             </div>
 
-            <div className="card" style={{ padding: '1.25rem', background: 'hsl(var(--color-surface-2))' }}>
+            <div className="card" style={{ padding: '1.25rem', background: '#F4F1EB' }}>
               <label className="label"><span>🚫</span> Cancellation Cutoff Window</label>
               <div className="input-addon-group" style={{ marginBottom: '0.5rem' }}>
                 <input
@@ -993,7 +958,7 @@ export default function ConfigurationPage() {
               <span className="form-hint">Notice required before patient can cancel/reschedule</span>
             </div>
 
-            <div className="card" style={{ padding: '1.25rem', background: 'hsl(var(--color-surface-2))' }}>
+            <div className="card" style={{ padding: '1.25rem', background: '#F4F1EB' }}>
               <label className="label"><span>🧼</span> Buffer Between Appointments</label>
               <div className="input-addon-group" style={{ marginBottom: '0.5rem' }}>
                 <input

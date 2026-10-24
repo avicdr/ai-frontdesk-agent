@@ -169,26 +169,15 @@ export default function BillingPage() {
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'active':
-        return <span className="badge badge-success">Active Plan</span>;
+        return <span className="badge badge-success">● Active Plan</span>;
       case 'trial':
-        return (
-          <span
-            className="badge badge-info"
-            style={{
-              background: 'hsl(199 89% 48% / 0.15)',
-              color: 'hsl(199 89% 65%)',
-              border: '1px solid hsl(199 89% 48% / 0.3)',
-            }}
-          >
-            Free Trial
-          </span>
-        );
+        return <span className="badge badge-warning">● 3-Day Free Trial</span>;
       case 'grace_period':
         return <span className="badge badge-warning">Grace Period</span>;
       case 'expired':
         return <span className="badge badge-danger">Plan Expired</span>;
       default:
-        return <span className="badge badge-warning">No Active Plan</span>;
+        return <span className="badge badge-neutral">No Active Plan</span>;
     }
   };
 
@@ -205,12 +194,19 @@ export default function BillingPage() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-            💳 Subscription, Usage & Billing
+          <h1 style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: 'clamp(1.75rem, 3.5vw, 2.25rem)',
+            fontWeight: 500,
+            letterSpacing: '-0.02em',
+            color: '#262522',
+            marginBottom: '0.4rem',
+          }}>
+            Subscription &amp; Usage
           </h1>
-          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>
+          <p style={{ color: '#706C65', fontSize: '0.95rem' }}>
             {orgName ? `${orgName} • ` : ''}
             {isInternational
               ? 'International client billing via Web3 Crypto (USDT, USDC, BTC, ETH).'
@@ -223,14 +219,9 @@ export default function BillingPage() {
             <button
               type="button"
               className="btn btn-primary"
-              style={{
-                background: 'linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(221 83% 58%) 100%)',
-                boxShadow: '0 4px 14px hsla(263, 70%, 50%, 0.35)',
-                fontWeight: 700,
-              }}
               onClick={() => setShowCryptoModal(true)}
             >
-              🪙 Pay & Renew via Crypto
+              Pay &amp; Renew via Crypto
             </button>
           ) : (
             <button
@@ -238,7 +229,7 @@ export default function BillingPage() {
               className="btn btn-primary"
               onClick={() => setShowUpiModal(true)}
             >
-              ⚡ Renew / Upgrade Subscription (UPI)
+              Renew / Upgrade Subscription (UPI)
             </button>
           )}
         </div>
@@ -247,37 +238,43 @@ export default function BillingPage() {
       {paymentSuccessMessage && (
         <div style={{
           marginBottom: '1.5rem',
-          padding: '1rem 1.25rem',
-          background: 'hsl(142 71% 45% / 0.15)',
-          border: '1px solid hsl(142 71% 45% / 0.3)',
+          padding: '0.85rem 1.25rem',
+          background: '#EBF3ED',
+          border: '1px solid #D5E4D8',
           borderRadius: '8px',
-          color: 'hsl(142 71% 65%)',
+          color: '#2A5A36',
           fontSize: '0.875rem',
-          fontWeight: 600,
+          fontWeight: 500,
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
         }}>
-          <span>✅</span>
+          <span>✦</span>
           <span>{paymentSuccessMessage}</span>
         </div>
       )}
 
       {/* Subscription Status Card */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-        <div className="card" style={{ padding: 'clamp(1.25rem, 3vw, 1.75rem)', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+        <div className="card" style={{ padding: 'clamp(1.25rem, 3vw, 1.75rem)', position: 'relative' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
             <div>
-              <div style={{ marginBottom: '0.5rem' }}>
+              <div style={{ marginBottom: '0.6rem' }}>
                 {getStatusBadge(subscription?.status)}
               </div>
-              <h2 style={{ fontSize: 'clamp(1.15rem, 3vw, 1.4rem)', fontWeight: 800 }}>
+              <h2 style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 'clamp(1.25rem, 3vw, 1.5rem)',
+                fontWeight: 500,
+                color: '#262522',
+                marginBottom: '0.25rem',
+              }}>
                 {subscription?.subscription_plans?.name || (subscription?.status === 'trial' ? 'Pro Trial Plan' : 'No Active Plan')}
               </h2>
-              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))' }}>
+              <div style={{ fontSize: '0.825rem', color: '#706C65' }}>
                 {subscription ? (
                   subscription.status === 'trial' ? (
-                    `3-Day Free Trial • ${subscription.daysRemaining != null ? `${subscription.daysRemaining} days left` : 'Active'}`
+                    `3-Day Free Trial • ${subscription.daysRemaining != null ? `${subscription.daysRemaining} days remaining` : 'Active'}`
                   ) : (
                     isInternational
                       ? `${selectedPlanConfig.priceUsdDisplay} USD / month • ${subscription.expires_at ? `Renews on ${new Date(subscription.expires_at).toLocaleDateString()}` : 'Monthly'}`
@@ -289,53 +286,61 @@ export default function BillingPage() {
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>Days Remaining</div>
+              <div style={{ fontSize: '0.72rem', color: '#706C65', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Days Remaining</div>
               <div style={{
                 fontSize: '1.8rem',
-                fontWeight: 900,
-                color: (subscription?.daysRemaining ?? 0) > 3 ? 'hsl(142 71% 45%)' : 'hsl(var(--color-warning))',
+                fontWeight: 600,
+                color: (subscription?.daysRemaining ?? 0) > 3 ? '#2A5A36' : '#C86646',
+                lineHeight: 1.2,
+                marginTop: '0.2rem',
               }}>
                 {subscription?.daysRemaining ?? 0}
               </div>
             </div>
           </div>
 
-          <div style={{ marginTop: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.35rem' }}>
-              <span>Monthly AI Chat Quota</span>
-              <span style={{ fontWeight: 700 }}>
+          <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #E7E2DA' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.825rem', marginBottom: '0.5rem' }}>
+              <span style={{ color: '#706C65' }}>Monthly AI Chat Quota</span>
+              <span style={{ fontWeight: 600, color: '#262522' }}>
                 {subscription ? `${quotaUsed.toLocaleString()} / ${quotaLimit.toLocaleString()} Chats (${quotaPercent}%)` : '0 / 0 Chats'}
               </span>
             </div>
-            <div style={{ height: 8, background: 'hsl(var(--color-surface-hover))', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ width: `${quotaPercent}%`, height: '100%', background: 'var(--gradient-brand)', borderRadius: '4px', transition: 'width 0.4s ease' }} />
+            <div style={{ height: 6, background: '#F4F1EB', borderRadius: '9999px', overflow: 'hidden' }}>
+              <div style={{ width: `${quotaPercent}%`, height: '100%', background: '#D97757', borderRadius: '9999px', transition: 'width 0.4s ease' }} />
             </div>
           </div>
         </div>
 
         {/* AI Cost Efficiency Telemetry */}
         <div className="card" style={{ padding: 'clamp(1.25rem, 3vw, 1.75rem)' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.75rem' }}>
-            🤖 AI Engine Efficiency
+          <h3 style={{
+            fontSize: '0.95rem',
+            fontWeight: 600,
+            color: '#262522',
+            marginBottom: '1rem',
+            letterSpacing: '-0.01em',
+          }}>
+            ✦ AI Engine Telemetry
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.8rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--color-border))', paddingBottom: '0.5rem' }}>
-              <span style={{ color: 'hsl(var(--color-text-muted))' }}>Primary Model</span>
-              <span style={{ fontWeight: 600 }}>Gemini 1.5 Flash</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.825rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F4F1EB', paddingBottom: '0.5rem' }}>
+              <span style={{ color: '#706C65' }}>Primary Model</span>
+              <span style={{ fontWeight: 500, color: '#262522' }}>Gemini 1.5 Flash</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--color-border))', paddingBottom: '0.5rem' }}>
-              <span style={{ color: 'hsl(var(--color-text-muted))' }}>Fallback Model</span>
-              <span style={{ fontWeight: 600 }}>OpenAI GPT-4o-mini</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F4F1EB', paddingBottom: '0.5rem' }}>
+              <span style={{ color: '#706C65' }}>Fallback Model</span>
+              <span style={{ fontWeight: 500, color: '#262522' }}>OpenAI GPT-4o-mini</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--color-border))', paddingBottom: '0.5rem' }}>
-              <span style={{ color: 'hsl(var(--color-text-muted))' }}>AI Requests Processed</span>
-              <span style={{ fontWeight: 600 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F4F1EB', paddingBottom: '0.5rem' }}>
+              <span style={{ color: '#706C65' }}>AI Requests Processed</span>
+              <span style={{ fontWeight: 500, color: '#262522' }}>
                 {subscription?.ai_requests_used ?? 0} / {subscription?.subscription_plans?.included_ai_requests ?? 500}
               </span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'hsl(var(--color-text-muted))' }}>Estimated AI Cost this Month</span>
-              <span style={{ fontWeight: 700, color: 'hsl(142 71% 45%)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.25rem' }}>
+              <span style={{ color: '#706C65' }}>Estimated AI Cost this Month</span>
+              <span style={{ fontWeight: 600, color: '#2A5A36' }}>
                 {isInternational ? `$${(Number(subscription?.ai_cost_used_inr ?? 0) / 85).toFixed(2)} USD` : `₹${Number(subscription?.ai_cost_used_inr ?? 0).toFixed(2)}`}
               </span>
             </div>
@@ -344,10 +349,22 @@ export default function BillingPage() {
       </div>
 
       {/* Available Plans */}
-      <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem' }}>
-        {isInternational ? 'International Subscription Tiers (Crypto)' : 'Upgrade Your Front Desk (UPI)'}
-      </h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
+      <div style={{ marginBottom: '1.25rem' }}>
+        <h2 style={{
+          fontFamily: 'var(--font-serif)',
+          fontSize: '1.35rem',
+          fontWeight: 500,
+          color: '#262522',
+          letterSpacing: '-0.01em',
+        }}>
+          {isInternational ? 'International Subscription Tiers (Crypto)' : 'Subscription Plans (UPI)'}
+        </h2>
+        <p style={{ color: '#706C65', fontSize: '0.875rem', marginTop: '0.2rem' }}>
+          Choose a plan that fits your clinic reception volume.
+        </p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
         {currentPlans.map(p => {
           const isCurrentPlan = subscription?.subscription_plans?.slug === p.id;
           return (
@@ -355,49 +372,66 @@ export default function BillingPage() {
               key={p.id}
               className="card"
               style={{
-                padding: '1.75rem 1.5rem 1.5rem',
+                padding: '1.75rem 1.5rem',
                 border: isCurrentPlan
-                  ? '2px solid hsl(var(--color-primary))'
-                  : (p.popular ? (isInternational ? '1.5px solid rgba(192, 132, 252, 0.6)' : '1px solid hsl(var(--color-primary) / 0.5)') : '1px solid hsl(var(--color-border))'),
+                  ? '1.5px solid #D97757'
+                  : (p.popular ? '1px solid #D97757' : '1px solid #E7E2DA'),
                 position: 'relative',
-                overflow: 'visible',
-                marginTop: '0.75rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
               }}
             >
               {isCurrentPlan && (
                 <span style={{
                   position: 'absolute',
-                  top: -12,
-                  right: 20,
-                  background: isInternational ? 'linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(221 83% 58%) 100%)' : 'var(--gradient-brand)',
-                  color: 'white',
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  padding: '0.25rem 0.75rem',
+                  top: -11,
+                  right: 18,
+                  background: '#F8E8DE',
+                  color: '#C86646',
+                  border: '1px solid #F0D5C7',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  padding: '0.2rem 0.6rem',
                   borderRadius: '9999px',
-                  zIndex: 10,
-                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
-                  letterSpacing: '0.02em',
                 }}>
                   Current Plan
                 </span>
               )}
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{p.name}</div>
-              <div style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.5rem', color: isInternational ? '#c084fc' : undefined }}>
-                {p.price}<span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>/month</span>
-              </div>
-              <div style={{ fontSize: '0.8rem', color: isInternational ? '#93c5fd' : 'hsl(var(--color-primary))', fontWeight: 600, marginBottom: '1rem' }}>
-                {p.chatsQuota.toLocaleString()} AI Patient Conversations
+              {p.popular && !isCurrentPlan && (
+                <span style={{
+                  position: 'absolute',
+                  top: -11,
+                  right: 18,
+                  background: '#262522',
+                  color: '#FAF9F5',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '9999px',
+                }}>
+                  Recommended
+                </span>
+              )}
+              <div>
+                <div style={{ fontSize: '1rem', fontWeight: 600, color: '#262522', marginBottom: '0.25rem' }}>{p.name}</div>
+                <div style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: '1.85rem',
+                  fontWeight: 500,
+                  color: '#262522',
+                  marginBottom: '0.35rem',
+                }}>
+                  {p.price}<span style={{ fontSize: '0.75rem', color: '#706C65', fontFamily: 'inherit' }}> / month</span>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#706C65', marginBottom: '1.5rem' }}>
+                  {p.chatsQuota.toLocaleString()} AI Patient Conversations
+                </div>
               </div>
               <button
                 type="button"
                 className={`btn ${isCurrentPlan ? 'btn-secondary' : 'btn-primary'}`}
-                style={{
-                  width: '100%',
-                  background: isInternational && !isCurrentPlan
-                    ? 'linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(221 83% 58%) 100%)'
-                    : undefined,
-                }}
+                style={{ width: '100%' }}
                 onClick={() => {
                   setSelectedPlan(p.id as any);
                   if (isInternational) {
@@ -417,7 +451,15 @@ export default function BillingPage() {
       </div>
 
       {/* Payment History */}
-      <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1rem' }}>Payment Transactions</h2>
+      <h2 style={{
+        fontFamily: 'var(--font-serif)',
+        fontSize: '1.35rem',
+        fontWeight: 500,
+        color: '#262522',
+        marginBottom: '1rem',
+      }}>
+        Payment Transactions
+      </h2>
       <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
         <table className="data-table">
           <thead>
@@ -462,19 +504,19 @@ export default function BillingPage() {
                     <td style={{ fontWeight: 600 }}>
                       {order.subscription_plans?.name || 'Clinic Subscription'}
                     </td>
-                    <td style={{ fontWeight: 700, color: isOrderCrypto ? '#4ade80' : 'white' }}>
+                    <td style={{ fontWeight: 600, color: '#262522' }}>
                       {isOrderCrypto
                         ? `$${order.metadata?.amount_usd || 100} USD`
                         : `₹${Number(order.amount_inr).toLocaleString('en-IN')}`}
                     </td>
                     <td>
                       {isOrderCrypto ? (
-                        <span className="badge" style={{ background: 'hsla(263, 70%, 50%, 0.15)', color: '#c084fc', border: '1px solid rgba(192, 132, 252, 0.4)', fontSize: '0.75rem' }}>
+                        <span className="badge" style={{ background: '#F8E8DE', color: '#C86646', border: '1px solid #F0D5C7', fontSize: '0.75rem' }}>
                           🪙 Crypto ({order.metadata?.crypto_network?.toUpperCase() || 'USDT'})
                         </span>
                       ) : (
-                        <span className="badge badge-secondary" style={{ fontSize: '0.75rem' }}>
-                          🇮🇳 UPI
+                        <span className="badge badge-neutral" style={{ fontSize: '0.75rem' }}>
+                          UPI
                         </span>
                       )}
                     </td>
@@ -496,16 +538,16 @@ export default function BillingPage() {
                             href={explorerUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ color: '#93c5fd', textDecoration: 'underline', fontFamily: 'monospace', fontSize: '0.75rem' }}
+                            style={{ color: '#D97757', textDecoration: 'underline', fontFamily: 'monospace', fontSize: '0.75rem' }}
                             title="Verify on Blockchain Explorer"
                           >
                             {order.utr_number.slice(0, 8)}...{order.utr_number.slice(-6)} ↗
                           </a>
                         ) : (
-                          <span style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{order.utr_number}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#262522' }}>{order.utr_number}</span>
                         )
                       ) : (
-                        <span style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.75rem' }}>—</span>
+                        <span style={{ color: '#706C65', fontSize: '0.75rem' }}>—</span>
                       )}
                     </td>
                   </tr>
@@ -539,20 +581,28 @@ export default function BillingPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0,0,0,0.75)',
+          background: 'rgba(38, 37, 34, 0.45)',
+          backdropFilter: 'blur(3px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 100,
           padding: '1rem',
         }}>
-          <div className="card" style={{ maxWidth: 500, width: '100%', padding: '1.75rem' }}>
+          <div className="card" style={{ maxWidth: 480, width: '100%', padding: '1.75rem', background: '#FFFFFF', border: '1px solid #E7E2DA', boxShadow: '0 8px 30px rgba(38,37,34,0.12)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>⚡ UPI Subscription Payment</h2>
+              <h2 style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: '1.25rem',
+                fontWeight: 500,
+                color: '#262522',
+              }}>
+                UPI Subscription Payment
+              </h2>
               <button
                 type="button"
                 onClick={() => setShowUpiModal(false)}
-                style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.25rem' }}
+                style={{ background: 'none', border: 'none', color: '#706C65', cursor: 'pointer', fontSize: '1.25rem', padding: '0.25rem' }}
               >
                 ✕
               </button>
@@ -560,12 +610,13 @@ export default function BillingPage() {
 
             <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
               <div style={{
-                maxWidth: 220,
+                maxWidth: 200,
                 margin: '0 auto 1rem auto',
-                background: 'white',
-                borderRadius: '16px',
-                padding: '0.75rem',
-                boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+                background: '#FFFFFF',
+                borderRadius: '12px',
+                padding: '0.65rem',
+                border: '1px solid #E7E2DA',
+                boxShadow: '0 2px 8px rgba(38,37,34,0.06)',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -575,27 +626,32 @@ export default function BillingPage() {
                   alt="Paytm UPI QR Code for aviwasasleep@ptaxis"
                   style={{
                     width: '100%',
-                    maxWidth: 200,
+                    maxWidth: 180,
                     height: 'auto',
-                    borderRadius: '12px',
+                    borderRadius: '8px',
                     display: 'block',
                   }}
                 />
-                <div style={{ color: '#0f172a', fontSize: '0.75rem', fontWeight: 700, marginTop: '0.5rem' }}>
+                <div style={{ color: '#262522', fontSize: '0.72rem', fontWeight: 600, marginTop: '0.4rem' }}>
                   Scan with any UPI App
                 </div>
-                <div style={{ color: '#64748b', fontSize: '0.65rem' }}>
+                <div style={{ color: '#706C65', fontSize: '0.65rem' }}>
                   Paytm • GPay • PhonePe • BHIM
                 </div>
               </div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white' }}>
+              <div style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: '1.5rem',
+                fontWeight: 500,
+                color: '#262522',
+              }}>
                 {PRICING_PLANS.find(p => p.id === selectedPlan)?.priceInrDisplay || '₹1,599'}
               </div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'hsl(var(--color-primary))', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#D97757', marginTop: '0.15rem' }}>
                 {PRICING_PLANS.find(p => p.id === selectedPlan)?.name || 'Pro Clinic'}
               </div>
-              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.25rem' }}>
-                VPA: <span style={{ color: 'hsl(var(--color-primary))', fontWeight: 700 }}>{upiVpa}</span>
+              <div style={{ fontSize: '0.78rem', color: '#706C65', marginTop: '0.25rem' }}>
+                VPA: <span style={{ color: '#262522', fontWeight: 600 }}>{upiVpa}</span>
               </div>
             </div>
 
@@ -603,13 +659,13 @@ export default function BillingPage() {
               <div style={{
                 marginBottom: '1rem',
                 padding: '0.75rem',
-                background: 'hsl(0 84% 60% / 0.15)',
-                border: '1px solid hsl(0 84% 60% / 0.3)',
+                background: '#FAEBEA',
+                border: '1px solid #F3CFCB',
                 borderRadius: '6px',
-                color: 'hsl(0 84% 75%)',
+                color: '#A83830',
                 fontSize: '0.8rem',
               }}>
-                ⚠️ {submitError}
+                {submitError}
               </div>
             )}
 

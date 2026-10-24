@@ -63,13 +63,19 @@ async function getAdminData() {
   };
 }
 
-function StatCard({ value, label, color, prefix = '' }: { value: string | number; label: string; color?: string; prefix?: string }) {
+function StatCard({ value, label, prefix = '', isHighlight }: { value: string | number; label: string; prefix?: string; isHighlight?: boolean }) {
   return (
-    <div className="stat-card">
-      <div className="stat-value" style={{ color }}>
+    <div className="stat-card" style={{ padding: '1.25rem 1rem' }}>
+      <div className="stat-value" style={{
+        fontFamily: 'var(--font-sans)',
+        fontSize: '1.75rem',
+        fontWeight: 600,
+        color: isHighlight ? '#C4512A' : '#201A17',
+        letterSpacing: '-0.02em',
+      }}>
         {prefix}{typeof value === 'number' ? value.toLocaleString('en-IN') : value}
       </div>
-      <div className="stat-label">{label}</div>
+      <div className="stat-label" style={{ fontSize: '0.78rem', color: '#756A62', marginTop: '0.2rem' }}>{label}</div>
     </div>
   );
 }
@@ -83,37 +89,45 @@ export default async function AdminDashboard() {
   return (
     <div>
       <div style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-          <span style={{ fontSize: '1.5rem' }}>👑</span>
-          <h1 style={{ fontSize: '1.75rem' }}>Super Admin Dashboard</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
+          <span style={{ fontSize: '1.25rem' }}>👑</span>
+          <h1 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(1.75rem, 3.5vw, 2.25rem)',
+            fontWeight: 400,
+            letterSpacing: '-0.02em',
+            color: '#201A17',
+          }}>
+            Super Admin Dashboard
+          </h1>
         </div>
-        <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>
-          Platform management — viewing live data
+        <p style={{ color: '#756A62', fontSize: '0.95rem' }}>
+          Platform management — viewing live multi-tenant accounts, subscriptions, and AI telemetry.
         </p>
-        <div className="badge badge-warning" style={{ marginTop: '0.5rem' }}>⚠️ Admin Area — Actions are audited</div>
+        <div className="badge badge-warning" style={{ marginTop: '0.6rem' }}>Admin Area — Actions are audited</div>
       </div>
 
       {/* Overview Stats */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
         gap: '1rem',
         marginBottom: '2rem',
       }}>
-        <StatCard value={stats.totalUsers} label="Registered Users" color="hsl(265, 83%, 70%)" />
+        <StatCard value={stats.totalUsers} label="Registered Users" />
         <StatCard value={stats.totalOrgs} label="Total Organizations" />
-        <StatCard value={stats.activeSubscribers} label="Active Subscribers" color="hsl(142, 71%, 55%)" />
-        <StatCard value={stats.expired} label="Expired Subscriptions" color="hsl(0, 84%, 60%)" />
-        <StatCard value={stats.suspended} label="Suspended Accounts" color="hsl(38, 92%, 50%)" />
-        <StatCard value={`₹${stats.mrr.toLocaleString('en-IN')}`} label="Est. MRR" color="hsl(221, 83%, 70%)" />
+        <StatCard value={stats.activeSubscribers} label="Active Subscribers" isHighlight />
+        <StatCard value={stats.expired} label="Expired Subscriptions" />
+        <StatCard value={stats.suspended} label="Suspended Accounts" />
+        <StatCard value={`₹${stats.mrr.toLocaleString('en-IN')}`} label="Est. MRR" />
         <StatCard value={`₹${stats.totalPaymentsThisMonth.toLocaleString('en-IN')}`} label="Payments This Month" />
-        <StatCard value={`₹${stats.aiSpend.toFixed(2)}`} label="AI Spend This Month" color="hsl(142, 71%, 55%)" />
-        <StatCard value={stats.expiringCount} label="Expiring in 7 Days" color="hsl(38, 92%, 50%)" />
+        <StatCard value={`₹${stats.aiSpend.toFixed(2)}`} label="AI Spend This Month" />
+        <StatCard value={stats.expiringCount} label="Expiring in 7 Days" />
       </div>
 
       {/* Health indicators */}
-      <div className="card" style={{ marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Platform Health</h2>
+      <div className="card" style={{ marginBottom: '1.5rem', padding: '1.25rem 1.5rem' }}>
+        <h2 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#201A17', marginBottom: '0.85rem' }}>Platform Health</h2>
         <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
           {[
             { label: 'WhatsApp Webhooks', status: 'healthy' },
@@ -122,16 +136,16 @@ export default async function AdminDashboard() {
             { label: 'Payment Webhooks', status: 'healthy' },
             { label: 'Background Jobs', status: 'healthy' },
           ].map(item => (
-            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.825rem' }}>
               <span style={{
-                width: 8,
-                height: 8,
+                width: 7,
+                height: 7,
                 borderRadius: '50%',
-                background: item.status === 'healthy' ? 'hsl(142, 71%, 55%)' : 'hsl(0, 84%, 60%)',
+                background: item.status === 'healthy' ? '#235A34' : '#9E3D23',
                 display: 'inline-block',
               }} />
-              <span style={{ color: 'hsl(var(--color-text-secondary))' }}>{item.label}</span>
-              <span style={{ fontSize: '0.7rem', color: item.status === 'healthy' ? 'hsl(142, 71%, 55%)' : 'hsl(0, 84%, 60%)' }}>
+              <span style={{ color: '#756A62' }}>{item.label}</span>
+              <span style={{ fontSize: '0.72rem', color: item.status === 'healthy' ? '#235A34' : '#9E3D23', fontWeight: 600 }}>
                 {item.status}
               </span>
             </div>
@@ -140,10 +154,10 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Subscribers table */}
-      <div className="card" style={{ marginBottom: '1.5rem' }}>
+      <div className="card" style={{ marginBottom: '1.5rem', padding: '1.25rem 1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1rem' }}>All Organizations</h2>
-          <Link href="/admin/subscribers" style={{ fontSize: '0.75rem', color: 'hsl(221, 83%, 70%)', textDecoration: 'none' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#201A17' }}>All Organizations</h2>
+          <Link href="/admin/subscribers" style={{ fontSize: '0.8rem', color: '#C4512A', textDecoration: 'none', fontWeight: 500 }}>
             View all →
           </Link>
         </div>
@@ -201,7 +215,7 @@ export default async function AdminDashboard() {
                     <td>
                       <Link
                         href={`/admin/subscribers/${org.id}`}
-                        style={{ fontSize: '0.75rem', color: 'hsl(221, 83%, 70%)', textDecoration: 'none' }}
+                        style={{ fontSize: '0.75rem', color: '#C4512A', textDecoration: 'none', fontWeight: 600 }}
                       >
                         View →
                       </Link>
@@ -217,8 +231,8 @@ export default async function AdminDashboard() {
       {/* Recent Payments */}
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1rem' }}>Recent Payments</h2>
-          <Link href="/admin/payments" style={{ fontSize: '0.75rem', color: 'hsl(221, 83%, 70%)', textDecoration: 'none' }}>
+          <h2 style={{ fontSize: '1rem', color: '#201A17' }}>Recent Payments</h2>
+          <Link href="/admin/payments" style={{ fontSize: '0.75rem', color: '#C4512A', textDecoration: 'none', fontWeight: 600 }}>
             View all →
           </Link>
         </div>

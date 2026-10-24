@@ -1,5 +1,8 @@
 'use client';
 
+// src/components/dashboard/SidebarNav.tsx
+// Minimal editorial sidebar navigation with burnt orange active states
+
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -20,7 +23,7 @@ export function SidebarNav({ navItems, isSuperAdmin, onNavigate }: SidebarNavPro
   const pathname = usePathname();
 
   return (
-    <nav style={{ flex: 1, padding: '0.75rem 0.625rem', overflowY: 'auto' }}>
+    <nav style={{ flex: 1, padding: '0.85rem 0.65rem', overflowY: 'auto' }}>
       {navItems.map(item => {
         const isActive = item.href === '/dashboard'
           ? pathname === '/dashboard'
@@ -32,8 +35,22 @@ export function SidebarNav({ navItems, isSuperAdmin, onNavigate }: SidebarNavPro
             href={item.href}
             onClick={onNavigate}
             className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
+            style={{
+              padding: '0.55rem 0.8rem',
+              borderRadius: '9px',
+              fontSize: '0.875rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.65rem',
+              textDecoration: 'none',
+              transition: 'background 0.15s ease, color 0.15s ease',
+              color: isActive ? '#C4512A' : '#756A62',
+              background: isActive ? 'rgba(196, 81, 42, 0.08)' : 'transparent',
+              border: isActive ? '1px solid rgba(196, 81, 42, 0.18)' : '1px solid transparent',
+              fontWeight: isActive ? 600 : 500,
+            }}
           >
-            <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
+            <span style={{ fontSize: '1rem', opacity: isActive ? 1 : 0.8 }}>{item.icon}</span>
             <span>{item.label}</span>
           </Link>
         );
@@ -41,19 +58,27 @@ export function SidebarNav({ navItems, isSuperAdmin, onNavigate }: SidebarNavPro
 
       {isSuperAdmin && (
         <>
-          <div className="divider" style={{ margin: '0.75rem 0.5rem' }} />
+          <div className="divider" style={{ margin: '0.75rem 0.5rem', background: '#E9DED3' }} />
           <Link
             href="/admin"
             onClick={onNavigate}
-            className="sidebar-nav-item"
+            className={`sidebar-nav-item ${pathname?.startsWith('/admin') ? 'active' : ''}`}
             style={{
-              color: 'hsl(265, 83%, 70%)',
-              background: pathname?.startsWith('/admin') ? 'hsla(265, 83%, 65%, 0.15)' : undefined,
-              borderColor: pathname?.startsWith('/admin') ? 'hsla(265, 83%, 65%, 0.3)' : undefined,
+              padding: '0.55rem 0.8rem',
+              borderRadius: '9px',
+              fontSize: '0.875rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.65rem',
+              textDecoration: 'none',
+              color: pathname?.startsWith('/admin') ? '#C4512A' : '#756A62',
+              background: pathname?.startsWith('/admin') ? 'rgba(196, 81, 42, 0.08)' : 'transparent',
+              border: pathname?.startsWith('/admin') ? '1px solid rgba(196, 81, 42, 0.18)' : '1px solid transparent',
+              fontWeight: pathname?.startsWith('/admin') ? 600 : 500,
             }}
           >
-            <span style={{ fontSize: '1.1rem' }}>👑</span>
-            <span>Admin Dashboard</span>
+            <span style={{ fontSize: '1rem' }}>👑</span>
+            <span>Admin Console</span>
           </Link>
         </>
       )}

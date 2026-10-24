@@ -1,7 +1,7 @@
 'use client';
 
 // src/components/dashboard/PostOnboardingCryptoPrompt.tsx
-// Prompts international clients to purchase their subscription and pay via Crypto after onboarding
+// Rich burnt orange banner prompting international clients to pay via Crypto (USDT, USDC, BTC, ETH)
 
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -30,41 +30,36 @@ export function PostOnboardingCryptoPrompt({
     return 'pro';
   });
   const [dismissed, setDismissed] = useState(false);
-  const [isInternational, setIsInternational] = useState(() =>
-    isInternationalClient(orgCountry, orgTimezone)
-  );
+  const [isInternational, setIsInternational] = useState<boolean>(() => {
+    return isInternationalClient(orgCountry, orgTimezone);
+  });
 
+  // Check geo on mount if country is UNKNOWN
   useEffect(() => {
-    // If explicitly Indian via org profile, do not allow geo check to flip it
-    const isDomesticIndian =
-      orgCountry === 'IN' ||
-      orgCountry === 'INDIA' ||
-      (orgTimezone && (orgTimezone.toLowerCase().includes('kolkata') || orgTimezone.toLowerCase().includes('calcutta')));
-
-    if (isDomesticIndian) {
-      setIsInternational(false);
+    if (orgCountry && orgCountry !== 'UNKNOWN') {
+      setIsInternational(isInternationalClient(orgCountry, orgTimezone));
       return;
     }
 
-    // Check client geo endpoint & browser timezone fallback
     fetch('/api/v1/geo')
       .then(res => res.json())
-      .then(geo => {
-        if (geo?.data?.country && geo.data.country !== 'UNKNOWN') {
-          setIsInternational(Boolean(geo.data.isInternational));
-        } else if (typeof Intl !== 'undefined') {
-          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          setIsInternational(isInternationalClient(null, tz));
+      .then(json => {
+        if (json?.data?.country) {
+          setIsInternational(Boolean(json.data.isInternational));
         }
       })
       .catch(() => {});
+  }, [orgCountry, orgTimezone]);
 
-    // Auto-open modal ONLY if user is international and require_crypto=true was flagged
-    if (isInternational && searchParams.get('require_crypto') === 'true') {
-      const planFromUrl = searchParams.get('plan');
-      if (planFromUrl && ['starter', 'pro', 'growth'].includes(planFromUrl)) {
-        setSelectedPlanId(planFromUrl as any);
-      }
+  // Handle URL query flags like ?require_crypto=true or ?plan=starter
+  useEffect(() => {
+    const planParam = searchParams.get('plan');
+    if (planParam && ['starter', 'pro', 'growth'].includes(planParam)) {
+      setSelectedPlanId(planParam as any);
+    }
+
+    const requireCrypto = searchParams.get('require_crypto') === 'true';
+    if (requireCrypto && isInternational) {
       setShowCryptoModal(true);
     }
   }, [searchParams, orgCountry, orgTimezone, isInternational]);
@@ -81,9 +76,9 @@ export function PostOnboardingCryptoPrompt({
     return (
       <div style={{
         padding: '1.25rem 1.5rem',
-        background: 'linear-gradient(135deg, hsla(263, 70%, 50%, 0.15) 0%, hsla(142, 71%, 45%, 0.15) 100%)',
-        border: '1px solid hsla(263, 70%, 50%, 0.35)',
-        borderRadius: '14px',
+        background: '#EDF7F1',
+        border: '1px solid #CEE8D8',
+        borderRadius: '16px',
         marginBottom: '1.75rem',
         display: 'flex',
         alignItems: 'center',
@@ -94,10 +89,10 @@ export function PostOnboardingCryptoPrompt({
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span style={{ fontSize: '1.75rem' }}>⏳</span>
           <div>
-            <div style={{ fontWeight: 800, fontSize: '1rem', color: '#f8fafc' }}>
+            <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#235A34' }}>
               Crypto Payment Verification In Progress
             </div>
-            <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>
+            <div style={{ fontSize: '0.825rem', color: '#487B57' }}>
               Your crypto transaction hash was received and is awaiting blockchain/admin confirmation. Your receptionist will activate automatically.
             </div>
           </div>
@@ -123,11 +118,11 @@ export function PostOnboardingCryptoPrompt({
     <>
       <div style={{
         padding: '1.5rem',
-        background: 'linear-gradient(135deg, hsla(263, 70%, 50%, 0.18) 0%, hsla(221, 83%, 58%, 0.18) 100%)',
-        border: '1.5px solid rgba(192, 132, 252, 0.45)',
+        background: '#FFFFFF',
+        border: '1px solid rgba(196, 81, 42, 0.3)',
         borderRadius: '16px',
         marginBottom: '1.75rem',
-        boxShadow: '0 8px 32px rgba(168, 85, 247, 0.15)',
+        boxShadow: '0 4px 20px rgba(196, 81, 42, 0.08)',
         display: 'flex',
         flexDirection: 'column',
         gap: '1rem',
@@ -138,32 +133,34 @@ export function PostOnboardingCryptoPrompt({
               width: 44,
               height: 44,
               borderRadius: '12px',
-              background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+              background: 'linear-gradient(135deg, #C4512A, #9E3D23)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.5rem',
-              boxShadow: '0 4px 12px rgba(168, 85, 247, 0.4)',
+              fontSize: '1.25rem',
+              color: '#FFFFFF',
+              boxShadow: '0 4px 12px rgba(196, 81, 42, 0.25)',
             }}>
               🪙
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#f8fafc' }}>
-                  Purchase Your Subscription via Crypto
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#201A17', margin: 0 }}>
+                  Activate Your Subscription via Crypto
                 </h3>
                 <span style={{
-                  background: '#10b981',
-                  color: 'white',
-                  fontSize: '0.65rem',
-                  fontWeight: 800,
-                  padding: '2px 6px',
-                  borderRadius: '4px',
+                  background: 'rgba(196, 81, 42, 0.08)',
+                  color: '#C4512A',
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  padding: '2px 8px',
+                  borderRadius: '9999px',
+                  border: '1px solid rgba(196, 81, 42, 0.2)',
                 }}>
-                  International Clients
+                  International Practice
                 </span>
               </div>
-              <p style={{ fontSize: '0.875rem', color: 'hsl(var(--color-text-secondary))', marginTop: '0.2rem' }}>
+              <p style={{ fontSize: '0.85rem', color: '#756A62', marginTop: '0.2rem', margin: 0 }}>
                 Onboarding complete! To activate your AI receptionist 24/7 on WhatsApp, select a plan and pay securely via Crypto (USDT, USDC, BTC, ETH).
               </p>
             </div>
@@ -174,19 +171,17 @@ export function PostOnboardingCryptoPrompt({
               type="button"
               className="btn btn-primary"
               style={{
-                background: 'linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(221 83% 58%) 100%)',
-                boxShadow: '0 4px 16px hsla(263, 70%, 50%, 0.4)',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                padding: '0.65rem 1.4rem',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                padding: '0.55rem 1.25rem',
               }}
               onClick={() => setShowCryptoModal(true)}
             >
-              ⚡ Pay via Crypto (${planDetails.priceUsd})
+              Pay via Crypto (${planDetails.priceUsd})
             </button>
             <button
               type="button"
-              style={{ background: 'transparent', border: 'none', color: 'hsl(var(--color-text-muted))', fontSize: '1.1rem', cursor: 'pointer', padding: '0.4rem' }}
+              style={{ background: 'transparent', border: 'none', color: '#756A62', fontSize: '1.1rem', cursor: 'pointer', padding: '0.4rem' }}
               onClick={() => setDismissed(true)}
               title="Close"
             >
@@ -214,8 +209,8 @@ export function PostOnboardingCryptoPrompt({
                 style={{
                   padding: '0.75rem 1rem',
                   borderRadius: '10px',
-                  background: isSelected ? 'hsla(263, 70%, 50%, 0.25)' : 'hsl(var(--color-surface))',
-                  border: `1.5px solid ${isSelected ? '#c084fc' : 'hsl(var(--color-border))'}`,
+                  background: isSelected ? 'rgba(196, 81, 42, 0.06)' : '#FAF5EE',
+                  border: `1.5px solid ${isSelected ? '#C4512A' : '#E9DED3'}`,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -224,14 +219,14 @@ export function PostOnboardingCryptoPrompt({
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: isSelected ? '#ffffff' : 'hsl(var(--color-text-primary))' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.85rem', color: isSelected ? '#C4512A' : '#201A17' }}>
                     {p.name}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#756A62' }}>
                     {p.chatsDisplay}
                   </div>
                 </div>
-                <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#4ade80' }}>
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#201A17' }}>
                   {p.priceUsdDisplay}
                 </div>
               </div>

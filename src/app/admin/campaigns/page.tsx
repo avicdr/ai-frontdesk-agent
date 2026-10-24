@@ -473,15 +473,20 @@ export default function AdminCampaignsPage() {
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto', paddingBottom: '3rem' }}>
       {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-            <span style={{ fontSize: '1.75rem' }}>🚀</span>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>WhatsApp Outreach & AI Qualification Engine</h1>
-          </div>
-          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem', maxWidth: 800 }}>
-            Blast personalized WhatsApp outreach campaigns to clinic leads, measure response latency down to the second,
-            and automatically qualify clinics with <strong>Manual Receptionists (Hot Sales Leads)</strong> vs. <strong>AI Bots</strong>.
+          <h1 style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: 'clamp(1.75rem, 3.5vw, 2.25rem)',
+            fontWeight: 500,
+            letterSpacing: '-0.02em',
+            color: '#262522',
+            marginBottom: '0.4rem',
+          }}>
+            Outreach &amp; AI Lead Qualification
+          </h1>
+          <p style={{ color: '#706C65', fontSize: '0.95rem', maxWidth: 800 }}>
+            Personalized WhatsApp campaigns with latency tracking down to the second to qualify clinics with <strong>Manual Receptionists (Hot Sales Leads)</strong> vs. <strong>AI Bots</strong>.
           </p>
         </div>
 
@@ -491,19 +496,19 @@ export default function AdminCampaignsPage() {
               loadCampaigns();
               if (selectedCampaignId) loadCampaignDetails(selectedCampaignId);
             }}
-            className="btn btn-outline"
-            style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            className="btn btn-secondary"
+            style={{ fontSize: '0.85rem' }}
           >
-            <span>🔄</span> Refresh
+            Refresh
           </button>
 
           {selectedCampaign && leads.length > 0 && (
             <button
               onClick={handleExportCSV}
-              className="btn btn-outline"
-              style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', borderColor: 'hsl(142 71% 45% / 0.5)' }}
+              className="btn btn-secondary"
+              style={{ fontSize: '0.85rem' }}
             >
-              <span>📥</span> Export CSV
+              Export CSV
             </button>
           )}
 
@@ -511,18 +516,18 @@ export default function AdminCampaignsPage() {
             <button
               onClick={() => setShowTestModal(true)}
               className="btn btn-secondary"
-              style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              style={{ fontSize: '0.85rem' }}
             >
-              <span>🧪</span> Test Send
+              Test Send
             </button>
           )}
 
           <button
             onClick={() => setShowCreateModal(true)}
             className="btn btn-primary"
-            style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            style={{ fontSize: '0.85rem' }}
           >
-            <span>➕</span> New Campaign
+            New Campaign
           </button>
         </div>
       </div>
@@ -532,27 +537,27 @@ export default function AdminCampaignsPage() {
         <div
           style={{
             marginBottom: '1.25rem',
-            padding: '0.75rem 1.25rem',
-            borderRadius: 'var(--radius-md)',
+            padding: '0.85rem 1.25rem',
+            borderRadius: '8px',
             background:
               statusMessage.type === 'success'
-                ? 'hsl(142 71% 45% / 0.15)'
+                ? '#EBF3ED'
                 : statusMessage.type === 'error'
-                ? 'hsl(0 84% 60% / 0.15)'
-                : 'hsl(221 83% 58% / 0.15)',
+                ? '#FAEBEA'
+                : '#F8E8DE',
             border: `1px solid ${
               statusMessage.type === 'success'
-                ? 'hsl(142 71% 45% / 0.3)'
+                ? '#D5E4D8'
                 : statusMessage.type === 'error'
-                ? 'hsl(0 84% 60% / 0.3)'
-                : 'hsl(221 83% 58% / 0.3)'
+                ? '#F3CFCB'
+                : '#F0D5C7'
             }`,
             color:
               statusMessage.type === 'success'
-                ? 'hsl(142 71% 55%)'
+                ? '#2A5A36'
                 : statusMessage.type === 'error'
-                ? 'hsl(0 84% 65%)'
-                : 'hsl(221 83% 68%)',
+                ? '#A83830'
+                : '#C86646',
             fontSize: '0.875rem',
             display: 'flex',
             justifyContent: 'space-between',
@@ -580,8 +585,8 @@ export default function AdminCampaignsPage() {
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '1rem',
-          background: 'linear-gradient(135deg, hsl(265 40% 12%) 0%, hsl(222 40% 9%) 100%)',
-          borderColor: 'hsl(265 30% 25%)',
+          background: '#F4F1EB',
+          border: '1px solid #E7E2DA',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -589,29 +594,30 @@ export default function AdminCampaignsPage() {
             style={{
               width: 38,
               height: 38,
-              borderRadius: '10px',
-              background: 'hsl(142 71% 45% / 0.2)',
-              border: '1px solid hsl(142 71% 45% / 0.4)',
+              borderRadius: '8px',
+              background: '#FFFFFF',
+              border: '1px solid #E7E2DA',
+              color: '#262522',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.25rem',
+              fontSize: '1.15rem',
             }}
           >
             💬
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>WhatsApp Sender Connection</span>
+              <span style={{ fontWeight: 600, fontSize: '0.95rem', color: '#262522' }}>WhatsApp Sender Line</span>
               {activeSender?.status === 'connected' ? (
-                <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>● Connected & Ready</span>
+                <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>● Connected &amp; Ready</span>
               ) : (
-                <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>⚠️ Disconnected / Needs Scan</span>
+                <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>Disconnected</span>
               )}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.15rem' }}>
+            <div style={{ fontSize: '0.75rem', color: '#706C65', marginTop: '0.15rem' }}>
               {activeSender?.phoneNumber ? (
-                <span>Outbound messages will be sent from <strong>{activeSender.phoneNumber}</strong> ({activeSender.clinicName})</span>
+                <span>Outbound messages sent from <strong>{activeSender.phoneNumber}</strong> ({activeSender.clinicName})</span>
               ) : (
                 <span>No phone number registered yet. Connect WhatsApp in the clinic dashboard or scan QR code.</span>
               )}
@@ -622,10 +628,10 @@ export default function AdminCampaignsPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Link
             href="/dashboard/onboarding"
-            className="btn btn-outline"
+            className="btn btn-secondary"
             style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
           >
-            Manage Connections 📱
+            Manage Connections
           </Link>
         </div>
       </div>
@@ -634,7 +640,7 @@ export default function AdminCampaignsPage() {
       {campaigns.length > 0 ? (
         <div style={{ marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'hsl(var(--color-text-secondary))' }}>Select Campaign:</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#706C65' }}>Select Campaign:</span>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
             {campaigns.map(camp => {
@@ -645,9 +651,9 @@ export default function AdminCampaignsPage() {
                   key={camp.id}
                   onClick={() => setSelectedCampaignId(camp.id)}
                   style={{
-                    background: isSelected ? 'hsl(221 83% 58% / 0.15)' : 'hsl(var(--color-surface))',
-                    border: `1px solid ${isSelected ? 'hsl(221 83% 58%)' : 'hsl(var(--color-border))'}`,
-                    borderRadius: 'var(--radius-md)',
+                    background: isSelected ? '#F8E8DE' : '#FFFFFF',
+                    border: `1px solid ${isSelected ? '#D97757' : '#E7E2DA'}`,
+                    borderRadius: '8px',
                     padding: '0.6rem 1rem',
                     textAlign: 'left',
                     cursor: 'pointer',
@@ -656,19 +662,19 @@ export default function AdminCampaignsPage() {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.875rem', color: isSelected ? 'hsl(var(--color-primary-glow))' : 'hsl(var(--color-text-primary))' }}>
+                    <span style={{ fontWeight: 600, fontSize: '0.875rem', color: isSelected ? '#C86646' : '#262522' }}>
                       {camp.name}
                     </span>
                     <span
                       className={`badge ${
-                        isRunning ? 'badge-success' : camp.status === 'paused' ? 'badge-warning' : 'badge-info'
+                        isRunning ? 'badge-success' : camp.status === 'paused' ? 'badge-warning' : 'badge-neutral'
                       }`}
                       style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem' }}
                     >
-                      {isRunning ? '⚡ Running' : camp.status}
+                      {isRunning ? '● Running' : camp.status}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#706C65' }}>
                     {camp.stats.totalLeads} leads • {camp.stats.repliedCount} replies
                   </div>
                 </button>
@@ -678,14 +684,22 @@ export default function AdminCampaignsPage() {
         </div>
       ) : (
         <div className="card" style={{ textAlign: 'center', padding: '3rem 1.5rem', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🚀</div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>No Campaigns Found</h2>
-          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem', maxWidth: 500, margin: '0 auto 1.5rem' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>✦</div>
+          <h2 style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: '1.25rem',
+            fontWeight: 500,
+            color: '#262522',
+            marginBottom: '0.5rem',
+          }}>
+            No Campaigns Found
+          </h2>
+          <p style={{ color: '#706C65', fontSize: '0.875rem', maxWidth: 500, margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
             Get started by creating your first WhatsApp outreach campaign. You can import leads, set a custom message template,
             and auto-qualify clinics in real-time.
           </p>
           <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
-            ➕ Create Your First Campaign
+            Create Your First Campaign
           </button>
         </div>
       )}
@@ -699,7 +713,6 @@ export default function AdminCampaignsPage() {
             style={{
               padding: '1.25rem',
               marginBottom: '1.5rem',
-              background: 'hsl(var(--color-surface))',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -709,21 +722,28 @@ export default function AdminCampaignsPage() {
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{selectedCampaign.name}</h2>
+                <h2 style={{
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: '1.35rem',
+                  fontWeight: 500,
+                  color: '#262522',
+                }}>
+                  {selectedCampaign.name}
+                </h2>
                 <span
                   className={`badge ${
                     selectedCampaign.status === 'running'
                       ? 'badge-success'
                       : selectedCampaign.status === 'paused'
                       ? 'badge-warning'
-                      : 'badge-info'
+                      : 'badge-neutral'
                   }`}
                   style={{ fontSize: '0.75rem' }}
                 >
-                  {selectedCampaign.status === 'running' ? '⚡ RUNNING IN BACKGROUND' : selectedCampaign.status.toUpperCase()}
+                  {selectedCampaign.status === 'running' ? '● RUNNING IN BACKGROUND' : selectedCampaign.status.toUpperCase()}
                 </span>
               </div>
-              <div style={{ fontSize: '0.78rem', color: 'hsl(var(--color-text-muted))' }}>
+              <div style={{ fontSize: '0.78rem', color: '#706C65' }}>
                 AI Threshold: <strong>≤ {selectedCampaign.responseThresholdSeconds}s = Bot</strong> •
                 Safe Throttle: <strong>{selectedCampaign.delaySeconds}s delay</strong> •
                 Created: {new Date(selectedCampaign.createdAt).toLocaleDateString()}
@@ -734,17 +754,17 @@ export default function AdminCampaignsPage() {
               <button
                 onClick={() => setShowAddLeadsModal(true)}
                 className="btn btn-secondary"
-                style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                style={{ fontSize: '0.85rem' }}
               >
-                <span>➕</span> Add Leads
+                Add Leads
               </button>
 
               <button
                 onClick={() => setShowSettingsModal(true)}
-                className="btn btn-outline"
-                style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                className="btn btn-secondary"
+                style={{ fontSize: '0.85rem' }}
               >
-                <span>⚙️</span> Template & Settings
+                Template &amp; Settings
               </button>
 
               {selectedCampaign.status !== 'running' ? (
@@ -752,25 +772,18 @@ export default function AdminCampaignsPage() {
                   onClick={() => handleCampaignAction('start')}
                   disabled={actionInProgress === 'start' || selectedCampaign.stats.pendingCount === 0}
                   className="btn btn-primary"
-                  style={{
-                    fontSize: '0.85rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    background: 'linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(162 73% 46%) 100%)',
-                    borderColor: 'hsl(142 71% 45%)',
-                  }}
+                  style={{ fontSize: '0.85rem' }}
                 >
-                  <span>▶️</span> {actionInProgress === 'start' ? 'Starting...' : 'Start Campaign'}
+                  {actionInProgress === 'start' ? 'Starting...' : 'Start Campaign'}
                 </button>
               ) : (
                 <button
                   onClick={() => handleCampaignAction('pause')}
                   disabled={actionInProgress === 'pause'}
-                  className="btn btn-warning"
-                  style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                  className="btn"
+                  style={{ fontSize: '0.85rem', background: '#FAF3E7', color: '#8A5812', border: '1px solid #F0E1C6' }}
                 >
-                  <span>⏸️</span> {actionInProgress === 'pause' ? 'Pausing...' : 'Pause Campaign'}
+                  {actionInProgress === 'pause' ? 'Pausing...' : 'Pause Campaign'}
                 </button>
               )}
 
@@ -781,20 +794,20 @@ export default function AdminCampaignsPage() {
                   }
                 }}
                 disabled={actionInProgress === 'reset'}
-                className="btn btn-outline"
+                className="btn btn-secondary"
                 title="Reset lead statuses to re-send"
-                style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                style={{ fontSize: '0.85rem' }}
               >
-                <span>🔄</span> Reset
+                Reset
               </button>
 
               <button
                 onClick={handleDeleteCampaign}
-                className="btn btn-outline"
+                className="btn"
                 title="Delete Campaign"
-                style={{ fontSize: '0.85rem', color: 'hsl(var(--color-error))', borderColor: 'hsl(0 84% 60% / 0.3)' }}
+                style={{ fontSize: '0.85rem', color: '#A83830', background: '#FAEBEA', border: '1px solid #F3CFCB' }}
               >
-                🗑️
+                Delete
               </button>
             </div>
           </div>

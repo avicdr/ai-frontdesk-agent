@@ -254,43 +254,53 @@ export default function IntegrationsPage() {
   return (
     <div>
       {/* Header */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-          🔗 Channels & Integrations
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{
+          fontFamily: 'var(--font-serif)',
+          fontSize: 'clamp(1.75rem, 3.5vw, 2.25rem)',
+          fontWeight: 500,
+          letterSpacing: '-0.02em',
+          color: '#262522',
+          marginBottom: '0.4rem',
+        }}>
+          Channels &amp; Integrations
         </h1>
-        <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.875rem' }}>
-          Connect your clinic WhatsApp number (via Linked Devices) and Google Calendar.
+        <p style={{ color: '#706C65', fontSize: '0.95rem' }}>
+          Connect your clinic WhatsApp line via Linked Devices and synchronize real-time doctor availability with Google Calendar.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.25rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '1.5rem', alignItems: 'start' }}>
         {/* WhatsApp Card */}
-        <div className="card" style={{ padding: 'clamp(1rem, 3vw, 1.75rem)', overflow: 'visible' }}>
+        <div className="card" style={{ padding: 'clamp(1.25rem, 3vw, 1.75rem)', overflow: 'visible' }}>
           {/* Card Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
-                width: 44,
-                height: 44,
-                borderRadius: '12px',
-                background: 'hsl(142 71% 45% / 0.15)',
-                color: 'hsl(142 71% 45%)',
+                width: 42,
+                height: 42,
+                borderRadius: '10px',
+                background: '#F4F1EB',
+                border: '1px solid #E7E2DA',
+                color: '#262522',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.5rem',
+                fontSize: '1.25rem',
               }}>
                 💬
               </div>
               <div>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>WhatsApp Web & Multi-Device</h2>
-                <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
-                  No Meta Developer Account required
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#262522', letterSpacing: '-0.01em' }}>
+                  WhatsApp Multi-Device
+                </h2>
+                <div style={{ fontSize: '0.75rem', color: '#706C65' }}>
+                  Native phone pairing • No Meta developer account
                 </div>
               </div>
             </div>
-            <span className={`badge ${waStatus === 'connected' ? 'badge-success' : waStatus === 'connecting' ? 'badge-info' : 'badge-warning'}`}>
-              {waStatus === 'connected' ? '● Connected' : waStatus === 'connecting' ? '⌛ Connecting...' : 'Disconnected'}
+            <span className={`badge ${waStatus === 'connected' ? 'badge-success' : waStatus === 'connecting' ? 'badge-warning' : 'badge-neutral'}`}>
+              {waStatus === 'connected' ? '● Connected' : waStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
             </span>
           </div>
 
@@ -298,37 +308,37 @@ export default function IntegrationsPage() {
           {waStatus === 'connected' ? (
             <div>
               <div style={{
-                background: 'hsla(142, 71%, 45%, 0.1)',
-                border: '1px solid hsla(142, 71%, 45%, 0.3)',
-                borderRadius: '12px',
-                padding: '1.25rem',
+                background: '#EBF3ED',
+                border: '1px solid #D5E4D8',
+                borderRadius: '10px',
+                padding: '1.15rem',
                 marginBottom: '1.25rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '1rem',
               }}>
-                <div style={{ fontSize: '2rem' }}>📱</div>
+                <div style={{ fontSize: '1.75rem' }}>📱</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 800, fontSize: '1rem', color: '#4ade80' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#2A5A36' }}>
                     Connected as {connectedNumber || 'Clinic Device'}
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))', marginTop: '0.2rem' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#406B49', marginTop: '0.2rem', lineHeight: 1.4 }}>
                     Your 24/7 AI Receptionist is active. Messages sent to this number are handled automatically.
                   </div>
                 </div>
               </div>
 
               <div style={{
-                background: 'hsl(var(--color-surface-hover))',
-                borderRadius: '10px',
+                background: '#F4F1EB',
+                borderRadius: '8px',
                 padding: '0.85rem 1rem',
-                border: '1px solid hsl(var(--color-border))',
+                border: '1px solid #E7E2DA',
                 marginBottom: '1.25rem',
                 fontSize: '0.75rem',
-                color: 'hsl(var(--color-text-muted))',
+                color: '#706C65',
                 lineHeight: 1.5,
               }}>
-                💡 <strong>Persistent Multi-Device Session:</strong> Your session credentials are encrypted and stored in your database. You will remain connected across reboots as long as your phone connects to the internet once every 14 days.
+                ✦ <strong>Persistent Session:</strong> Session credentials are encrypted and stored in your database. You remain connected across reboots as long as your phone connects to the internet once every 14 days.
               </div>
 
               <button
@@ -338,10 +348,10 @@ export default function IntegrationsPage() {
                 className="btn"
                 style={{
                   width: '100%',
-                  background: 'hsla(0, 84%, 60%, 0.1)',
-                  color: '#f87171',
-                  border: '1px solid hsla(0, 84%, 60%, 0.3)',
-                  fontWeight: 600,
+                  background: '#FAEBEA',
+                  color: '#A83830',
+                  border: '1px solid #F3CFCB',
+                  fontWeight: 500,
                 }}
               >
                 {isLoadingWA ? 'Unlinking...' : 'Disconnect WhatsApp Number'}
@@ -350,67 +360,67 @@ export default function IntegrationsPage() {
           ) : (
             /* Disconnected / Connecting Setup */
             <div>
-              <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-                Link your phone directly just like WhatsApp Web. Choose to scan a QR code or enter an 8-character connection code on your mobile app.
+              <p style={{ color: '#706C65', fontSize: '0.875rem', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                Link your clinic phone directly just like WhatsApp Web. Choose to scan a QR code or enter an 8-character connection code on your mobile app.
               </p>
 
               {/* Mode Toggle Tabs */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
-                gap: '0.5rem',
-                background: 'hsl(var(--color-surface-hover))',
+                gap: '0.35rem',
+                background: '#F4F1EB',
                 padding: '0.25rem',
-                borderRadius: '10px',
+                borderRadius: '8px',
                 marginBottom: '1.25rem',
               }}>
                 <button
                   type="button"
                   onClick={() => { setWaMode('qr'); setWaError(null); }}
                   style={{
-                    padding: '0.6rem',
-                    borderRadius: '8px',
+                    padding: '0.55rem',
+                    borderRadius: '6px',
                     border: 'none',
-                    fontWeight: 600,
+                    fontWeight: waMode === 'qr' ? 600 : 500,
                     fontSize: '0.825rem',
                     cursor: 'pointer',
-                    background: waMode === 'qr' ? 'hsl(var(--color-surface))' : 'transparent',
-                    color: waMode === 'qr' ? 'hsl(var(--color-text-primary))' : 'hsl(var(--color-text-muted))',
-                    boxShadow: waMode === 'qr' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    background: waMode === 'qr' ? '#FFFFFF' : 'transparent',
+                    color: waMode === 'qr' ? '#262522' : '#706C65',
+                    boxShadow: waMode === 'qr' ? '0 1px 2px rgba(38,37,34,0.06)' : 'none',
                   }}
                 >
-                  📷 Scan QR Code
+                  Scan QR Code
                 </button>
                 <button
                   type="button"
                   onClick={() => { setWaMode('pairing_code'); setWaError(null); }}
                   style={{
-                    padding: '0.6rem',
-                    borderRadius: '8px',
+                    padding: '0.55rem',
+                    borderRadius: '6px',
                     border: 'none',
-                    fontWeight: 600,
+                    fontWeight: waMode === 'pairing_code' ? 600 : 500,
                     fontSize: '0.825rem',
                     cursor: 'pointer',
-                    background: waMode === 'pairing_code' ? 'hsl(var(--color-surface))' : 'transparent',
-                    color: waMode === 'pairing_code' ? 'hsl(var(--color-text-primary))' : 'hsl(var(--color-text-muted))',
-                    boxShadow: waMode === 'pairing_code' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    background: waMode === 'pairing_code' ? '#FFFFFF' : 'transparent',
+                    color: waMode === 'pairing_code' ? '#262522' : '#706C65',
+                    boxShadow: waMode === 'pairing_code' ? '0 1px 2px rgba(38,37,34,0.06)' : 'none',
                   }}
                 >
-                  🔢 Link with Phone Code
+                  Phone Pairing Code
                 </button>
               </div>
 
               {waError && (
                 <div style={{
-                  padding: '0.75rem',
+                  padding: '0.75rem 1rem',
                   borderRadius: '8px',
-                  background: 'hsla(0, 84%, 60%, 0.1)',
-                  color: '#f87171',
-                  border: '1px solid hsla(0, 84%, 60%, 0.3)',
-                  fontSize: '0.8rem',
+                  background: '#FAEBEA',
+                  color: '#A83830',
+                  border: '1px solid #F3CFCB',
+                  fontSize: '0.85rem',
                   marginBottom: '1rem',
                 }}>
-                  ⚠️ {waError}
+                  {waError}
                 </div>
               )}
 
@@ -422,18 +432,19 @@ export default function IntegrationsPage() {
                       <div style={{
                         display: 'inline-block',
                         padding: '12px',
-                        background: '#ffffff',
-                        borderRadius: '16px',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                        background: '#FFFFFF',
+                        borderRadius: '12px',
+                        border: '1px solid #E7E2DA',
+                        boxShadow: '0 2px 8px rgba(38,37,34,0.06)',
                         marginBottom: '1rem',
                       }}>
                         <img
                           src={qrCode}
                           alt="WhatsApp QR Code"
-                          style={{ width: 220, height: 220, display: 'block', borderRadius: '8px' }}
+                          style={{ width: 220, height: 220, display: 'block', borderRadius: '6px' }}
                         />
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', marginBottom: '0.5rem' }}>
+                      <div style={{ fontSize: '0.8rem', color: '#706C65', marginBottom: '0.75rem' }}>
                         Waiting for you to scan... (Auto-refreshing)
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '0.5rem' }}>
@@ -442,7 +453,7 @@ export default function IntegrationsPage() {
                           onClick={() => handleStartQR(true)}
                           disabled={isLoadingWA}
                           className="btn btn-secondary"
-                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem' }}
                         >
                           🔄 Regenerate QR
                         </button>
@@ -451,7 +462,7 @@ export default function IntegrationsPage() {
                           onClick={handleRevokePairing}
                           disabled={isLoadingWA}
                           className="btn btn-ghost"
-                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', color: '#A83830' }}
                         >
                           ✕ Revoke QR
                         </button>
@@ -459,16 +470,17 @@ export default function IntegrationsPage() {
                     </div>
                   ) : (
                     <div style={{
-                      padding: '2rem 1rem',
-                      border: '2px dashed hsl(var(--color-border))',
-                      borderRadius: '12px',
+                      padding: '2.5rem 1rem',
+                      border: '1.5px dashed #E7E2DA',
+                      borderRadius: '10px',
                       marginBottom: '1rem',
+                      background: '#FAF9F5',
                     }}>
-                      <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📷</div>
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem' }}>
+                      <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📷</div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#262522', marginBottom: '0.25rem' }}>
                         Generate Linked Device QR Code
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginBottom: '1rem' }}>
+                      <div style={{ fontSize: '0.78rem', color: '#706C65', marginBottom: '1.25rem' }}>
                         Click below to generate a real-time QR code.
                       </div>
                       <button
@@ -486,14 +498,15 @@ export default function IntegrationsPage() {
                   {/* Instructions */}
                   <div style={{
                     textAlign: 'left',
-                    background: 'hsl(var(--color-surface-hover))',
-                    borderRadius: '10px',
+                    background: '#F4F1EB',
+                    borderRadius: '8px',
+                    border: '1px solid #E7E2DA',
                     padding: '1rem',
                     fontSize: '0.8rem',
-                    color: 'hsl(var(--color-text-secondary))',
+                    color: '#706C65',
                     lineHeight: 1.6,
                   }}>
-                    <strong style={{ color: 'hsl(var(--color-text-primary))' }}>How to scan:</strong>
+                    <strong style={{ color: '#262522' }}>How to scan:</strong>
                     <ol style={{ paddingLeft: '1.25rem', marginTop: '0.4rem', marginBlockEnd: 0 }}>
                       <li>Open WhatsApp on the clinic phone</li>
                       <li>Go to <strong>Settings</strong> (or tap ⋮ on Android) → <strong>Linked Devices</strong></li>
@@ -516,7 +529,7 @@ export default function IntegrationsPage() {
                         placeholder="e.g. +91 98765 43210 or 919876543210"
                         style={{ fontFamily: 'monospace' }}
                       />
-                      <div style={{ fontSize: '0.725rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.25rem' }}>
+                      <div style={{ fontSize: '0.725rem', color: '#706C65', marginTop: '0.25rem' }}>
                         Include country code (e.g. 91 for India, 1 for US). No spaces required.
                       </div>
                     </div>
@@ -537,7 +550,7 @@ export default function IntegrationsPage() {
                           onClick={handleRevokePairing}
                           disabled={isLoadingWA}
                           className="btn btn-secondary"
-                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', borderColor: 'rgba(239, 68, 68, 0.4)', color: '#f87171' }}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', borderColor: '#F3CFCB', color: '#A83830' }}
                         >
                           ✕ Revoke Code
                         </button>
@@ -556,21 +569,21 @@ export default function IntegrationsPage() {
 
                   {pairingCode && (
                     <div style={{
-                      background: 'hsla(142, 71%, 45%, 0.1)',
-                      border: '1px solid hsla(142, 71%, 45%, 0.3)',
-                      borderRadius: '12px',
+                      background: '#F4F1EB',
+                      border: '1px solid #E7E2DA',
+                      borderRadius: '10px',
                       padding: '1.25rem',
                       textAlign: 'center',
                       marginBottom: '1rem',
                     }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'hsl(var(--color-text-muted))', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#706C65', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         Your Pairing Code
                       </div>
                       <div style={{
                         fontSize: '2rem',
-                        fontWeight: 900,
+                        fontWeight: 700,
                         fontFamily: 'monospace',
-                        color: '#4ade80',
+                        color: '#262522',
                         letterSpacing: '0.15em',
                         margin: '0.5rem 0',
                       }}>
@@ -599,23 +612,24 @@ export default function IntegrationsPage() {
                           onClick={handleRevokePairing}
                           disabled={isLoadingWA}
                           className="btn btn-ghost"
-                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', color: '#A83830', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                         >
                           ✕ Revoke Code
                         </button>
                       </div>
                       <div style={{
                         fontSize: '0.75rem',
-                        color: 'hsl(var(--color-text-muted))',
-                        background: 'hsl(var(--color-surface))',
+                        color: '#706C65',
+                        background: '#FFFFFF',
+                        border: '1px solid #E7E2DA',
                         padding: '0.5rem 0.75rem',
                         borderRadius: '6px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '0.5rem'
+                        gap: '0.5rem',
                       }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#eab308', display: 'inline-block' }} />
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#D97757', display: 'inline-block' }} />
                         Enter code on your phone now. WhatsApp takes 5–10s to link.
                       </div>
                     </div>
@@ -623,18 +637,19 @@ export default function IntegrationsPage() {
 
                   {/* Instructions */}
                   <div style={{
-                    background: 'hsl(var(--color-surface-hover))',
-                    borderRadius: '10px',
+                    background: '#F4F1EB',
+                    borderRadius: '8px',
+                    border: '1px solid #E7E2DA',
                     padding: '1rem',
                     fontSize: '0.8rem',
-                    color: 'hsl(var(--color-text-secondary))',
+                    color: '#706C65',
                     lineHeight: 1.6,
                   }}>
-                    <strong style={{ color: 'hsl(var(--color-text-primary))' }}>How to enter code:</strong>
+                    <strong style={{ color: '#262522' }}>How to enter code:</strong>
                     <ol style={{ paddingLeft: '1.25rem', marginTop: '0.4rem', marginBlockEnd: 0 }}>
                       <li>Open WhatsApp on the clinic phone</li>
                       <li>Go to <strong>Settings</strong> → <strong>Linked Devices</strong> → <strong>Link a Device</strong></li>
-                      <li>At the bottom of the camera screen, tap <strong>"Link with phone number instead"</strong></li>
+                      <li>At the bottom of the camera screen, tap <strong>&quot;Link with phone number instead&quot;</strong></li>
                       <li>Enter the 8-digit code shown above</li>
                     </ol>
                   </div>
@@ -645,61 +660,64 @@ export default function IntegrationsPage() {
         </div>
 
         {/* Google Calendar Card */}
-        <div className="card" style={{ padding: '1.75rem', overflow: 'visible' }}>
+        <div className="card" style={{ padding: 'clamp(1.25rem, 3vw, 1.75rem)', overflow: 'visible' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{
-                width: 44,
-                height: 44,
-                borderRadius: '12px',
-                background: 'hsl(221 83% 58% / 0.15)',
-                color: 'hsl(221 83% 58%)',
+                width: 42,
+                height: 42,
+                borderRadius: '10px',
+                background: '#F4F1EB',
+                border: '1px solid #E7E2DA',
+                color: '#262522',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.5rem',
+                fontSize: '1.25rem',
               }}>
                 📅
               </div>
               <div>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Google Calendar 2-Way Sync</h2>
-                <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>Automatic doctor schedule sync</div>
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 600, color: '#262522', letterSpacing: '-0.01em' }}>
+                  Google Calendar 2-Way Sync
+                </h2>
+                <div style={{ fontSize: '0.75rem', color: '#706C65' }}>Automatic doctor schedule sync</div>
               </div>
             </div>
-            <span className={`badge ${calendarConnected ? 'badge-success' : 'badge-info'}`}>
+            <span className={`badge ${calendarConnected ? 'badge-success' : 'badge-neutral'}`}>
               {calendarConnected ? '● Connected' : 'OAuth 2.0'}
             </span>
           </div>
 
-          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+          <p style={{ color: '#706C65', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '1.25rem' }}>
             Connect your primary Google Calendar. The AI receptionist will check your free/busy times in real time to avoid double-bookings, and instantly write confirmed patient slots to your calendar.
           </p>
 
           {/* OAuth status badge */}
           <div style={{ marginBottom: '1rem' }}>
             {isLiveGoogleConfigured ? (
-              <span style={{ fontSize: '0.75rem', color: '#4ade80', background: 'hsla(142, 71%, 45%, 0.12)', border: '1px solid hsla(142, 71%, 45%, 0.3)', padding: '0.3rem 0.75rem', borderRadius: '9999px', fontWeight: 600 }}>
-                🟢 Live Google Account OAuth Active
+              <span className="badge badge-success" style={{ fontSize: '0.75rem', padding: '0.3rem 0.75rem' }}>
+                ● Live Google Account OAuth Active
               </span>
             ) : (
-              <span style={{ fontSize: '0.75rem', color: '#fbbf24', background: 'hsla(38, 92%, 50%, 0.12)', border: '1px solid hsla(38, 92%, 50%, 0.3)', padding: '0.3rem 0.75rem', borderRadius: '9999px', fontWeight: 600 }} title="Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env for production Google OAuth">
-                ⚡ Sandbox Simulation Mode (Set GOOGLE_CLIENT_ID & SECRET in .env for Live Account)
+              <span className="badge badge-warning" style={{ fontSize: '0.75rem', padding: '0.3rem 0.75rem' }}>
+                Sandbox Simulation Mode (Set GOOGLE_CLIENT_ID &amp; SECRET in .env for Live Account)
               </span>
             )}
           </div>
 
           <div style={{
-            background: 'hsl(var(--color-surface-hover))',
-            borderRadius: '12px',
-            padding: '1.25rem',
-            border: '1px solid hsl(var(--color-border))',
-            marginBottom: '1.5rem',
+            background: '#F4F1EB',
+            borderRadius: '10px',
+            padding: '1rem 1.25rem',
+            border: '1px solid #E7E2DA',
+            marginBottom: '1.25rem',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '1.1rem' }}>🔒</span>
-              <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>Zero Stored Passwords</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+              <span style={{ fontSize: '1rem' }}>🔒</span>
+              <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#262522' }}>Zero Stored Passwords</span>
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '0.75rem', color: '#706C65', lineHeight: 1.5 }}>
               Tokens are encrypted at rest using AES-256-GCM and refreshed automatically using Google OAuth offline credentials.
             </div>
           </div>
@@ -708,9 +726,9 @@ export default function IntegrationsPage() {
             <div>
               {/* Connected Banner */}
               <div style={{
-                background: apiDisabled ? 'hsla(38, 92%, 50%, 0.1)' : 'hsla(142, 71%, 45%, 0.1)',
-                border: apiDisabled ? '1px solid hsla(38, 92%, 50%, 0.35)' : '1px solid hsla(142, 71%, 45%, 0.3)',
-                borderRadius: '12px',
+                background: apiDisabled ? '#FAF3E7' : '#EBF3ED',
+                border: `1px solid ${apiDisabled ? '#F0E1C6' : '#D5E4D8'}`,
+                borderRadius: '10px',
                 padding: '1rem',
                 marginBottom: '1rem',
                 display: 'flex',
@@ -719,10 +737,10 @@ export default function IntegrationsPage() {
               }}>
                 <span style={{ fontSize: '1.25rem' }}>{apiDisabled ? '⚠️' : '✅'}</span>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: apiDisabled ? '#fbbf24' : '#4ade80' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem', color: apiDisabled ? '#8A5812' : '#2A5A36' }}>
                     {apiDisabled ? 'Google Calendar Connected (API Action Required)' : 'Google Doctor Calendar Connected'}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#706C65', marginTop: '0.15rem' }}>
                     {calendarEmail ? `Account: ${calendarEmail}` : 'OAuth credentials active.'}
                     {calendarName ? ` • Calendar: ${calendarName}` : ''}
                   </div>
@@ -732,16 +750,16 @@ export default function IntegrationsPage() {
               {/* API Disabled Notice */}
               {apiDisabled && (
                 <div style={{
-                  background: 'hsla(38, 92%, 50%, 0.1)',
-                  border: '1px solid hsla(38, 92%, 50%, 0.3)',
-                  borderRadius: '12px',
+                  background: '#FAF3E7',
+                  border: '1px solid #F0E1C6',
+                  borderRadius: '10px',
                   padding: '1.25rem',
                   marginBottom: '1rem',
                 }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#fbbf24', marginBottom: '0.35rem' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#8A5812', marginBottom: '0.35rem' }}>
                     Google Calendar API is Disabled in Google Cloud
                   </div>
-                  <p style={{ fontSize: '0.785rem', color: 'hsl(var(--color-text-secondary))', lineHeight: 1.5, margin: 0, marginBottom: '0.75rem' }}>
+                  <p style={{ fontSize: '0.785rem', color: '#706C65', lineHeight: 1.5, margin: 0, marginBottom: '0.75rem' }}>
                     Google returned error 403: Google Calendar API has not been enabled in your Google Cloud Project. Please click the button below to turn it on, then click &quot;Sync Appointments&quot;.
                   </p>
                   {enableApiUrl && (
@@ -750,9 +768,9 @@ export default function IntegrationsPage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn-sm btn-primary"
-                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}
+                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
                     >
-                      🚀 Enable Google Calendar API in Google Cloud
+                      Enable Google Calendar API in Google Cloud
                     </a>
                   )}
                 </div>
@@ -761,9 +779,9 @@ export default function IntegrationsPage() {
               {/* Unsynced Appointments Notice */}
               {unsyncedCount > 0 && (
                 <div style={{
-                  background: 'hsla(217, 91%, 60%, 0.1)',
-                  border: '1px solid hsla(217, 91%, 60%, 0.3)',
-                  borderRadius: '10px',
+                  background: '#F8E8DE',
+                  border: '1px solid #F0D5C7',
+                  borderRadius: '8px',
                   padding: '0.85rem 1rem',
                   marginBottom: '1rem',
                   display: 'flex',
@@ -771,8 +789,8 @@ export default function IntegrationsPage() {
                   justifyContent: 'space-between',
                   gap: '0.75rem',
                 }}>
-                  <div style={{ fontSize: '0.8rem', color: '#93c5fd' }}>
-                    📅 <strong>{unsyncedCount} confirmed appointment{unsyncedCount > 1 ? 's' : ''}</strong> pending Google Calendar sync (including &quot;Om&quot;).
+                  <div style={{ fontSize: '0.8rem', color: '#C86646' }}>
+                    📅 <strong>{unsyncedCount} confirmed appointment{unsyncedCount > 1 ? 's' : ''}</strong> pending Google Calendar sync.
                   </div>
                   <button
                     type="button"
@@ -781,7 +799,7 @@ export default function IntegrationsPage() {
                     className="btn btn-sm btn-primary"
                     style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', whiteSpace: 'nowrap' }}
                   >
-                    {isSyncing ? '⏳ Syncing...' : '⚡ Push to Calendar'}
+                    {isSyncing ? 'Syncing...' : 'Push to Calendar'}
                   </button>
                 </div>
               )}
@@ -793,9 +811,9 @@ export default function IntegrationsPage() {
                   borderRadius: '8px',
                   fontSize: '0.8rem',
                   marginBottom: '1rem',
-                  background: syncMessage.includes('Successfully') ? 'hsla(142, 71%, 45%, 0.1)' : 'hsla(0, 84%, 60%, 0.1)',
-                  color: syncMessage.includes('Successfully') ? '#4ade80' : '#f87171',
-                  border: `1px solid ${syncMessage.includes('Successfully') ? 'hsla(142, 71%, 45%, 0.3)' : 'hsla(0, 84%, 60%, 0.3)'}`,
+                  background: syncMessage.includes('Successfully') ? '#EBF3ED' : '#FAEBEA',
+                  color: syncMessage.includes('Successfully') ? '#2A5A36' : '#A83830',
+                  border: `1px solid ${syncMessage.includes('Successfully') ? '#D5E4D8' : '#F3CFCB'}`,
                 }}>
                   {syncMessage}
                 </div>
@@ -809,12 +827,12 @@ export default function IntegrationsPage() {
                   className="btn btn-secondary"
                   style={{ flex: 1, textAlign: 'center' }}
                 >
-                  {isSyncing ? '⏳ Syncing Appointments...' : '🔄 Sync Appointments'}
+                  {isSyncing ? 'Syncing Appointments...' : '🔄 Sync Appointments'}
                 </button>
                 <button
                   type="button"
                   className="btn"
-                  style={{ background: 'hsla(0, 84%, 60%, 0.1)', color: '#f87171', border: '1px solid hsla(0, 84%, 60%, 0.3)' }}
+                  style={{ background: '#FAEBEA', color: '#A83830', border: '1px solid #F3CFCB' }}
                   onClick={handleDisconnectCalendar}
                 >
                   Disconnect
@@ -828,7 +846,7 @@ export default function IntegrationsPage() {
                 className="btn btn-primary"
                 style={{ flex: 1, textAlign: 'center', textDecoration: 'none' }}
               >
-                🗓️ Connect Google Calendar
+                Connect Google Calendar
               </a>
             </div>
           )}

@@ -1,18 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { DM_Serif_Display, Inter } from "next/font/google";
 import "./globals.css";
+
+const dmSerif = DM_Serif_Display({
+  weight: "400",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-display",
+});
 
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-sans",
 });
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#080c18",
+  themeColor: "#FAF5EE",
 };
 
 export const metadata: Metadata = {
@@ -21,18 +29,25 @@ export const metadata: Metadata = {
     template: "%s | AI Front Desk",
   },
   description:
-    "Give your dental clinic or appointment-based business an AI receptionist that answers patient queries, checks availability, and books appointments — 24/7 on WhatsApp.",
+    "Give your clinic or appointment-based practice an intelligent AI receptionist that answers patient queries, checks availability, and books appointments 24/7 on WhatsApp.",
   keywords: [
     "AI receptionist",
-    "dental clinic AI",
-    "WhatsApp chatbot",
-    "appointment booking",
-    "clinic automation",
+    "clinic AI front desk",
+    "WhatsApp assistant",
+    "appointment booking automation",
   ],
   authors: [{ name: "AI Front Desk" }],
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/ARENOVA.ico" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/arenova.png",
+  },
   openGraph: {
-    title: "AI Front Desk — AI Receptionist for Clinics",
-    description: "AI-powered receptionist for dental clinics and appointment businesses.",
+    title: "AI Front Desk — Intelligent Clinic Receptionist",
+    description: "Intelligent front-desk assistant for clinics and appointment businesses.",
     type: "website",
   },
 };
@@ -43,8 +58,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.variable}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${dmSerif.variable} ${inter.variable}`}
+    >
+      <body className="antialiased">
         {children}
       </body>
     </html>

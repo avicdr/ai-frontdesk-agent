@@ -1,7 +1,7 @@
 'use client';
 
 // src/app/dashboard/conversations/page.tsx
-// Clinic Conversation Inbox with real-time timeline, human takeover, scrollable feed, and contact info
+// Claude-inspired Clinic Conversation Inbox with warm paper workspace, real-time timeline, and human takeover
 
 import React, { useState, useEffect, useRef } from 'react';
 
@@ -30,17 +30,14 @@ function formatContactNumber(phone: string): string {
   if (!phone) return 'Unknown Contact';
   const clean = phone.replace(/[^0-9]/g, '');
 
-  // If 15-digit WhatsApp Linked Identity ID (LID)
   if (clean.length >= 14 && !clean.startsWith('91')) {
     return `WA ID: ${clean.slice(0, 4)}••••${clean.slice(-4)}`;
   }
 
-  // If Indian country code 91 + 10 digits
   if (clean.startsWith('91') && clean.length === 12) {
     return `+91 ${clean.slice(2, 7)}-${clean.slice(7)}`;
   }
 
-  // If 10 digit mobile
   if (clean.length === 10) {
     return `+91 ${clean.slice(0, 5)}-${clean.slice(5)}`;
   }
@@ -58,19 +55,15 @@ function formatMessageContent(content: string): string {
 
   if (trimmed.startsWith('{') || trimmed.startsWith('```') || trimmed.startsWith('json\n')) {
     try {
-      const cleaned = trimmed
-        .replace(/^```(?:json)?\s*/i, '')
-        .replace(/\s*```$/i, '')
-        .replace(/^json\s*/i, '')
-        .trim();
-      const parsed = JSON.parse(cleaned);
-      if (parsed && typeof parsed.user_message === 'string' && parsed.user_message.trim().length > 0) {
-        return parsed.user_message;
-      }
-      if (parsed && typeof parsed.message === 'string' && parsed.message.trim().length > 0) {
-        return parsed.message;
-      }
-    } catch {}
+      const cleanJson = trimmed.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```$/, '').trim();
+      const parsed = JSON.parse(cleanJson);
+      if (parsed.message) return parsed.message;
+      if (parsed.reply) return parsed.reply;
+      if (parsed.response) return parsed.response;
+      if (parsed.text) return parsed.text;
+    } catch {
+      // Fallback
+    }
   }
 
   return content;
@@ -82,81 +75,102 @@ export default function ConversationsPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [actionInProgress, setActionInProgress] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [actionInProgress, setActionInProgress] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom of chat on new messages or tab switch
-  useEffect(() => {
+  // Auto-scroll to bottom of conversation feed on new messages
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loadingMessages]);
+  };
 
-  // Load conversations list
   useEffect(() => {
-    async function loadConversations() {
-      try {
-        const res = await fetch('/api/v1/conversations');
-        const json = await res.json();
-        if (json.data?.conversations) {
-          setConversations(json.data.conversations);
-          if (json.data.conversations.length > 0 && !selectedConvId) {
-            setSelectedConvId(json.data.conversations[0].id);
-          }
+    scrollToBottom();
+  }, [messages]);
+
+  // Load conversation threads
+  const fetchConversations = async () => {
+    try {
+      const res = await fetch('/api/v1/conversations');
+      const json = await res.json();
+      if (json.data?.conversations) {
+        setConversations(json.data.conversations);
+        if (!selectedConvId && json.data.conversations.length > 0) {
+          setSelectedConvId(json.data.conversations[0].id);
         }
-      } catch (e) {
-        console.error('Failed to load conversations:', e);
-      } finally {
-        setLoading(false);
       }
+    } catch (e) {
+      console.error('Failed to load conversations:', e);
+    } finally {
+      setLoading(false);
     }
-    loadConversations();
+  };
+
+  useEffect(() => {
+    fetchConversations();
+    const interval = setInterval(fetchConversations, 8000);
+    return () => clearInterval(interval);
   }, []);
 
-  // Load messages for selected conversation
+  // Load message timeline for selected conversation
   useEffect(() => {
-    if (!selectedConvId) return;
+    if (!selectedConvId) {
+      setMessages([]);
+      return;
+    }
 
-    async function loadMessages() {
+    let isMounted = true;
+    const fetchTimeline = async () => {
       setLoadingMessages(true);
       try {
-        const res = await fetch(`/api/v1/conversations?conversationId=${selectedConvId}`);
+        const res = await fetch(`/api/v1/conversations/${selectedConvId}`);
         const json = await res.json();
-        if (json.data?.messages) {
+        if (isMounted && json.data?.messages) {
           setMessages(json.data.messages);
         }
       } catch (e) {
-        console.error('Failed to load messages:', e);
+        console.error('Failed to load conversation timeline:', e);
       } finally {
-        setLoadingMessages(false);
+        if (isMounted) setLoadingMessages(false);
       }
-    }
-    loadMessages();
+    };
+
+    fetchTimeline();
+    const interval = setInterval(fetchTimeline, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [selectedConvId]);
 
   const selectedConv = conversations.find(c => c.id === selectedConvId);
 
-  // Takeover or release
+  // Toggle Human Takeover / Return to AI
   const handleToggleTakeover = async () => {
-    if (!selectedConv) return;
+    if (!selectedConvId || !selectedConv) return;
     setActionInProgress(true);
-    const action = selectedConv.owner === 'human' ? 'release_to_ai' : 'takeover';
+    const newOwner = selectedConv.owner === 'human' ? 'ai' : 'human';
+    const newStatus = newOwner === 'human' ? 'handed_off' : 'active';
 
     try {
-      await fetch('/api/v1/conversations', {
+      const res = await fetch(`/api/v1/conversations/${selectedConvId}/takeover`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId: selectedConv.id, action }),
+        body: JSON.stringify({
+          owner: newOwner,
+          status: newStatus,
+          reason: newOwner === 'human' ? 'Doctor took over live chat via dashboard' : undefined,
+        }),
       });
 
-      // Update local state
-      setConversations(conversations.map(c => 
-        c.id === selectedConv.id 
-          ? { ...c, owner: action === 'takeover' ? 'human' : 'ai', status: action === 'takeover' ? 'handed_off' : 'active' }
-          : c
-      ));
+      if (res.ok) {
+        setConversations(prev =>
+          prev.map(c => (c.id === selectedConvId ? { ...c, owner: newOwner, status: newStatus } : c))
+        );
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -164,24 +178,27 @@ export default function ConversationsPage() {
     }
   };
 
-  // Send manual reply
+  // Send Manual Reply (Direct to Patient WhatsApp via Baileys)
   const handleSendReply = async () => {
-    if (!selectedConv || !replyText.trim()) return;
+    if (!selectedConvId || !replyText.trim()) return;
     setActionInProgress(true);
 
     try {
-      const res = await fetch('/api/v1/conversations', {
+      const res = await fetch(`/api/v1/conversations/${selectedConvId}/reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conversationId: selectedConv.id,
-          action: 'send_message',
-          message: replyText.trim(),
-        }),
+        body: JSON.stringify({ message: replyText.trim() }),
       });
-      const json = await res.json();
-      if (json.data?.message) {
-        setMessages(prev => [...prev, json.data.message]);
+
+      if (res.ok) {
+        const optimisticMsg: Message = {
+          id: `opt_${Date.now()}`,
+          role: 'assistant',
+          content: replyText.trim(),
+          created_at: new Date().toISOString(),
+          metadata: { from_dashboard: true },
+        };
+        setMessages(prev => [...prev, optimisticMsg]);
         setReplyText('');
       }
     } catch (e) {
@@ -191,11 +208,9 @@ export default function ConversationsPage() {
     }
   };
 
-  // Delete a single conversation
+  // Delete single conversation thread
   const handleDeleteSingleConversation = async (convId: string) => {
-    const target = conversations.find(c => c.id === convId);
-    const label = target ? (target.patient_name || formatContactNumber(target.patient_phone)) : 'this conversation';
-    if (!confirm(`Are you sure you want to delete the conversation with ${label}? All messages will be permanently deleted.`)) {
+    if (!confirm('Are you sure you want to delete this conversation thread?')) {
       return;
     }
 
@@ -255,7 +270,7 @@ export default function ConversationsPage() {
     }
   };
 
-  // Filter conversations by search term (name or phone)
+  // Filter conversations by search term
   const filteredConversations = conversations.filter(c => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
@@ -265,15 +280,15 @@ export default function ConversationsPage() {
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 6rem)', minHeight: 480, overflow: 'hidden' }}>
-      {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexShrink: 0, flexWrap: 'wrap', gap: '0.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 6.5rem)', minHeight: 480, overflow: 'hidden', width: '100%' }}>
+      {/* Page Header (Claude Warm Serif) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexShrink: 0, flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <h1 style={{ fontSize: 'clamp(1.15rem, 3vw, 1.4rem)', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-            💬 Patient Conversations & Live Inbox
+          <h1 style={{ fontSize: '1.85rem', fontWeight: 500, fontFamily: 'var(--font-serif)', color: '#262522', letterSpacing: '-0.02em', margin: 0 }}>
+            Patient Conversations
           </h1>
-          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.8rem', margin: '0.2rem 0 0 0' }}>
-            Monitor WhatsApp dialogues, view contact names, take over chats, or let AI handle reception automatically.
+          <p style={{ color: '#706C65', fontSize: '0.85rem', margin: '0.2rem 0 0 0' }}>
+            Monitor WhatsApp dialogues, review patient requests, take over chats, or allow AI to manage reception.
           </p>
         </div>
 
@@ -282,20 +297,14 @@ export default function ConversationsPage() {
             type="button"
             onClick={handleClearAllConversations}
             disabled={isDeleting}
-            className="btn btn-ghost btn-sm"
+            className="btn btn-secondary btn-sm"
             style={{
-              color: '#f87171',
-              border: '1px solid hsla(0, 84%, 60%, 0.25)',
-              background: 'hsla(0, 84%, 60%, 0.08)',
+              color: '#C44E45',
               fontSize: '0.75rem',
-              padding: '0.4rem 0.8rem',
-              borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              flexShrink: 0,
+              gap: '0.35rem',
             }}
-            title="Permanently clear all conversation threads"
           >
             🗑️ {isDeleting ? 'Clearing...' : 'Clear All History'}
           </button>
@@ -311,11 +320,12 @@ export default function ConversationsPage() {
           flex: 1,
           minHeight: 0,
           height: '100%',
-          background: 'hsl(var(--color-surface))',
-          border: '1px solid hsl(var(--color-border))',
-          borderRadius: '16px',
+          background: '#FFFFFF',
+          border: '1px solid #E7E2DA',
+          borderRadius: '14px',
           overflow: 'hidden',
           position: 'relative',
+          boxShadow: 'var(--shadow-card)',
         }}
       >
         <style jsx>{`
@@ -345,21 +355,21 @@ export default function ConversationsPage() {
         <div
           className="conv-list-panel"
           style={{
-            borderRight: '1px solid hsl(var(--color-border))',
+            borderRight: '1px solid #E7E2DA',
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
             minHeight: 0,
-            background: 'hsl(var(--color-background) / 0.5)',
+            background: '#F4F1EB',
           }}
         >
           {/* Search bar */}
-          <div style={{ padding: '0.875rem 1rem', borderBottom: '1px solid hsl(var(--color-border))', flexShrink: 0 }}>
+          <div style={{ padding: '0.85rem 1rem', borderBottom: '1px solid #E7E2DA', flexShrink: 0 }}>
             <input
               className="input"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{ fontSize: '0.8rem', padding: '0.5rem 0.75rem', width: '100%' }}
+              style={{ fontSize: '0.8125rem', padding: '0.45rem 0.75rem', width: '100%', background: '#FFFFFF' }}
               placeholder="Search by name or number..."
             />
           </div>
@@ -367,11 +377,11 @@ export default function ConversationsPage() {
           {/* Conversation List Scroll Area */}
           <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
             {loading ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>
+              <div style={{ padding: '2rem', textAlign: 'center', color: '#706C65', fontSize: '0.85rem' }}>
                 Loading conversations...
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem' }}>
+              <div style={{ padding: '2rem', textAlign: 'center', color: '#706C65', fontSize: '0.85rem' }}>
                 {searchQuery ? 'No matching contacts found.' : 'No active conversations yet. Messages sent to your WhatsApp number will appear here!'}
               </div>
             ) : (
@@ -386,20 +396,20 @@ export default function ConversationsPage() {
                     key={conv.id}
                     onClick={() => setSelectedConvId(conv.id)}
                     style={{
-                      padding: '0.875rem 1rem',
-                      borderBottom: '1px solid hsl(var(--color-border))',
-                      background: isSelected ? 'hsl(var(--color-primary) / 0.12)' : 'transparent',
+                      padding: '0.85rem 1rem',
+                      borderBottom: '1px solid #E7E2DA',
+                      background: isSelected ? '#F8E8DE' : 'transparent',
                       cursor: 'pointer',
-                      borderLeft: isSelected ? '3px solid hsl(var(--color-primary))' : '3px solid transparent',
+                      borderLeft: isSelected ? '3px solid #D97757' : '3px solid transparent',
                       transition: 'background 0.15s ease',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div style={{ minWidth: 0, flex: 1, marginRight: '0.5rem' }}>
                         <div style={{
-                          fontWeight: 700,
+                          fontWeight: 600,
                           fontSize: '0.875rem',
-                          color: 'white',
+                          color: '#262522',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -407,14 +417,14 @@ export default function ConversationsPage() {
                           {title}
                         </div>
                         {conv.patient_name && (
-                          <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.1rem' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#706C65', marginTop: '0.1rem' }}>
                             {formattedNum}
                           </div>
                         )}
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#706C65', whiteSpace: 'nowrap' }}>
                           {new Date(conv.last_message_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                         <button
@@ -427,22 +437,13 @@ export default function ConversationsPage() {
                           style={{
                             background: 'transparent',
                             border: 'none',
-                            color: 'hsl(var(--color-text-muted))',
+                            color: '#706C65',
                             cursor: 'pointer',
                             padding: '2px 4px',
                             borderRadius: '4px',
                             fontSize: '0.75rem',
-                            lineHeight: 1,
-                            opacity: 0.5,
+                            opacity: 0.6,
                             transition: 'opacity 0.15s, color 0.15s',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.opacity = '1';
-                            e.currentTarget.style.color = '#ef4444';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.opacity = '0.5';
-                            e.currentTarget.style.color = 'hsl(var(--color-text-muted))';
                           }}
                           title="Delete this conversation"
                         >
@@ -451,12 +452,12 @@ export default function ConversationsPage() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.35rem' }}>
-                      <span className={`badge badge-${isHandoff ? 'warning' : 'success'}`} style={{ fontSize: '0.65rem' }}>
-                        {isHandoff ? '🚨 Staff Control' : '🤖 AI Active'}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.35rem' }}>
+                      <span className={`badge ${isHandoff ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: '0.65rem' }}>
+                        {isHandoff ? 'Staff Control' : 'AI Active'}
                       </span>
                       {conv.handoff_reason && (
-                        <span style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#706C65', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {conv.handoff_reason}
                         </span>
                       )}
@@ -478,45 +479,58 @@ export default function ConversationsPage() {
               height: '100%',
               minHeight: 0,
               overflow: 'hidden',
+              background: '#FAF9F5',
             }}
           >
             {/* Thread Header */}
             <div style={{
-              padding: '0.75rem clamp(0.75rem, 3vw, 1.25rem)',
-              borderBottom: '1px solid hsl(var(--color-border))',
+              padding: '0.85rem 1.25rem',
+              borderBottom: '1px solid #E7E2DA',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              background: 'hsl(var(--color-surface))',
+              background: '#FFFFFF',
               flexWrap: 'wrap',
               gap: '0.5rem',
               flexShrink: 0,
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
                 {/* Mobile back button */}
                 <button
                   type="button"
                   onClick={() => setSelectedConvId(null)}
-                  className="show-on-mobile btn btn-ghost btn-sm"
+                  className="show-on-mobile btn btn-secondary btn-sm"
                   style={{
-                    padding: '0.35rem 0.6rem',
-                    background: 'hsl(var(--color-surface-2))',
-                    border: '1px solid hsl(var(--color-border))',
-                    borderRadius: '8px',
-                    fontSize: '0.85rem',
+                    padding: '0.3rem 0.55rem',
+                    fontSize: '0.8rem',
                   }}
                   title="Back to contacts list"
                 >
                   ←
                 </button>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-                  <span style={{ fontSize: '1.25rem', flexShrink: 0 }}>👤</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
+                  <div style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: '#F4F1EB',
+                    border: '1px solid #E7E2DA',
+                    color: '#262522',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    flexShrink: 0,
+                  }}>
+                    {(selectedConv.patient_name?.[0] || 'P').toUpperCase()}
+                  </div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{
-                      fontWeight: 800,
-                      fontSize: 'clamp(0.9rem, 2.5vw, 1.05rem)',
-                      color: 'white',
+                      fontWeight: 600,
+                      fontSize: '0.95rem',
+                      color: '#262522',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
@@ -524,7 +538,7 @@ export default function ConversationsPage() {
                       {selectedConv.patient_name || formatContactNumber(selectedConv.patient_phone)}
                     </div>
                     {selectedConv.patient_name && (
-                      <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#706C65' }}>
                         {formatContactNumber(selectedConv.patient_phone)}
                       </div>
                     )}
@@ -534,42 +548,33 @@ export default function ConversationsPage() {
 
               {/* Actions Button Group */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                {/* Delete Single Conversation Button */}
                 <button
                   type="button"
-                  className="btn btn-ghost btn-sm"
+                  className="btn btn-secondary btn-sm"
                   onClick={() => handleDeleteSingleConversation(selectedConv.id)}
                   disabled={isDeleting || actionInProgress}
                   style={{
                     fontSize: '0.75rem',
-                    padding: '0.4rem 0.65rem',
-                    color: '#f87171',
-                    border: '1px solid hsla(0, 84%, 60%, 0.25)',
-                    background: 'hsla(0, 84%, 60%, 0.05)',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.3rem',
+                    color: '#C44E45',
                   }}
                   title="Delete this conversation thread"
                 >
-                  🗑️ Delete Chat
+                  Delete
                 </button>
 
-                {/* Takeover Toggle Button */}
                 <button
                   type="button"
                   className={`btn ${selectedConv.owner === 'human' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
                   onClick={handleToggleTakeover}
                   disabled={actionInProgress}
-                  style={{ fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
+                  style={{ fontSize: '0.75rem' }}
                 >
                   {selectedConv.owner === 'human' ? '🤖 Resume AI' : '✋ Take Over'}
                 </button>
               </div>
             </div>
 
-            {/* Message History Bubble Feed (Scrollable) */}
+            {/* Message History Bubble Feed (Scrollable Claude Parchment Canvas) */}
             <div style={{
               flex: 1,
               minHeight: 0,
@@ -580,11 +585,11 @@ export default function ConversationsPage() {
               gap: '1rem',
             }}>
               {loadingMessages ? (
-                <div style={{ textAlign: 'center', color: 'hsl(var(--color-text-muted))', padding: '2rem' }}>
+                <div style={{ textAlign: 'center', color: '#706C65', padding: '2rem' }}>
                   Loading message history...
                 </div>
               ) : messages.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'hsl(var(--color-text-muted))', padding: '2rem' }}>
+                <div style={{ textAlign: 'center', color: '#706C65', padding: '2rem' }}>
                   No messages recorded in this conversation.
                 </div>
               ) : (
@@ -598,7 +603,7 @@ export default function ConversationsPage() {
                   if (isPatient) {
                     senderLabel = `👤 ${selectedConv.patient_name || 'Patient'}`;
                   } else if (isStaff) {
-                    senderLabel = msg.metadata?.from_me ? '📱 Staff (from WhatsApp)' : '👨‍⚕️ Staff (You)';
+                    senderLabel = msg.metadata?.from_me ? '📱 Staff (WhatsApp)' : '👨‍⚕️ Staff';
                   }
 
                   return (
@@ -612,25 +617,21 @@ export default function ConversationsPage() {
                     >
                       <div style={{
                         maxWidth: '75%',
-                        padding: '0.875rem 1.125rem',
-                        borderRadius: isOutgoing ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                        background: isOutgoing
-                          ? isStaff
-                            ? 'linear-gradient(135deg, hsl(215 80% 50%) 0%, hsl(235 80% 60%) 100%)'
-                            : 'linear-gradient(135deg, hsl(221 83% 58%) 0%, hsl(265 83% 65%) 100%)'
-                          : 'hsl(var(--color-surface-2))',
-                        border: isOutgoing ? 'none' : '1px solid hsl(var(--color-border))',
-                        color: 'white',
+                        padding: '0.85rem 1.15rem',
+                        borderRadius: isOutgoing ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                        background: isOutgoing ? (isStaff ? '#F8E8DE' : '#FFFFFF') : '#F4F1EB',
+                        border: `1px solid ${isOutgoing ? (isStaff ? '#F0D5C7' : '#E7E2DA') : '#E7E2DA'}`,
+                        color: '#262522',
                         fontSize: '0.875rem',
-                        lineHeight: 1.5,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        lineHeight: 1.6,
+                        boxShadow: '0 1px 2px rgba(38, 37, 34, 0.03)',
                         wordBreak: 'break-word',
                       }}>
                         {displayContent}
                       </div>
                       <div style={{
-                        fontSize: '0.65rem',
-                        color: 'hsl(var(--color-text-muted))',
+                        fontSize: '0.6875rem',
+                        color: '#706C65',
                         marginTop: '0.25rem',
                         padding: '0 0.25rem',
                         display: 'flex',
@@ -645,22 +646,21 @@ export default function ConversationsPage() {
                   );
                 })
               )}
-              {/* Ref to anchor scroll to bottom */}
               <div ref={messagesEndRef} />
             </div>
 
             {/* Reply Composer */}
             <div style={{
-              padding: '0.875rem 1.5rem',
-              borderTop: '1px solid hsl(var(--color-border))',
-              background: 'hsl(var(--color-surface))',
+              padding: '0.85rem 1.25rem',
+              borderTop: '1px solid #E7E2DA',
+              background: '#FFFFFF',
               display: 'flex',
-              gap: '0.75rem',
+              gap: '0.65rem',
               flexShrink: 0,
             }}>
               <input
                 className="input"
-                style={{ flex: 1 }}
+                style={{ flex: 1, background: '#FAF9F5' }}
                 value={replyText}
                 onChange={e => setReplyText(e.target.value)}
                 onKeyDown={e => {
@@ -676,7 +676,7 @@ export default function ConversationsPage() {
                 className="btn btn-primary"
                 onClick={handleSendReply}
                 disabled={actionInProgress || !replyText.trim()}
-                style={{ padding: '0.5rem 0.875rem', flexShrink: 0 }}
+                style={{ flexShrink: 0 }}
               >
                 Send →
               </button>
@@ -689,9 +689,10 @@ export default function ConversationsPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'hsl(var(--color-text-muted))',
+              color: '#706C65',
               padding: '2rem',
               textAlign: 'center',
+              background: '#FAF9F5',
             }}
           >
             Select a conversation on the left to view message history

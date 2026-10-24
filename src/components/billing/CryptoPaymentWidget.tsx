@@ -115,9 +115,9 @@ export function CryptoPaymentWidget({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {/* Header Plan Pill */}
       <div style={{
-        background: 'linear-gradient(135deg, hsla(263, 70%, 50%, 0.15) 0%, hsla(221, 83%, 58%, 0.15) 100%)',
-        border: '1px solid hsla(263, 70%, 50%, 0.3)',
-        borderRadius: '12px',
+        background: '#F4F1EB',
+        border: '1px solid #E7E2DA',
+        borderRadius: '10px',
         padding: '0.875rem 1.25rem',
         display: 'flex',
         alignItems: 'center',
@@ -126,18 +126,28 @@ export function CryptoPaymentWidget({
         gap: '0.5rem',
       }}>
         <div>
-          <div style={{ fontSize: '0.75rem', color: '#c084fc', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+          <div style={{ fontSize: '0.72rem', color: '#706C65', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>
             Selected International Plan
           </div>
-          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#f8fafc' }}>
+          <div style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: '1.15rem',
+            fontWeight: 500,
+            color: '#262522',
+          }}>
             {planName}
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#4ade80' }}>
-            ${amountUsd} <span style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-muted))', fontWeight: 500 }}>USD</span>
+          <div style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: '1.5rem',
+            fontWeight: 500,
+            color: '#262522',
+          }}>
+            ${amountUsd} <span style={{ fontSize: '0.85rem', color: '#706C65', fontFamily: 'inherit' }}>USD</span>
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
+          <div style={{ fontSize: '0.75rem', color: '#706C65' }}>
             Billed monthly • Cancel anytime
           </div>
         </div>
@@ -147,16 +157,22 @@ export function CryptoPaymentWidget({
         <div style={{
           textAlign: 'center',
           padding: '2.5rem 1.5rem',
-          background: 'hsla(142, 71%, 45%, 0.1)',
-          border: '1px solid hsla(142, 71%, 45%, 0.3)',
-          borderRadius: '16px',
+          background: '#EBF3ED',
+          border: '1px solid #D5E4D8',
+          borderRadius: '12px',
         }}>
-          <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>🎉</div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#4ade80', marginBottom: '0.5rem' }}>
-            Transaction Hash Submitted!
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>✦</div>
+          <h3 style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: '1.25rem',
+            fontWeight: 500,
+            color: '#2A5A36',
+            marginBottom: '0.5rem',
+          }}>
+            Transaction Hash Submitted
           </h3>
-          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem', maxWidth: 440, margin: '0 auto 1.5rem' }}>
-            Your transaction reference <strong style={{ color: '#f8fafc', fontFamily: 'monospace' }}>{txHash.slice(0, 10)}...{txHash.slice(-6)}</strong> has been received. Your AI receptionist will be fully activated upon automated/admin network confirmation.
+          <p style={{ color: '#406B49', fontSize: '0.9rem', maxWidth: 440, margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
+            Your transaction reference <strong style={{ color: '#262522', fontFamily: 'monospace' }}>{txHash.slice(0, 10)}...{txHash.slice(-6)}</strong> has been received. Your AI receptionist will be fully activated upon automated/admin network confirmation.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
             {onCancel && (
@@ -165,7 +181,7 @@ export function CryptoPaymentWidget({
                 className="btn btn-primary"
                 onClick={onCancel}
               >
-                Close & Return
+                Close &amp; Return
               </button>
             )}
           </div>
@@ -175,7 +191,7 @@ export function CryptoPaymentWidget({
           {/* Network Selection Tabs */}
           <div>
             <label className="label" style={{ marginBottom: '0.5rem', display: 'block', fontSize: '0.85rem' }}>
-              Select Payment Cryptocurrency & Network:
+              Select Payment Cryptocurrency &amp; Network:
             </label>
             <div style={{
               display: 'grid',
@@ -190,18 +206,18 @@ export function CryptoPaymentWidget({
                     type="button"
                     onClick={() => setSelectedNetwork(net)}
                     style={{
-                      background: isSelected ? 'hsla(263, 70%, 50%, 0.25)' : 'hsl(var(--color-surface-2))',
-                      border: `1.5px solid ${isSelected ? '#a855f7' : 'hsl(var(--color-border))'}`,
-                      borderRadius: '10px',
-                      padding: '0.6rem 0.5rem',
-                      color: isSelected ? '#ffffff' : 'hsl(var(--color-text-secondary))',
-                      fontWeight: isSelected ? 700 : 500,
+                      background: isSelected ? '#F8E8DE' : '#FFFFFF',
+                      border: `1.5px solid ${isSelected ? '#D97757' : '#E7E2DA'}`,
+                      borderRadius: '8px',
+                      padding: '0.65rem 0.5rem',
+                      color: isSelected ? '#C86646' : '#262522',
+                      fontWeight: isSelected ? 600 : 500,
                       cursor: 'pointer',
                       fontSize: '0.8rem',
                       textAlign: 'center',
                       position: 'relative',
                       transition: 'all 0.15s ease',
-                      boxShadow: isSelected ? '0 0 12px hsla(263, 70%, 50%, 0.3)' : 'none',
+                      boxShadow: isSelected ? '0 1px 3px rgba(217,119,87,0.12)' : 'none',
                     }}
                   >
                     {net.recommended && (
@@ -209,10 +225,11 @@ export function CryptoPaymentWidget({
                         position: 'absolute',
                         top: -7,
                         right: 6,
-                        background: '#10b981',
-                        color: 'white',
+                        background: '#EBF3ED',
+                        color: '#2A5A36',
+                        border: '1px solid #D5E4D8',
                         fontSize: '0.6rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         padding: '1px 5px',
                         borderRadius: '4px',
                       }}>
@@ -220,7 +237,7 @@ export function CryptoPaymentWidget({
                       </span>
                     )}
                     <div>{net.name}</div>
-                    <div style={{ fontSize: '0.68rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.15rem' }}>
+                    <div style={{ fontSize: '0.68rem', color: '#706C65', marginTop: '0.15rem' }}>
                       {net.networkName}
                     </div>
                   </button>
@@ -231,9 +248,9 @@ export function CryptoPaymentWidget({
 
           {/* Deposit Address & QR Section */}
           <div style={{
-            background: 'hsl(var(--color-surface-2))',
-            border: '1px solid hsl(var(--color-border))',
-            borderRadius: '14px',
+            background: '#F4F1EB',
+            border: '1px solid #E7E2DA',
+            borderRadius: '10px',
             padding: '1.25rem',
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
@@ -242,18 +259,19 @@ export function CryptoPaymentWidget({
           }}>
             {/* Visual Crisp QR Code */}
             <div style={{
-              background: 'white',
-              borderRadius: '12px',
+              background: '#FFFFFF',
+              borderRadius: '10px',
+              border: '1px solid #E7E2DA',
               padding: '0.85rem',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               textAlign: 'center',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+              boxShadow: '0 2px 8px rgba(38,37,34,0.06)',
               margin: '0 auto',
               maxWidth: 160,
             }}>
-              <div style={{ width: 130, height: 130, background: '#f8fafc', padding: 4, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 130, height: 130, background: '#FAF9F5', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <img
                   src={selectedNetwork.qrImagePath}
                   alt={`${selectedNetwork.name} Deposit QR`}
@@ -266,10 +284,10 @@ export function CryptoPaymentWidget({
                   }}
                 />
               </div>
-              <div style={{ color: '#0f172a', fontSize: '0.72rem', fontWeight: 700, marginTop: '0.4rem' }}>
+              <div style={{ color: '#262522', fontSize: '0.72rem', fontWeight: 600, marginTop: '0.4rem' }}>
                 {selectedNetwork.symbol} Deposit
               </div>
-              <div style={{ color: '#64748b', fontSize: '0.65rem' }}>
+              <div style={{ color: '#706C65', fontSize: '0.65rem' }}>
                 {selectedNetwork.networkName}
               </div>
             </div>
@@ -277,18 +295,18 @@ export function CryptoPaymentWidget({
             {/* Address Details & Copy Actions */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div>
-                <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.25rem' }}>
+                <div style={{ fontSize: '0.7rem', color: '#706C65', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.25rem' }}>
                   Exact Amount to Send
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <div style={{
                     padding: '0.4rem 0.75rem',
-                    borderRadius: '8px',
-                    background: 'hsl(var(--color-surface))',
-                    border: '1px solid hsl(var(--color-border))',
-                    fontWeight: 700,
+                    borderRadius: '6px',
+                    background: '#FFFFFF',
+                    border: '1px solid #E7E2DA',
+                    fontWeight: 600,
                     fontSize: '1rem',
-                    color: '#4ade80',
+                    color: '#262522',
                     fontFamily: 'monospace',
                   }}>
                     {amountUsd} {selectedNetwork.symbol}
@@ -305,14 +323,14 @@ export function CryptoPaymentWidget({
               </div>
 
               <div>
-                <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.25rem' }}>
+                <div style={{ fontSize: '0.7rem', color: '#706C65', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.25rem' }}>
                   Official {selectedNetwork.name} Deposit Address
                 </div>
                 <div style={{
                   padding: '0.65rem 0.75rem',
-                  borderRadius: '8px',
-                  background: 'hsl(var(--color-surface))',
-                  border: '1px solid hsl(var(--color-border))',
+                  borderRadius: '6px',
+                  background: '#FFFFFF',
+                  border: '1px solid #E7E2DA',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -320,8 +338,8 @@ export function CryptoPaymentWidget({
                 }}>
                   <div style={{
                     fontSize: '0.825rem',
-                    fontWeight: 600,
-                    color: '#93c5fd',
+                    fontWeight: 500,
+                    color: '#262522',
                     fontFamily: 'monospace',
                     wordBreak: 'break-all',
                   }}>
@@ -338,8 +356,8 @@ export function CryptoPaymentWidget({
                 </div>
               </div>
 
-              <div style={{ fontSize: '0.72rem', color: 'hsl(38 92% 50%)', background: 'hsla(38, 92%, 50%, 0.1)', padding: '0.5rem 0.75rem', borderRadius: '8px' }}>
-                ⚠️ {selectedNetwork.instructions}
+              <div style={{ fontSize: '0.72rem', color: '#8A5812', background: '#FAF3E7', border: '1px solid #F0E1C6', padding: '0.5rem 0.75rem', borderRadius: '6px' }}>
+                ✦ {selectedNetwork.instructions}
               </div>
             </div>
           </div>
@@ -348,28 +366,28 @@ export function CryptoPaymentWidget({
           <form onSubmit={handleSubmitProof} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             <div className="form-field">
               <label className="label" style={{ fontSize: '0.85rem' }}>
-                <span>🧾</span> Transaction Hash (TxID) <span style={{ color: '#ef4444' }}>*</span>
+                Transaction Hash (TxID) <span style={{ color: '#A83830' }}>*</span>
               </label>
               <input
                 className="input"
                 value={txHash}
                 onChange={e => setTxHash(e.target.value)}
-                placeholder="e.g. 0x8a92f0... or Tron TxID from your exchange / wallet"
+                placeholder="e.g. 0x8a92f0... or Tron TxID from your wallet"
                 required
                 style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}
               />
-              <span className="form-hint" style={{ fontSize: '0.75rem' }}>
-                💡 Find this in your Binance, MetaMask, OKX, or TronLink withdrawal receipt.
+              <span className="form-hint" style={{ fontSize: '0.75rem', color: '#706C65' }}>
+                Find this in your Binance, MetaMask, OKX, or TronLink withdrawal receipt.
               </span>
             </div>
 
             {errorMessage && (
               <div style={{
                 padding: '0.65rem 0.85rem',
-                background: 'hsla(0, 84%, 60%, 0.12)',
-                border: '1px solid hsla(0, 84%, 60%, 0.3)',
-                borderRadius: '8px',
-                color: '#f87171',
+                background: '#FAEBEA',
+                border: '1px solid #F3CFCB',
+                borderRadius: '6px',
+                color: '#A83830',
                 fontSize: '0.8rem',
               }}>
                 {errorMessage}
@@ -392,13 +410,10 @@ export function CryptoPaymentWidget({
                 className="btn btn-primary"
                 disabled={isSubmitting || !txHash.trim()}
                 style={{
-                  background: 'linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(221 83% 58%) 100%)',
-                  fontWeight: 700,
-                  boxShadow: '0 4px 16px hsla(263, 70%, 50%, 0.35)',
-                  padding: '0.75rem 1.75rem',
+                  padding: '0.65rem 1.5rem',
                 }}
               >
-                {isSubmitting ? 'Verifying...' : '⚡ Submit Crypto Payment for Activation'}
+                {isSubmitting ? 'Verifying...' : 'Submit Crypto Payment for Activation'}
               </button>
             </div>
           </form>
@@ -419,8 +434,8 @@ export function CryptoPaymentWidget({
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'rgba(0, 0, 0, 0.75)',
-      backdropFilter: 'blur(6px)',
+      background: 'rgba(38, 37, 34, 0.45)',
+      backdropFilter: 'blur(3px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -428,20 +443,27 @@ export function CryptoPaymentWidget({
       padding: '1rem',
     }}>
       <div style={{
-        background: 'hsl(var(--color-surface))',
-        border: '1px solid hsl(var(--color-border))',
-        borderRadius: '20px',
+        background: '#FFFFFF',
+        border: '1px solid #E7E2DA',
+        borderRadius: '16px',
         maxWidth: 620,
         width: '100%',
         maxHeight: '90vh',
         overflowY: 'auto',
         padding: 'clamp(1.25rem, 4vw, 2rem)',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+        boxShadow: '0 12px 36px rgba(38, 37, 34, 0.12)',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <span style={{ fontSize: '1.5rem' }}>🪙</span>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Pay via Crypto</h2>
+            <span style={{ fontSize: '1.25rem' }}>🪙</span>
+            <h2 style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: '1.25rem',
+              fontWeight: 500,
+              color: '#262522',
+            }}>
+              Pay via Crypto
+            </h2>
           </div>
           {onCancel && (
             <button
@@ -450,7 +472,7 @@ export function CryptoPaymentWidget({
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: 'hsl(var(--color-text-muted))',
+                color: '#706C65',
                 fontSize: '1.25rem',
                 cursor: 'pointer',
                 padding: '0.25rem',

@@ -1,7 +1,7 @@
 'use client';
 
 // src/app/dashboard/appointments/page.tsx
-// Clinic Appointment Management page with filters, manual booking modal, and status updates
+// Claude-inspired Clinic Appointment Management with warm typography, calm status indicators, and clean data tables
 
 import React, { useState, useEffect } from 'react';
 
@@ -56,7 +56,6 @@ export default function AppointmentsPage() {
     fetchAppointments();
   }, [statusFilter]);
 
-  // Update status (e.g. mark complete or cancel)
   const handleUpdateStatus = async (appointmentId: string, newStatus: string) => {
     try {
       await fetch('/api/v1/appointments', {
@@ -76,7 +75,6 @@ export default function AppointmentsPage() {
     setIsSubmitting(true);
 
     try {
-      // First get or pick service
       const res = await fetch('/api/v1/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -101,21 +99,27 @@ export default function AppointmentsPage() {
     }
   };
 
-  // Metrics calculation
   const total = appointments.length;
   const confirmed = appointments.filter(a => a.status === 'confirmed').length;
   const completed = appointments.filter(a => a.status === 'completed').length;
   const cancelled = appointments.filter(a => a.status === 'cancelled').length;
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+    <div style={{ width: '100%', maxWidth: '100%' }}>
+      {/* Header (Claude Warm Serif) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.75rem' }}>
         <div>
-          <h1 style={{ fontSize: 'clamp(1.2rem, 3vw, 1.5rem)', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-            📅 Dental Appointments & Schedule
+          <h1 style={{
+            fontSize: '2rem',
+            fontWeight: 500,
+            fontFamily: 'var(--font-serif)',
+            color: '#262522',
+            letterSpacing: '-0.02em',
+            margin: 0,
+          }}>
+            Appointments & Schedule
           </h1>
-          <p style={{ color: 'hsl(var(--color-text-muted))', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+          <p style={{ color: '#706C65', fontSize: '0.875rem', marginTop: '0.25rem' }}>
             All patient appointments synced from WhatsApp AI bookings and Google Calendar.
           </p>
         </div>
@@ -130,66 +134,77 @@ export default function AppointmentsPage() {
         </button>
       </div>
 
-      {/* Metrics Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+      {/* Metrics Row (Full width) */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '1rem',
+        marginBottom: '1.75rem',
+        width: '100%',
+      }}>
         {[
-          { label: 'Total Scheduled', value: total, icon: '📋', color: 'hsl(221 83% 58%)' },
-          { label: 'Confirmed / Upcoming', value: confirmed, icon: '⏰', color: 'hsl(142 71% 45%)' },
-          { label: 'Completed Care', value: completed, icon: '✓', color: 'hsl(265 83% 65%)' },
-          { label: 'Cancelled / Rescheduled', value: cancelled, icon: '✕', color: 'hsl(0 84% 60%)' },
+          { label: 'Total Scheduled', value: total, icon: '📋' },
+          { label: 'Confirmed / Upcoming', value: confirmed, icon: '⏰' },
+          { label: 'Completed Care', value: completed, icon: '✓' },
+          { label: 'Cancelled / Rescheduled', value: cancelled, icon: '✕' },
         ].map((m, i) => (
-          <div key={i} className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{
-              width: 38,
-              height: 38,
-              borderRadius: '10px',
-              background: `${m.color}20`,
-              color: m.color,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.1rem',
-              fontWeight: 800,
-              flexShrink: 0,
-            }}>
-              {m.icon}
+          <div key={i} className="stat-card" style={{ padding: '1.15rem 1.35rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.78rem', color: '#706C65', fontWeight: 500 }}>{m.label}</span>
+              <span style={{
+                width: 28,
+                height: 28,
+                borderRadius: '6px',
+                background: '#F4F1EB',
+                border: '1px solid #E7E2DA',
+                color: '#262522',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.85rem',
+              }}>
+                {m.icon}
+              </span>
             </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.label}</div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800 }}>{m.value}</div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 600, color: '#262522', marginTop: '0.2rem' }}>
+              {m.value}
             </div>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', overflowX: 'auto', flexWrap: 'wrap', paddingBottom: '0.25rem' }}>
-        {['all', 'confirmed', 'completed', 'cancelled'].map(f => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => setStatusFilter(f)}
-            style={{
-              padding: '0.45rem 0.85rem',
-              borderRadius: '8px',
-              border: `1px solid ${statusFilter === f ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))'}`,
-              background: statusFilter === f ? 'hsl(var(--color-primary) / 0.15)' : 'hsl(var(--color-surface))',
-              color: statusFilter === f ? 'hsl(var(--color-primary))' : 'hsl(var(--color-text-muted))',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              textTransform: 'capitalize',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {f}
-          </button>
-        ))}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', overflowX: 'auto', flexWrap: 'wrap', paddingBottom: '0.25rem' }}>
+        {['all', 'confirmed', 'completed', 'cancelled'].map(f => {
+          const isActive = statusFilter === f;
+          return (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setStatusFilter(f)}
+              style={{
+                padding: '0.4rem 0.85rem',
+                borderRadius: '8px',
+                border: `1px solid ${isActive ? '#F0D5C7' : '#E7E2DA'}`,
+                background: isActive ? '#F8E8DE' : '#FFFFFF',
+                color: isActive ? '#C86646' : '#706C65',
+                fontSize: '0.8rem',
+                fontWeight: isActive ? 600 : 500,
+                cursor: 'pointer',
+                textTransform: 'capitalize',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {f}
+            </button>
+          );
+        })}
       </div>
 
       {/* Appointments Data Table */}
-      <div className="card table-responsive" style={{ padding: 0 }}>
-        <table className="data-table">
+      <div className="card table-responsive" style={{ padding: 0, overflow: 'hidden' }}>
+        <table>
           <thead>
             <tr>
               <th>Patient</th>
@@ -197,19 +212,19 @@ export default function AppointmentsPage() {
               <th>Scheduled Time</th>
               <th>Status</th>
               <th>Source</th>
-              <th>Actions</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'hsl(var(--color-text-muted))' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#706C65' }}>
                   Loading appointments...
                 </td>
               </tr>
             ) : appointments.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'hsl(var(--color-text-muted))' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#706C65' }}>
                   No appointments found for the selected filter.
                 </td>
               </tr>
@@ -217,15 +232,15 @@ export default function AppointmentsPage() {
               appointments.map(appt => (
                 <tr key={appt.id}>
                   <td>
-                    <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>{appt.patient_name}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>{appt.patient_phone}</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#262522' }}>{appt.patient_name}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#706C65' }}>{appt.patient_phone}</div>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 600 }}>{appt.services?.name ?? 'General Dental Care'}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'hsl(142 71% 45%)' }}>{appt.services?.price_display ?? '—'}</div>
+                    <div style={{ fontWeight: 500, color: '#262522' }}>{appt.services?.name ?? 'General Dental Care'}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#487B57' }}>{appt.services?.price_display ?? '—'}</div>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 600 }}>
+                    <div style={{ fontWeight: 600, color: '#262522' }}>
                       {new Date(appt.starts_at).toLocaleDateString('en-IN', {
                         timeZone: 'Asia/Kolkata',
                         weekday: 'short',
@@ -233,7 +248,7 @@ export default function AppointmentsPage() {
                         day: 'numeric',
                       })}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#706C65' }}>
                       {new Date(appt.starts_at).toLocaleTimeString('en-US', {
                         timeZone: 'Asia/Kolkata',
                         hour: '2-digit',
@@ -243,17 +258,19 @@ export default function AppointmentsPage() {
                     </div>
                   </td>
                   <td>
-                    <span className={`badge badge-${appt.status === 'confirmed' ? 'success' : appt.status === 'completed' ? 'info' : 'error'}`}>
+                    <span className={`badge ${
+                      appt.status === 'confirmed' ? 'badge-success' : appt.status === 'completed' ? 'badge-info' : 'badge-error'
+                    }`}>
                       {appt.status}
                     </span>
                   </td>
                   <td>
-                    <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>
+                    <span style={{ fontSize: '0.78rem', color: '#706C65' }}>
                       {appt.source === 'whatsapp' ? '🤖 WhatsApp AI' : '👤 Front Desk'}
                     </span>
                   </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <td style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center' }}>
                       {appt.status === 'confirmed' && (
                         <>
                           <button
@@ -262,10 +279,11 @@ export default function AppointmentsPage() {
                             style={{
                               background: 'none',
                               border: 'none',
-                              color: 'hsl(142 71% 45%)',
-                              fontSize: '0.75rem',
+                              color: '#487B57',
+                              fontSize: '0.78rem',
                               fontWeight: 600,
                               cursor: 'pointer',
+                              padding: '2px 4px',
                             }}
                           >
                             ✓ Complete
@@ -276,10 +294,11 @@ export default function AppointmentsPage() {
                             style={{
                               background: 'none',
                               border: 'none',
-                              color: 'hsl(0 84% 60%)',
-                              fontSize: '0.75rem',
+                              color: '#C44E45',
+                              fontSize: '0.78rem',
                               fontWeight: 600,
                               cursor: 'pointer',
+                              padding: '2px 4px',
                             }}
                           >
                             ✕ Cancel
@@ -287,7 +306,7 @@ export default function AppointmentsPage() {
                         </>
                       )}
                       {appt.status !== 'confirmed' && (
-                        <span style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))' }}>—</span>
+                        <span style={{ fontSize: '0.75rem', color: '#97938A' }}>—</span>
                       )}
                     </div>
                   </td>
@@ -306,20 +325,23 @@ export default function AppointmentsPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0,0,0,0.7)',
+          background: 'rgba(38, 37, 34, 0.45)',
+          backdropFilter: 'blur(3px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 100,
           padding: '1rem',
         }}>
-          <div className="card" style={{ maxWidth: 480, width: '100%', padding: 'clamp(1rem, 3vw, 1.75rem)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 700 }}>New Manual Walk-In Appointment</h2>
+          <div className="card" style={{ maxWidth: 480, width: '100%', padding: '1.75rem', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#262522', margin: 0 }}>
+                New Walk-In Appointment
+              </h2>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.25rem' }}
+                style={{ background: 'none', border: 'none', color: '#706C65', cursor: 'pointer', fontSize: '1.25rem' }}
               >
                 ✕
               </button>
@@ -370,7 +392,7 @@ export default function AppointmentsPage() {
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem' }}>
                 <button
                   type="button"
                   className="btn btn-secondary"

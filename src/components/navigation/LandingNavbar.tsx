@@ -2,24 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 interface NavLinkItem {
   label: string;
   href: string;
-  icon: string;
-  badge?: string;
 }
 
 const navLinks: NavLinkItem[] = [
-  { label: 'Features', href: '/#features', icon: '💬' },
-  { label: 'How It Works', href: '/#how-it-works', icon: '⚡' },
-  { label: 'Live Demo', href: '/#demo', icon: '🤖' },
-  { label: 'Pricing', href: '/#pricing', icon: '💳' },
+  { label: 'Features', href: '/#features' },
+  { label: 'How It Works', href: '/#how-it-works' },
+  { label: 'Pricing', href: '/#pricing' },
 ];
 
 export function LandingNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
 
   // Close mobile menu on route change
@@ -48,6 +47,15 @@ export function LandingNavbar() {
     };
   }, [mobileMenuOpen]);
 
+  // Track scroll for navbar background
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const handleLinkClick = () => {
     setMobileMenuOpen(false);
   };
@@ -62,15 +70,16 @@ export function LandingNavbar() {
           left: 0,
           right: 0,
           zIndex: 50,
-          padding: '0.75rem clamp(1rem, 4vw, 2rem)',
+          padding: '0 clamp(1rem, 4vw, 3rem)',
+          height: '64px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
-          background: 'rgba(8, 12, 24, 0.88)',
-          transition: 'all 0.2s ease',
+          backdropFilter: scrolled ? 'blur(16px) saturate(1.2)' : 'none',
+          WebkitBackdropFilter: scrolled ? 'blur(16px) saturate(1.2)' : 'none',
+          borderBottom: scrolled ? '1px solid rgba(233, 222, 211, 0.6)' : '1px solid transparent',
+          background: scrolled ? 'rgba(250, 245, 238, 0.85)' : 'transparent',
+          transition: 'all 0.3s ease',
         }}
       >
         {/* Brand Logo */}
@@ -80,34 +89,32 @@ export function LandingNavbar() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.625rem',
+            gap: '0.6rem',
             textDecoration: 'none',
             color: 'inherit',
           }}
         >
-          <div
+          <Image
+            src="/arenova.png"
+            alt="Arenova"
+            width={34}
+            height={34}
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: '9px',
-              background: 'var(--gradient-brand)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.05rem',
+              width: '34px',
+              height: '34px',
+              borderRadius: '8px',
+              objectFit: 'contain',
               flexShrink: 0,
-              boxShadow: '0 2px 10px rgba(59, 130, 246, 0.3)',
             }}
-          >
-            🤖
-          </div>
+            priority
+          />
           <span
             style={{
-              fontFamily: 'Plus Jakarta Sans, sans-serif',
-              fontWeight: 800,
-              fontSize: 'clamp(0.95rem, 2.5vw, 1.15rem)',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 400,
+              fontSize: '1.2rem',
               letterSpacing: '-0.02em',
-              color: 'hsl(var(--color-text-primary))',
+              color: '#201A17',
             }}
           >
             AI Front Desk
@@ -120,7 +127,7 @@ export function LandingNavbar() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '1.75rem',
+            gap: '2rem',
           }}
         >
           {navLinks.map((item) => (
@@ -128,17 +135,18 @@ export function LandingNavbar() {
               key={item.label}
               href={item.href}
               style={{
-                color: 'hsl(var(--color-text-secondary))',
+                color: '#756A62',
                 textDecoration: 'none',
                 fontSize: '0.875rem',
                 fontWeight: 500,
                 transition: 'color 0.15s ease',
+                letterSpacing: '-0.01em',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'hsl(var(--color-text-primary))';
+                e.currentTarget.style.color = '#201A17';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'hsl(var(--color-text-secondary))';
+                e.currentTarget.style.color = '#756A62';
               }}
             >
               {item.label}
@@ -153,14 +161,14 @@ export function LandingNavbar() {
             <Link
               href="/login"
               className="btn btn-ghost btn-sm"
-              style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem' }}
+              style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem', color: '#756A62' }}
             >
               Sign In
             </Link>
             <Link
               href="/register"
               className="btn btn-primary btn-sm"
-              style={{ fontSize: '0.85rem', padding: '0.4rem 0.95rem' }}
+              style={{ fontSize: '0.85rem', padding: '0.45rem 1rem' }}
             >
               Start Free Trial
             </Link>
@@ -171,7 +179,7 @@ export function LandingNavbar() {
             href="/register"
             className="show-on-mobile btn btn-primary btn-sm"
             style={{
-              padding: '0.35rem 0.7rem',
+              padding: '0.38rem 0.75rem',
               fontSize: '0.78rem',
               fontWeight: 600,
               marginRight: '0.25rem',
@@ -188,10 +196,10 @@ export function LandingNavbar() {
             aria-expanded={mobileMenuOpen}
             className="show-on-mobile"
             style={{
-              background: mobileMenuOpen ? 'hsl(var(--color-surface-3))' : 'hsl(var(--color-surface-2))',
-              border: '1px solid hsl(var(--color-border))',
+              background: mobileMenuOpen ? '#ECE4D8' : '#F5EFE6',
+              border: '1px solid #E9DED3',
               borderRadius: '8px',
-              color: 'hsl(var(--color-text-primary))',
+              color: '#201A17',
               width: '40px',
               height: '40px',
               cursor: 'pointer',
@@ -203,17 +211,15 @@ export function LandingNavbar() {
             }}
           >
             {mobileMenuOpen ? (
-              // X icon
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             ) : (
-              // Hamburger 3-line icon
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
+                <line x1="4" y1="7" x2="20" y2="7" />
+                <line x1="4" y1="12" x2="20" y2="12" />
+                <line x1="4" y1="17" x2="20" y2="17" />
               </svg>
             )}
           </button>
@@ -236,39 +242,39 @@ export function LandingNavbar() {
         <div
           style={{
             padding: '1rem 1.25rem',
-            borderBottom: '1px solid hsl(var(--color-border))',
+            borderBottom: '1px solid #E9DED3',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-            <div
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <Image
+              src="/arenova.png"
+              alt="Arenova"
+              width={30}
+              height={30}
               style={{
-                width: 32,
-                height: 32,
+                width: '30px',
+                height: '30px',
                 borderRadius: '8px',
-                background: 'var(--gradient-brand)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1rem',
+                objectFit: 'contain',
+                flexShrink: 0,
               }}
-            >
-              🤖
-            </div>
+            />
             <div>
               <div
                 style={{
-                  fontFamily: 'Plus Jakarta Sans, sans-serif',
-                  fontWeight: 800,
-                  fontSize: '0.95rem',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 400,
+                  fontSize: '1.05rem',
                   letterSpacing: '-0.02em',
+                  color: '#201A17',
                 }}
               >
                 AI Front Desk
               </div>
-              <div style={{ fontSize: '0.65rem', color: 'hsl(142, 71%, 55%)' }}>
+              <div style={{ fontSize: '0.65rem', color: '#16A34A', fontWeight: 500 }}>
                 ● 24/7 AI Reception
               </div>
             </div>
@@ -279,10 +285,10 @@ export function LandingNavbar() {
             onClick={() => setMobileMenuOpen(false)}
             aria-label="Close navigation"
             style={{
-              background: 'hsl(var(--color-surface-2))',
-              border: '1px solid hsl(var(--color-border))',
+              background: '#F5EFE6',
+              border: '1px solid #E9DED3',
               borderRadius: '6px',
-              color: 'hsl(var(--color-text-muted))',
+              color: '#756A62',
               width: '32px',
               height: '32px',
               cursor: 'pointer',
@@ -300,15 +306,15 @@ export function LandingNavbar() {
         </div>
 
         {/* Drawer Nav Links */}
-        <div style={{ padding: '1rem 0.875rem', flex: 1 }}>
+        <div style={{ padding: '1.25rem 1rem', flex: 1 }}>
           <div
             style={{
-              fontSize: '0.7rem',
-              fontWeight: 700,
+              fontSize: '0.68rem',
+              fontWeight: 600,
               textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: 'hsl(var(--color-text-muted))',
-              padding: '0 0.5rem 0.5rem',
+              letterSpacing: '0.1em',
+              color: '#756A62',
+              padding: '0 0.5rem 0.75rem',
             }}
           >
             Navigation
@@ -326,7 +332,7 @@ export function LandingNavbar() {
                   gap: '0.85rem',
                   padding: '0.75rem 0.875rem',
                   borderRadius: '10px',
-                  color: 'hsl(var(--color-text-primary))',
+                  color: '#201A17',
                   textDecoration: 'none',
                   fontSize: '0.95rem',
                   fontWeight: 500,
@@ -334,37 +340,21 @@ export function LandingNavbar() {
                   background: 'transparent',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'hsl(var(--color-surface-2))';
+                  e.currentTarget.style.background = '#F5EFE6';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = 'transparent';
                 }}
               >
-                <span style={{ fontSize: '1.2rem', width: '24px', textAlign: 'center' }}>
-                  {item.icon}
-                </span>
                 <span>{item.label}</span>
               </Link>
             ))}
           </div>
 
-          <div className="divider" style={{ margin: '1.25rem 0.5rem' }} />
+          <div className="divider" style={{ margin: '1.5rem 0.5rem' }} />
 
           {/* Auth Actions in Drawer */}
-          <div
-            style={{
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: 'hsl(var(--color-text-muted))',
-              padding: '0 0.5rem 0.5rem',
-            }}
-          >
-            Get Started
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginTop: '0.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
             <Link
               href="/register"
               onClick={handleLinkClick}
@@ -375,10 +365,10 @@ export function LandingNavbar() {
                 textAlign: 'center',
                 padding: '0.75rem',
                 fontSize: '0.9rem',
-                fontWeight: 700,
+                fontWeight: 600,
               }}
             >
-              🚀 Start Free Trial
+              Start Free Trial
             </Link>
 
             <Link
@@ -391,10 +381,10 @@ export function LandingNavbar() {
                 textAlign: 'center',
                 padding: '0.75rem',
                 fontSize: '0.9rem',
-                fontWeight: 600,
+                fontWeight: 500,
               }}
             >
-              Sign In to Clinic
+              Sign In
             </Link>
           </div>
         </div>
@@ -403,8 +393,8 @@ export function LandingNavbar() {
         <div
           style={{
             padding: '1rem 1.25rem',
-            borderTop: '1px solid hsl(var(--color-border))',
-            background: 'hsl(var(--color-surface-2))',
+            borderTop: '1px solid #E9DED3',
+            background: '#F5EFE6',
           }}
         >
           <div
@@ -413,13 +403,13 @@ export function LandingNavbar() {
               alignItems: 'center',
               gap: '0.5rem',
               fontSize: '0.75rem',
-              color: 'hsl(var(--color-text-secondary))',
+              color: '#756A62',
             }}
           >
-            <span style={{ fontSize: '0.9rem' }}>💬</span>
+            <span style={{ fontSize: '0.85rem' }}>💬</span>
             <span>WhatsApp & Google Calendar AI</span>
           </div>
-          <div style={{ fontSize: '0.6875rem', color: 'hsl(var(--color-text-muted))', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '0.6875rem', color: '#A39B92', marginTop: '0.25rem' }}>
             No credit card required &bull; 3-day free trial
           </div>
         </div>

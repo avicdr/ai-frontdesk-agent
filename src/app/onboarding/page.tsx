@@ -540,13 +540,11 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'hsl(var(--color-bg))', color: 'hsl(var(--color-text-primary))', padding: '2rem 1rem 4rem 1rem' }}>
-      <div className="animated-bg" />
-
+    <div style={{ minHeight: '100vh', background: '#FAF5EE', color: '#201A17', padding: '2rem 1rem 4rem 1rem' }}>
       <div style={{ maxWidth: 880, margin: '0 auto', position: 'relative', zIndex: 10 }}>
         {/* Top bar with quick Dashboard jump */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <Link href="/" style={{ color: 'hsl(var(--color-text-muted))', textDecoration: 'none', fontSize: '0.825rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <Link href="/" style={{ color: '#756A62', textDecoration: 'none', fontSize: '0.825rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             ← Home
           </Link>
           <Link
@@ -556,17 +554,17 @@ export default function OnboardingPage() {
               alignItems: 'center',
               gap: '0.4rem',
               fontSize: '0.825rem',
-              fontWeight: 600,
-              color: '#93c5fd',
-              background: 'hsla(221, 83%, 58%, 0.12)',
-              border: '1px solid hsla(221, 83%, 58%, 0.3)',
-              padding: '0.4rem 0.9rem',
-              borderRadius: '8px',
+              fontWeight: 500,
+              color: '#201A17',
+              background: '#FFFFFF',
+              border: '1px solid #E9DED3',
+              padding: '0.45rem 1rem',
+              borderRadius: '9px',
               textDecoration: 'none',
-              transition: 'all 0.15s ease',
+              boxShadow: '0 1px 2px rgba(32,26,23,0.04)',
             }}
           >
-            <span>🏠 Go to Clinic Dashboard</span>
+            <span>Go to Clinic Dashboard</span>
             <span>→</span>
           </Link>
         </div>
@@ -576,22 +574,29 @@ export default function OnboardingPage() {
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.4rem 1.1rem',
+            gap: '0.4rem',
+            padding: '0.35rem 0.9rem',
             borderRadius: '9999px',
-            background: 'hsl(221 83% 58% / 0.12)',
-            border: '1px solid hsl(221 83% 58% / 0.35)',
-            fontSize: '0.8125rem',
+            background: 'rgba(196, 81, 42, 0.08)',
+            border: '1px solid rgba(196, 81, 42, 0.2)',
+            fontSize: '0.78rem',
             fontWeight: 600,
-            color: 'hsl(221 83% 70%)',
-            marginBottom: '1rem',
+            color: '#C4512A',
+            marginBottom: '0.85rem',
           }}>
-            ✨ AI Front Desk Setup Wizard
+            ✦ AI Front Desk Setup Wizard
           </div>
-          <h1 style={{ fontSize: '2.25rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
-            Set Up Your 24/7 Dental AI Receptionist
+          <h1 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(1.85rem, 3.5vw, 2.4rem)',
+            fontWeight: 400,
+            letterSpacing: '-0.025em',
+            color: '#201A17',
+            marginBottom: '0.5rem',
+          }}>
+            Set Up Your 24/7 AI Receptionist
           </h1>
-          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.95rem', maxWidth: 540, margin: '0 auto' }}>
+          <p style={{ color: '#756A62', fontSize: '0.95rem', maxWidth: 540, margin: '0 auto', lineHeight: 1.5 }}>
             Empower your practice with an automated WhatsApp receptionist that quotes treatments, checks calendar slots, and books appointments.
           </p>
         </div>
@@ -602,13 +607,13 @@ export default function OnboardingPage() {
           justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '2rem',
-          background: 'hsl(var(--color-surface))',
+          background: '#FFFFFF',
           padding: '0.875rem 1.25rem',
-          borderRadius: '16px',
-          border: '1px solid hsl(var(--color-border))',
+          borderRadius: '14px',
+          border: '1px solid #E9DED3',
           overflowX: 'auto',
           gap: '0.5rem',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+          boxShadow: '0 1px 3px rgba(32, 26, 23, 0.04)',
         }}>
           {[
             { step: 1, label: 'Clinic Essentials' },
@@ -623,35 +628,34 @@ export default function OnboardingPage() {
             const isDone = currentStep > step;
             const isCurrent = currentStep === step;
             return (
-              <div key={step} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: isCurrent ? 1 : isDone ? 0.9 : 0.45 }}>
+              <div key={step} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: isCurrent ? 1 : isDone ? 0.9 : 0.55 }}>
                 <div style={{
-                  width: 28,
-                  height: 28,
+                  width: 26,
+                  height: 26,
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '0.75rem',
-                  fontWeight: 700,
-                  background: isCurrent ? 'var(--gradient-brand)' : isDone ? 'hsl(142 71% 45%)' : 'hsl(var(--color-surface-2))',
-                  border: isCurrent ? '2px solid hsl(var(--color-primary-glow))' : '1px solid hsl(var(--color-border))',
-                  color: 'white',
+                  fontWeight: 600,
+                  background: isCurrent ? '#C4512A' : isDone ? '#EDF7F1' : '#F6EFE5',
+                  border: isCurrent ? '1.5px solid #C4512A' : isDone ? '1px solid #CEE8D8' : '1px solid #E9DED3',
+                  color: isCurrent ? '#FFFFFF' : isDone ? '#235A34' : '#756A62',
                   flexShrink: 0,
-                  boxShadow: isCurrent ? '0 0 12px hsla(221, 83%, 58%, 0.4)' : 'none',
                 }}>
                   {isDone ? '✓' : step}
                 </div>
-                <span style={{ fontSize: '0.75rem', fontWeight: isCurrent ? 700 : 500, whiteSpace: 'nowrap', color: isCurrent ? '#f8fafc' : undefined }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: isCurrent ? 600 : 500, whiteSpace: 'nowrap', color: isCurrent ? '#201A17' : '#756A62' }}>
                   {label}
                 </span>
-                {step < 8 && <div style={{ width: 14, height: 1, background: 'hsl(var(--color-border))' }} />}
+                {step < 8 && <div style={{ width: 14, height: 1, background: '#E9DED3' }} />}
               </div>
             );
           })}
         </div>
 
         {/* Step Content Card */}
-        <div className="card" style={{ padding: '2.25rem', border: '1px solid hsl(var(--color-border))', borderRadius: '20px', background: 'hsl(var(--color-surface))', boxShadow: '0 8px 32px rgba(0,0,0,0.36)' }}>
+        <div className="card" style={{ padding: '2.25rem', border: '1px solid #E9DED3', borderRadius: '20px', background: '#FFFFFF', boxShadow: '0 8px 30px rgba(32, 26, 23, 0.08)' }}>
           {errorMsg && (
             <div style={{
               padding: '0.875rem 1.25rem',
@@ -683,16 +687,16 @@ export default function OnboardingPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {/* Healthcare Specialty / Clinic Type Selector */}
                 <div className="form-field" style={{
-                  background: 'hsla(221, 83%, 58%, 0.08)',
+                  background: 'rgba(196, 81, 42, 0.05)',
                   padding: '1.25rem',
                   borderRadius: '14px',
-                  border: '1px solid hsla(221, 83%, 58%, 0.25)',
+                  border: '1px solid rgba(196, 81, 42, 0.2)',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <label className="label" style={{ fontWeight: 700, fontSize: '0.95rem', margin: 0 }}>
+                    <label className="label" style={{ fontWeight: 600, fontSize: '0.95rem', margin: 0, color: '#201A17' }}>
                       <span>🏥</span> Clinic Type / Healthcare Specialty <span style={{ color: 'hsl(var(--color-error))' }}>*</span>
                     </label>
-                    <span style={{ fontSize: '0.75rem', color: '#93c5fd', fontWeight: 600 }}>
+                    <span style={{ fontSize: '0.75rem', color: '#C4512A', fontWeight: 600 }}>
                       {currentClinicConfig.icon} {currentClinicConfig.label}
                     </span>
                   </div>
@@ -704,28 +708,28 @@ export default function OnboardingPage() {
                     style={{
                       cursor: 'pointer',
                       fontSize: '0.95rem',
-                      fontWeight: 600,
-                      background: 'hsl(var(--color-surface))',
-                      color: 'hsl(var(--color-text-primary))',
-                      border: '1px solid hsla(221, 83%, 58%, 0.4)',
+                      fontWeight: 500,
+                      background: '#FFFFFF',
+                      color: '#201A17',
+                      border: '1px solid #E9DED3',
                       padding: '0.75rem 1rem',
                       borderRadius: '10px',
                     }}
                   >
                     {CLINIC_TYPES.map(type => (
-                      <option key={type.id} value={type.id} style={{ background: '#0f172a', color: '#ffffff' }}>
+                      <option key={type.id} value={type.id}>
                         {type.icon} {type.label}
                       </option>
                     ))}
                   </select>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem', fontSize: '0.775rem', color: '#93c5fd' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem', fontSize: '0.775rem', color: '#756A62' }}>
                     <span>✨</span>
                     <span>
-                      <strong>{currentClinicConfig.label}:</strong> {currentClinicConfig.specialtyDescription}
+                      <strong style={{ color: '#201A17' }}>{currentClinicConfig.label}:</strong> {currentClinicConfig.specialtyDescription}
                     </span>
                   </div>
-                  <span className="form-hint" style={{ marginTop: '0.35rem' }}>
+                  <span className="form-hint" style={{ marginTop: '0.35rem', color: '#756A62' }}>
                     Switching specialty automatically adapts your catalog, procedure presets, and AI clinical responses.
                   </span>
                 </div>
@@ -859,21 +863,21 @@ export default function OnboardingPage() {
                             style={{
                               padding: '0.875rem 1rem',
                               borderRadius: '12px',
-                              border: `1.5px solid ${isSelected ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))'}`,
-                              background: isSelected ? 'hsla(221, 83%, 58%, 0.12)' : 'hsl(var(--color-surface-2))',
+                              border: `1.5px solid ${isSelected ? '#C4512A' : '#E9DED3'}`,
+                              background: isSelected ? 'rgba(196, 81, 42, 0.06)' : '#FAF5EE',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'space-between',
                               transition: 'all 0.15s ease',
-                              boxShadow: isSelected ? '0 0 16px hsla(221, 83%, 58%, 0.2)' : 'none',
+                              boxShadow: isSelected ? '0 0 16px rgba(196, 81, 42, 0.12)' : 'none',
                             }}
                           >
                             <div>
-                              <div style={{ fontWeight: 700, fontSize: '0.875rem', color: isSelected ? '#93c5fd' : '#f8fafc', marginBottom: '0.2rem' }}>
+                              <div style={{ fontWeight: 600, fontSize: '0.875rem', color: isSelected ? '#C4512A' : '#201A17', marginBottom: '0.2rem' }}>
                                 {t.title}
                               </div>
-                              <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
+                              <div style={{ fontSize: '0.75rem', color: '#756A62' }}>
                                 {t.desc}
                               </div>
                             </div>
@@ -881,8 +885,8 @@ export default function OnboardingPage() {
                               width: 18,
                               height: 18,
                               borderRadius: '50%',
-                              border: `2px solid ${isSelected ? 'hsl(var(--color-primary))' : 'hsl(var(--color-border))'}`,
-                              background: isSelected ? 'hsl(var(--color-primary))' : 'transparent',
+                              border: `2px solid ${isSelected ? '#C4512A' : '#E9DED3'}`,
+                              background: isSelected ? '#C4512A' : 'transparent',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -1298,7 +1302,7 @@ export default function OnboardingPage() {
                       }}>
                         {DAYS[wh.dayOfWeek].substring(0, 3)}
                       </span>
-                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: wh.isOpen ? '#f8fafc' : 'hsl(var(--color-text-muted))' }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.9rem', color: wh.isOpen ? '#201A17' : 'hsl(var(--color-text-muted))' }}>
                         {DAYS[wh.dayOfWeek]}
                       </span>
                     </div>
@@ -1790,18 +1794,16 @@ export default function OnboardingPage() {
                       style={{
                         padding: '1.75rem 1.5rem 1.5rem',
                         borderRadius: '16px',
-                        border: `2px solid ${isSelected ? (isInternational ? '#c084fc' : 'hsl(var(--color-primary))') : 'hsl(var(--color-border))'}`,
-                        background: isSelected
-                          ? (isInternational ? 'hsla(263, 70%, 50%, 0.12)' : 'hsla(221, 83%, 58%, 0.1)')
-                          : 'hsl(var(--color-surface-2))',
+                        border: `1.5px solid ${isSelected ? '#C4512A' : '#E9DED3'}`,
+                        background: isSelected ? 'rgba(196, 81, 42, 0.05)' : '#FFFFFF',
                         cursor: 'pointer',
                         position: 'relative',
                         overflow: 'visible',
                         marginTop: '0.75rem',
                         transition: 'all 0.2s ease',
                         boxShadow: isSelected
-                          ? (isInternational ? '0 0 24px hsla(263, 70%, 50%, 0.25)' : '0 0 24px hsla(221, 83%, 58%, 0.25)')
-                          : 'none',
+                          ? '0 0 0 1px rgba(196, 81, 42, 0.1), 0 8px 20px rgba(196, 81, 42, 0.12)'
+                          : '0 1px 3px rgba(32, 26, 23, 0.04)',
                       }}
                     >
                       {p.badge && (
@@ -1809,36 +1811,34 @@ export default function OnboardingPage() {
                           position: 'absolute',
                           top: -11,
                           right: 16,
-                          background: isInternational
-                            ? 'linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(221 83% 58%) 100%)'
-                            : 'var(--gradient-brand)',
+                          background: 'linear-gradient(135deg, #C4512A 0%, #9E3D23 100%)',
                           color: 'white',
                           fontSize: '0.68rem',
                           fontWeight: 700,
                           padding: '0.25rem 0.75rem',
                           borderRadius: '9999px',
-                          boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+                          boxShadow: '0 4px 12px rgba(196, 81, 42, 0.3)',
                           zIndex: 10,
                           letterSpacing: '0.02em',
                         }}>
                           {p.badge}
                         </div>
                       )}
-                      <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.35rem' }}>{p.name}</div>
-                      <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#f8fafc', marginBottom: '0.35rem' }}>
-                        {priceDisplay}<span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-muted))', fontWeight: 500 }}>/mo</span>
+                      <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '0.35rem', color: '#201A17' }}>{p.name}</div>
+                      <div style={{ fontSize: '1.75rem', fontWeight: 700, color: isSelected ? '#C4512A' : '#201A17', marginBottom: '0.35rem', fontFamily: 'var(--font-sans)' }}>
+                        {priceDisplay}<span style={{ fontSize: '0.8rem', color: '#756A62', fontWeight: 500 }}>/mo</span>
                       </div>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: isInternational ? '#c084fc' : 'hsl(221 83% 70%)', marginBottom: '1rem' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#C4512A', marginBottom: '1rem' }}>
                         {p.chatsDisplay}
                       </div>
-                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.78rem', color: '#756A62' }}>
                         {p.features.map((f, i) => (
                           <li key={i} style={{ marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <span style={{ color: '#4ade80' }}>✓</span> {f}
+                            <span style={{ color: '#16A34A', fontWeight: 700 }}>✓</span> {f}
                           </li>
                         ))}
                         {isInternational && (
-                          <li style={{ marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#c084fc' }}>
+                          <li style={{ marginBottom: '0.45rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#C4512A' }}>
                             <span>🪙</span> Pay via Crypto (USDT / USDC / BTC)
                           </li>
                         )}
@@ -1852,23 +1852,24 @@ export default function OnboardingPage() {
               {isInternational ? (
                 /* International Crypto Gateway Card */
                 <div style={{
-                  background: 'hsl(var(--color-surface-2))',
+                  background: '#FFFFFF',
                   borderRadius: '16px',
-                  border: '1px solid hsla(263, 70%, 50%, 0.3)',
+                  border: '1px solid #E9DED3',
                   padding: 'clamp(1rem, 3vw, 1.75rem)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '1.25rem',
+                  boxShadow: '0 2px 8px rgba(32, 26, 23, 0.04)',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                       <span style={{ fontSize: '1.5rem' }}>🪙</span>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '1rem', color: '#f8fafc' }}>
+                        <div style={{ fontWeight: 600, fontSize: '1rem', color: '#201A17' }}>
                           International Crypto Payment Gateway
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
-                          Selected Tier: <strong style={{ color: '#c084fc' }}>{PRICING_PLANS.find(p => p.id === selectedPlan)?.name}</strong> — <strong style={{ color: '#4ade80' }}>{PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsdDisplay} USD</strong>
+                        <div style={{ fontSize: '0.75rem', color: '#756A62' }}>
+                          Selected Tier: <strong style={{ color: '#C4512A' }}>{PRICING_PLANS.find(p => p.id === selectedPlan)?.name}</strong> — <strong style={{ color: '#201A17' }}>{PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsdDisplay} USD</strong>
                         </div>
                       </div>
                     </div>
@@ -1876,11 +1877,11 @@ export default function OnboardingPage() {
                     <div style={{
                       padding: '0.4rem 0.85rem',
                       borderRadius: '8px',
-                      background: 'hsla(142, 71%, 45%, 0.12)',
-                      border: '1px solid hsla(142, 71%, 45%, 0.3)',
-                      color: '#4ade80',
-                      fontWeight: 700,
-                      fontSize: '0.85rem',
+                      background: '#EDF7F1',
+                      border: '1px solid #CEE8D8',
+                      color: '#235A34',
+                      fontWeight: 600,
+                      fontSize: '0.825rem',
                     }}>
                       Amount: {PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsd} {selectedCryptoNetwork.symbol}
                     </div>
@@ -1888,7 +1889,7 @@ export default function OnboardingPage() {
 
                   {/* Network Tabs */}
                   <div>
-                    <div style={{ fontSize: '0.75rem', color: 'hsl(var(--color-text-muted))', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#756A62', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
                       Select Network:
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem' }}>
@@ -1902,13 +1903,14 @@ export default function OnboardingPage() {
                             style={{
                               padding: '0.5rem',
                               borderRadius: '8px',
-                              background: isNetActive ? 'hsla(263, 70%, 50%, 0.25)' : 'hsl(var(--color-surface))',
-                              border: `1.5px solid ${isNetActive ? '#c084fc' : 'hsl(var(--color-border))'}`,
-                              color: isNetActive ? '#ffffff' : 'hsl(var(--color-text-secondary))',
+                              background: isNetActive ? 'rgba(196, 81, 42, 0.08)' : '#FAF5EE',
+                              border: `1.5px solid ${isNetActive ? '#C4512A' : '#E9DED3'}`,
+                              color: isNetActive ? '#C4512A' : '#756A62',
                               fontSize: '0.75rem',
-                              fontWeight: isNetActive ? 700 : 500,
+                              fontWeight: isNetActive ? 600 : 500,
                               cursor: 'pointer',
                               textAlign: 'center',
+                              transition: 'all 0.15s ease',
                             }}
                           >
                             <div>{net.name}</div>
@@ -1939,7 +1941,7 @@ export default function OnboardingPage() {
                       margin: '0 auto',
                       boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
                     }}>
-                      <div style={{ width: 110, height: 110, background: '#f8fafc', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: 110, height: 110, background: '#FFFFFF', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <img
                           src={selectedCryptoNetwork.qrImagePath}
                           alt={`${selectedCryptoNetwork.name} Deposit QR`}
@@ -1952,7 +1954,7 @@ export default function OnboardingPage() {
                           }}
                         />
                       </div>
-                      <div style={{ color: '#0f172a', fontSize: '0.68rem', fontWeight: 700, marginTop: '0.35rem' }}>
+                      <div style={{ color: '#201A17', fontSize: '0.68rem', fontWeight: 600, marginTop: '0.35rem' }}>
                         {selectedCryptoNetwork.symbol} Deposit
                       </div>
                     </div>
@@ -1960,21 +1962,21 @@ export default function OnboardingPage() {
                     {/* Deposit Address Box & TxID input */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       <div>
-                        <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        <div style={{ fontSize: '0.7rem', color: '#756A62', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
                           Official {selectedCryptoNetwork.name} Address:
                         </div>
                         <div style={{
                           padding: '0.6rem 0.75rem',
                           borderRadius: '8px',
-                          background: 'hsl(var(--color-surface-2))',
-                          border: '1px solid hsl(var(--color-border))',
+                          background: '#FAF5EE',
+                          border: '1px solid #E9DED3',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           gap: '0.5rem',
                           marginTop: '0.25rem',
                         }}>
-                          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#93c5fd', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#C4512A', fontFamily: 'monospace', wordBreak: 'break-all' }}>
                             {selectedCryptoNetwork.address}
                           </span>
                           <button
@@ -2060,16 +2062,16 @@ export default function OnboardingPage() {
                       padding: '0.875rem 1rem',
                       borderRadius: '10px',
                       background: 'hsl(var(--color-surface))',
-                      border: '1px solid hsl(var(--color-border))',
+                      border: '1px solid #E9DED3',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                     }}>
                       <div>
-                        <div style={{ fontSize: '0.7rem', color: 'hsl(var(--color-text-muted))', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        <div style={{ fontSize: '0.7rem', color: '#756A62', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
                           Official Clinic UPI VPA:
                         </div>
-                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#93c5fd', fontFamily: 'monospace' }}>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#C4512A', fontFamily: 'monospace' }}>
                           {PLATFORM_UPI_VPA}
                         </div>
                       </div>
