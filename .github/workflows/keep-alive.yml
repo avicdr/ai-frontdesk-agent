@@ -14,7 +14,7 @@ jobs:
       - name: Ping AI Front Desk Health Endpoint
         run: |
           echo "Pinging AI Front Desk on Render to prevent free-tier spin down..."
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://ai-frontdesk-agent.onrender.com/api/health)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://frontdesk.arenova.in/api/health)
           echo "Render HTTP Status: $STATUS"
           if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
             echo "✅ Service is awake and healthy!"

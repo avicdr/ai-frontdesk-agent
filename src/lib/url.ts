@@ -10,10 +10,10 @@ import { NextRequest } from 'next/server';
  * Priority:
  * 1. Inspect incoming request's `x-forwarded-host` and `x-forwarded-proto` headers.
  *    If host is non-localhost or running in development, this is always used.
- * 2. RENDER_EXTERNAL_URL (automatically provided by Render, e.g. https://ai-frontdesk-agent.onrender.com)
+ * 2. RENDER_EXTERNAL_URL (if provided and not pointing to a blocked onrender.com domain)
  * 3. VERCEL_PROJECT_PRODUCTION_URL / VERCEL_URL
  * 4. NEXT_PUBLIC_APP_URL (if configured and not pointing to localhost in non-development environments)
- * 5. Production deployment fallback: https://ai-frontdesk-agent.onrender.com
+ * 5. Production deployment fallback: https://frontdesk.arenova.in
  * 6. Local development fallback: http://localhost:3000
  */
 export function getAppBaseUrl(request?: NextRequest | Request | null): string {
@@ -45,8 +45,8 @@ export function getAppBaseUrl(request?: NextRequest | Request | null): string {
     }
   }
 
-  // 2. Render automated environment variable
-  if (process.env.RENDER_EXTERNAL_URL) {
+  // 2. Render automated environment variable (skip if onrender.com subdomain which is blocked by custom domain)
+  if (process.env.RENDER_EXTERNAL_URL && !process.env.RENDER_EXTERNAL_URL.includes('onrender.com')) {
     return process.env.RENDER_EXTERNAL_URL.replace(/\/$/, '');
   }
 
