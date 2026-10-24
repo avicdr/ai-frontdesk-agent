@@ -558,7 +558,14 @@ h3, h4, h5, h6 {
   border: 1px solid rgba(232, 122, 56, 0.3);
 }
 
-.badge-error {
+.badge-primary {
+  background: rgba(232, 75, 44, 0.16);
+  color: var(--color-flame);
+  border: 1px solid rgba(232, 75, 44, 0.35);
+}
+
+.badge-error,
+.badge-danger {
   background: rgba(232, 75, 44, 0.14);
   color: var(--color-error);
   border: 1px solid rgba(232, 75, 44, 0.3);
@@ -583,9 +590,67 @@ h3, h4, h5, h6 {
 }
 
 .badge-muted, .badge-neutral {
-  background: var(--color-border-subtle);
+  background: var(--color-surface-secondary);
   color: var(--color-text-muted);
   border: 1px solid var(--color-border-standard);
+}
+
+/* ============================================================
+   Enterprise SaaS Data Tables (Admin & Clinical Ledgers)
+   ============================================================ */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.8125rem;
+  font-family: var(--font-sans);
+}
+
+.data-table thead th {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border-standard);
+  white-space: nowrap;
+}
+
+.data-table tbody td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  vertical-align: middle;
+}
+
+.data-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.data-table tbody tr:hover {
+  background-color: rgba(243, 240, 232, 0.03);
+}
+
+[data-theme="light"] .data-table thead th,
+.light .data-table thead th {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-muted);
+  border-bottom-color: var(--color-border-standard);
+}
+
+[data-theme="light"] .data-table tbody td,
+.light .data-table tbody td {
+  border-bottom-color: var(--color-border-subtle);
+  color: var(--color-text-secondary);
+}
+
+[data-theme="light"] .data-table tbody tr:hover,
+.light .data-table tbody tr:hover {
+  background-color: rgba(28, 25, 23, 0.03);
 }
 
 /* ============================================================
@@ -808,6 +873,16 @@ textarea {
   flex-direction: column;
   z-index: 40;
   transition: background-color 0.25s ease, border-color 0.25s ease;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  box-sizing: border-box;
+}
+
+.sidebar nav,
+aside.sidebar nav {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin;
 }
 
 .sidebar-nav-item {
@@ -823,6 +898,14 @@ textarea {
   transition: all 0.15s ease;
   margin: 0.15rem 0;
   border: 1px solid transparent;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.sidebar-nav-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebar-nav-item:hover {
@@ -1208,6 +1291,81 @@ tr:hover td {
 }
 
 [data-theme="light"] [style*="rgba(243, 240, 232, 0.05)"] {
+  background-color: rgba(28, 25, 23, 0.04) !important;
+}
+
+/* ============================================================
+   Light Theme Universal Class & Utility Overrides
+   ============================================================ */
+
+[data-theme="light"] .text-\[\#F3F0E8\],
+.light .text-\[\#F3F0E8\] {
+  color: var(--color-text-primary) !important;
+}
+
+[data-theme="light"] .text-\[\#D0CBC1\],
+.light .text-\[\#D0CBC1\] {
+  color: var(--color-text-secondary) !important;
+}
+
+[data-theme="light"] .text-\[\#9E9B93\],
+.light .text-\[\#9E9B93\] {
+  color: var(--color-text-muted) !important;
+}
+
+[data-theme="light"] .bg-\[\#111110\],
+.light .bg-\[\#111110\] {
+  background-color: var(--color-surface-secondary) !important;
+}
+
+[data-theme="light"] .bg-\[\#171614\],
+.light .bg-\[\#171614\] {
+  background-color: var(--color-surface-elevated) !important;
+}
+
+[data-theme="light"] .bg-\[\#1C1916\],
+.light .bg-\[\#1C1916\] {
+  background-color: var(--color-surface-raised) !important;
+}
+
+[data-theme="light"] .bg-\[\#211B17\],
+.light .bg-\[\#211B17\] {
+  background-color: var(--color-surface-raised) !important;
+}
+
+[data-theme="light"] .bg-\[\#0D0D0C\],
+.light .bg-\[\#0D0D0C\] {
+  background-color: var(--color-charcoal) !important;
+}
+
+[data-theme="light"] .bg-\[\#080505\],
+.light .bg-\[\#080505\] {
+  background-color: var(--color-void) !important;
+}
+
+[data-theme="light"] [class*="border-\[\#F3F0E8\]"],
+.light [class*="border-\[\#F3F0E8\]"],
+[data-theme="light"] .border-\[\#F3F0E8\]\/08,
+.light .border-\[\#F3F0E8\]\/08 {
+  border-color: var(--color-border-subtle) !important;
+}
+
+[data-theme="light"] [class*="border-b-\[\#F3F0E8\]"],
+.light [class*="border-b-\[\#F3F0E8\]"],
+[data-theme="light"] .border-b-\[\#F3F0E8\]\/08,
+.light .border-b-\[\#F3F0E8\]\/08 {
+  border-bottom-color: var(--color-border-subtle) !important;
+}
+
+[data-theme="light"] [class*="hover\:border-\[\#F3F0E8\]"]:hover,
+.light [class*="hover\:border-\[\#F3F0E8\]"]:hover {
+  border-color: var(--color-border-hover) !important;
+}
+
+[data-theme="light"] [class*="hover\:bg-\[\#F3F0E8\]"]:hover,
+.light [class*="hover\:bg-\[\#F3F0E8\]"]:hover,
+[data-theme="light"] .hover\:bg-\[\#F3F0E8\]\/03:hover,
+.light .hover\:bg-\[\#F3F0E8\]\/03:hover {
   background-color: rgba(28, 25, 23, 0.04) !important;
 }
 
