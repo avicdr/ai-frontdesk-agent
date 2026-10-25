@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ThemeToggle, ThemeSegmentedToggle } from '@/components/theme/ThemeToggle';
 
 interface AdminNavItem {
@@ -98,17 +99,26 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
             width: 28,
             height: 28,
             borderRadius: '7px',
-            background: 'linear-gradient(135deg, #E84B2C, #C86938)',
-            color: '#FFFFFF',
+            background: 'linear-gradient(135deg, rgba(232, 75, 44, 0.22), rgba(200, 105, 56, 0.08))',
+            border: '1px solid rgba(232, 75, 44, 0.32)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '0.85rem',
-            fontWeight: 700,
             flexShrink: 0,
-            boxShadow: '0 0 12px rgba(232, 75, 44, 0.35)',
+            boxShadow: '0 0 12px rgba(232, 75, 44, 0.2)',
           }}>
-            👑
+            <Image
+              src="/arenova.png"
+              alt="Arenova"
+              width={20}
+              height={20}
+              style={{
+                width: '20px',
+                height: '20px',
+                borderRadius: '4px',
+                objectFit: 'contain',
+              }}
+            />
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{
@@ -171,15 +181,27 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
               width: 32,
               height: 32,
               borderRadius: '8px',
-              background: 'linear-gradient(135deg, #E84B2C, #C86938)',
-              color: '#FFFFFF',
+              background: 'linear-gradient(135deg, rgba(232, 75, 44, 0.22), rgba(200, 105, 56, 0.08))',
+              border: '1px solid rgba(232, 75, 44, 0.32)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '0.85rem',
               flexShrink: 0,
-              boxShadow: '0 0 14px rgba(232, 75, 44, 0.35)',
-            }}>👑</div>
+              boxShadow: '0 0 14px rgba(232, 75, 44, 0.25)',
+            }}>
+              <Image
+                src="/arenova.png"
+                alt="Arenova"
+                width={24}
+                height={24}
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '5px',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 Admin Console

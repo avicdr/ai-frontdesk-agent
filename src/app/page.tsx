@@ -7,8 +7,31 @@ import { InteractiveBotComparison } from '@/components/landing/InteractiveBotCom
 import { HeroInteractivePreview } from '@/components/landing/HeroInteractivePreview';
 
 export const metadata: Metadata = {
-  title: 'AI Front Desk — Premium AI Receptionist for Clinics & Practices',
-  description: 'Deploy a cinematic, intelligent AI receptionist on WhatsApp for your practice. Answers queries, coordinates availability, and books appointments 24/7.',
+  title: 'AI Front Desk - Premium AI Receptionist for Clinics & Practices',
+  description:
+    'Transform the way your practice works. Deploy a cinematic, intelligent 24/7 AI receptionist on WhatsApp. Answers queries, coordinates doctor availability, and books appointments seamlessly.',
+  openGraph: {
+    title: 'Arenova AI Front Desk — Transform the Way Your Business Works',
+    description:
+      'Transform the way your practice works. Deploy an intelligent 24/7 AI receptionist on WhatsApp for modern clinics and appointment practices.',
+    url: '/',
+    siteName: 'Arenova AI Front Desk',
+    images: [
+      {
+        url: '/metadata.png',
+        width: 2912,
+        height: 1440,
+        alt: 'Arenova AI Front Desk — Transform the way your business works',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Arenova AI Front Desk — Transform the Way Your Business Works',
+    description:
+      'Transform the way your practice works. Intelligent 24/7 AI receptionist for clinics and appointment practices.',
+    images: ['/metadata.png'],
+  },
 };
 
 const featureBento = [
