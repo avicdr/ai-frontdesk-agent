@@ -95,33 +95,19 @@ export function LandingNavbar() {
             color: 'inherit',
           }}
         >
-          <div style={{
-            position: 'relative',
-            width: 36,
-            height: 36,
-            borderRadius: '9px',
-            background: 'linear-gradient(135deg, rgba(232, 75, 44, 0.22), rgba(200, 105, 56, 0.08))',
-            border: '1px solid rgba(232, 75, 44, 0.32)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            boxShadow: '0 0 16px rgba(232, 75, 44, 0.2)',
-          }}>
-            <Image
-              src="/arenova.png"
-              alt="Arenova"
-              width={26}
-              height={26}
-              style={{
-                width: '26px',
-                height: '26px',
-                borderRadius: '6px',
-                objectFit: 'contain',
-              }}
-              priority
-            />
-          </div>
+          <Image
+            src="/arenova.png"
+            alt="Arenova"
+            width={38}
+            height={38}
+            style={{
+              width: '38px',
+              height: '38px',
+              objectFit: 'contain',
+              flexShrink: 0,
+            }}
+            priority
+          />
           <span
             style={{
               fontFamily: 'var(--font-display)',
@@ -273,13 +259,13 @@ export function LandingNavbar() {
             <Image
               src="/arenova.png"
               alt="Arenova"
-              width={28}
-              height={28}
+              width={32}
+              height={32}
               style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '7px',
+                width: '32px',
+                height: '32px',
                 objectFit: 'contain',
+                flexShrink: 0,
               }}
             />
             <span

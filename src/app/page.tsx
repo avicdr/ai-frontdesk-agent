@@ -960,12 +960,11 @@ export default function LandingPage() {
             <Image
               src="/arenova.png"
               alt="Arenova"
-              width={28}
-              height={28}
+              width={32}
+              height={32}
               style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '7px',
+                width: '32px',
+                height: '32px',
                 objectFit: 'contain',
               }}
             />

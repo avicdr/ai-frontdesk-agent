@@ -141,7 +141,7 @@ export default function RegisterPage() {
               alt="Arenova"
               width={34}
               height={34}
-              className="w-9 h-9 rounded-xl object-contain border border-[#F3F0E8]/12 shadow-[0_0_15px_rgba(232,75,44,0.25)] transition-transform group-hover:scale-105"
+              className="w-9 h-9 object-contain transition-transform group-hover:scale-105"
               priority
             />
             <span className="font-heading text-lg font-semibold tracking-tight text-[#F3F0E8]">

@@ -145,15 +145,12 @@ export default function LoginPage() {
           <Image
             src="/arenova.png"
             alt="Arenova"
-            width={36}
-            height={36}
+            width={38}
+            height={38}
             style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
+              width: '38px',
+              height: '38px',
               objectFit: 'contain',
-              border: '1px solid var(--color-border-standard)',
-              boxShadow: '0 0 15px rgba(232, 75, 44, 0.25)',
               flexShrink: 0,
             }}
             priority
@@ -253,10 +250,8 @@ export default function LoginPage() {
                 style={{
                   width: '32px',
                   height: '32px',
-                  borderRadius: '8px',
                   objectFit: 'contain',
                   flexShrink: 0,
-                  border: '1px solid var(--color-border-standard)',
                 }}
               />
               <span style={{

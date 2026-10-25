@@ -104,12 +104,11 @@ export function DashboardShell({
           <Image
             src="/arenova.png"
             alt="Arenova"
-            width={28}
-            height={28}
+            width={32}
+            height={32}
             style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '7px',
+              width: '32px',
+              height: '32px',
               objectFit: 'contain',
               flexShrink: 0,
             }}
@@ -182,31 +181,18 @@ export function DashboardShell({
           flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
-            <div style={{
-              position: 'relative',
-              width: 34,
-              height: 34,
-              borderRadius: '9px',
-              background: 'linear-gradient(135deg, rgba(232, 75, 44, 0.2), rgba(200, 105, 56, 0.08))',
-              border: '1px solid rgba(232, 75, 44, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <Image
-                src="/arenova.png"
-                alt="Arenova"
-                width={26}
-                height={26}
-                style={{
-                  width: '26px',
-                  height: '26px',
-                  borderRadius: '6px',
-                  objectFit: 'contain',
-                }}
-              />
-            </div>
+            <Image
+              src="/arenova.png"
+              alt="Arenova"
+              width={34}
+              height={34}
+              style={{
+                width: '34px',
+                height: '34px',
+                objectFit: 'contain',
+                flexShrink: 0,
+              }}
+            />
             <div style={{ minWidth: 0 }}>
               <div style={{
                 fontFamily: 'var(--font-sans)',

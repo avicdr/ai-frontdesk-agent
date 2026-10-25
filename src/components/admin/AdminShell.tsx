@@ -95,31 +95,18 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', minWidth: 0, flex: 1, margin: '0 0.75rem' }}>
-          <div style={{
-            width: 28,
-            height: 28,
-            borderRadius: '7px',
-            background: 'linear-gradient(135deg, rgba(232, 75, 44, 0.22), rgba(200, 105, 56, 0.08))',
-            border: '1px solid rgba(232, 75, 44, 0.32)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            boxShadow: '0 0 12px rgba(232, 75, 44, 0.2)',
-          }}>
-            <Image
-              src="/arenova.png"
-              alt="Arenova"
-              width={20}
-              height={20}
-              style={{
-                width: '20px',
-                height: '20px',
-                borderRadius: '4px',
-                objectFit: 'contain',
-              }}
-            />
-          </div>
+          <Image
+            src="/arenova.png"
+            alt="Arenova"
+            width={28}
+            height={28}
+            style={{
+              width: '28px',
+              height: '28px',
+              objectFit: 'contain',
+              flexShrink: 0,
+            }}
+          />
           <div style={{ minWidth: 0 }}>
             <div style={{
               fontFamily: 'var(--font-sans)',
@@ -177,31 +164,18 @@ export function AdminShell({ displayName, adminNavItems, children }: AdminShellP
           flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
-            <div style={{
-              width: 32,
-              height: 32,
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, rgba(232, 75, 44, 0.22), rgba(200, 105, 56, 0.08))',
-              border: '1px solid rgba(232, 75, 44, 0.32)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              boxShadow: '0 0 14px rgba(232, 75, 44, 0.25)',
-            }}>
-              <Image
-                src="/arenova.png"
-                alt="Arenova"
-                width={24}
-                height={24}
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '5px',
-                  objectFit: 'contain',
-                }}
-              />
-            </div>
+            <Image
+              src="/arenova.png"
+              alt="Arenova"
+              width={32}
+              height={32}
+              style={{
+                width: '32px',
+                height: '32px',
+                objectFit: 'contain',
+                flexShrink: 0,
+              }}
+            />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 Admin Console
