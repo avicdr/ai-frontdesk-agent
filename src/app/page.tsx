@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description:
     'Transform the way your practice works. Deploy a cinematic, intelligent 24/7 AI receptionist on WhatsApp. Answers queries, coordinates doctor availability, and books appointments seamlessly.',
   openGraph: {
-    title: 'Arenova AI Front Desk — Transform the Way Your Business Works',
+    title: 'Arenova AI Front Desk - Transform the Way Your Business Works',
     description:
       'Transform the way your practice works. Deploy an intelligent 24/7 AI receptionist on WhatsApp for modern clinics and appointment practices.',
     url: '/',
