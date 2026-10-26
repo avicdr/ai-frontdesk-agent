@@ -54,6 +54,8 @@ export async function GET(request: NextRequest) {
         status,
         notes,
         source,
+        review_requested_at,
+        review_status,
         created_at,
         services ( id, name, duration_minutes, price_display )
       `)
@@ -245,6 +247,16 @@ export async function PATCH(request: NextRequest) {
         if (statusCode !== 410 && statusCode !== 404) {
           console.warn('Calendar delete event warning:', e?.message || e);
         }
+      }
+    }
+
+    // If marked completed, trigger automated review request
+    if (status === 'completed' && !existingAppt.review_requested_at) {
+      try {
+        const { dispatchReviewRequestForAppointment } = await import('@/lib/reviews/review-service');
+        await dispatchReviewRequestForAppointment(appointmentId);
+      } catch (revErr) {
+        console.warn('Auto review dispatch on appointment complete warning:', revErr);
       }
     }
 

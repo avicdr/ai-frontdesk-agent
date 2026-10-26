@@ -5,6 +5,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { CLINIC_TYPES, ClinicTypeId, getClinicTypeConfig } from '@/lib/constants/clinic-types';
+import { GoogleMapsLocationPicker } from '@/components/clinic/GoogleMapsLocationPicker';
+import { DEFAULT_REVIEW_TEMPLATE, formatReviewMessage } from '@/lib/reviews/constants';
 
 interface Service {
   name: string;
@@ -68,6 +70,15 @@ export default function ConfigurationPage() {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [timezone, setTimezone] = useState('Asia/Kolkata');
+  const [googleMapsUrl, setGoogleMapsUrl] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+
+  // Google Reviews & Post-Appointment Automation State
+  const [googleReviewLink, setGoogleReviewLink] = useState('');
+  const [autoReviewRequest, setAutoReviewRequest] = useState(true);
+  const [reviewRequestDelayMinutes, setReviewRequestDelayMinutes] = useState(60);
+  const [reviewRequestTemplate, setReviewRequestTemplate] = useState('');
 
   // AI Agent State
   const [assistantName, setAssistantName] = useState('Roma');
@@ -110,6 +121,13 @@ export default function ConfigurationPage() {
             setAddress(clinic.address || '');
             setCity(clinic.city || '');
             setTimezone(clinic.timezone || 'Asia/Kolkata');
+            setGoogleMapsUrl(clinic.googleMapsUrl || '');
+            setLatitude(clinic.latitude ?? null);
+            setLongitude(clinic.longitude ?? null);
+            setGoogleReviewLink(clinic.googleReviewLink || '');
+            setAutoReviewRequest(clinic.autoReviewRequest ?? true);
+            setReviewRequestDelayMinutes(clinic.reviewRequestDelayMinutes ?? 60);
+            setReviewRequestTemplate(clinic.reviewRequestTemplate || '');
             if (clinic.businessType && CLINIC_TYPES.some(t => t.id === clinic.businessType)) {
               setBusinessType(clinic.businessType as ClinicTypeId);
             }
@@ -164,6 +182,13 @@ export default function ConfigurationPage() {
             city,
             timezone,
             businessType,
+            googleMapsUrl,
+            latitude,
+            longitude,
+            googleReviewLink,
+            autoReviewRequest,
+            reviewRequestDelayMinutes,
+            reviewRequestTemplate,
           },
           agent: {
             assistantName,
@@ -365,7 +390,8 @@ export default function ConfigurationPage() {
 
       {/* Tab 1: Profile */}
       {activeTab === 'profile' && (
-        <div className="card">
+        <>
+          <div className="card">
           <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#F3F0E8', marginBottom: '0.35rem' }}>Clinic Essentials</h2>
           <p style={{ color: '#9E9B93', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
             Basic clinic contact information used when addressing patients and sending booking confirmations.
@@ -422,16 +448,35 @@ export default function ConfigurationPage() {
               </div>
             </div>
 
+            {/* Google Maps Exact Location Auto-Detector */}
+            <div>
+              <GoogleMapsLocationPicker
+                address={address}
+                city={city}
+                googleMapsUrl={googleMapsUrl}
+                latitude={latitude}
+                longitude={longitude}
+                onLocationSelected={loc => {
+                  setAddress(loc.address);
+                  setCity(loc.city);
+                  setGoogleMapsUrl(loc.googleMapsUrl);
+                  setLatitude(loc.latitude ?? null);
+                  setLongitude(loc.longitude ?? null);
+                }}
+              />
+            </div>
+
             <div>
               <label className="label"><span>📍</span> Address</label>
               <input className="input" value={address} onChange={e => setAddress(e.target.value)} />
-              <span style={{ fontSize: '0.72rem', color: '#9E9B93', marginTop: '0.25rem', display: 'block' }}>Physical clinic address provided upon appointment booking</span>
+              <span style={{ fontSize: '0.72rem', color: '#9E9B93', marginTop: '0.25rem', display: 'block' }}>Physical clinic address provided upon appointment booking (auto-filled from Google Maps)</span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
               <div>
                 <label className="label"><span>🏙️</span> City / Area</label>
                 <input className="input" value={city} onChange={e => setCity(e.target.value)} />
+                <span style={{ fontSize: '0.72rem', color: '#9E9B93', marginTop: '0.25rem', display: 'block' }}>Detected locality for patient travel estimation</span>
               </div>
               <div>
                 <label className="label"><span>🌐</span> Timezone</label>
@@ -446,6 +491,200 @@ export default function ConfigurationPage() {
             </div>
           </div>
         </div>
+
+        {/* Section: Google Reviews & Post-Appointment Automation */}
+        <div className="card" style={{ marginTop: '1.5rem', border: '1px solid rgba(232, 122, 56, 0.2)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.5rem' }}>
+            <div>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#F3F0E8', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span>⭐</span> Google Reviews & Post-Appointment Automation
+              </h2>
+              <p style={{ color: '#9E9B93', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                Automatically invite patients to rate your clinic on Google Maps after their scheduled appointment ends.
+              </p>
+            </div>
+            {googleReviewLink && (
+              <span style={{
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: '#63C7A2',
+                background: 'rgba(99, 199, 162, 0.12)',
+                padding: '4px 10px',
+                borderRadius: '8px',
+                border: '1px solid rgba(99, 199, 162, 0.25)',
+              }}>
+                ✓ Review Automation Active
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1.25rem' }}>
+            {/* Google Business Review Link */}
+            <div>
+              <label className="label" style={{ fontWeight: 600, color: '#F3F0E8' }}>
+                <span>🔗</span> Google Business / Review Link <span style={{ color: '#E87A38' }}>*</span>
+              </label>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <input
+                  className="input"
+                  style={{ flex: 1, minWidth: '260px' }}
+                  value={googleReviewLink}
+                  onChange={e => setGoogleReviewLink(e.target.value)}
+                  placeholder="e.g. https://g.page/r/.../review or https://search.google.com/local/writereview?placeid=..."
+                />
+                {googleReviewLink && (
+                  <a
+                    href={googleReviewLink.startsWith('http') ? googleReviewLink : `https://${googleReviewLink}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn"
+                    style={{
+                      background: 'rgba(232, 122, 56, 0.15)',
+                      border: '1px solid rgba(232, 122, 56, 0.35)',
+                      color: '#E87A38',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      padding: '0.5rem 1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    Test Link ↗
+                  </a>
+                )}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#9E9B93', marginTop: '0.35rem', lineHeight: 1.4 }}>
+                ✦ <strong>How to find this:</strong> Open your <a href="https://business.google.com" target="_blank" rel="noopener noreferrer" style={{ color: '#E87A38' }}>Google Business Profile</a> → Click <strong>&quot;Ask for reviews&quot;</strong> → Copy your direct review link and paste it here.
+              </div>
+            </div>
+
+            {/* Toggle & Delay Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', alignItems: 'center' }}>
+              <div style={{
+                background: '#1C1916',
+                padding: '1rem',
+                borderRadius: '10px',
+                border: '1px solid rgba(243, 240, 232, 0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+              }}>
+                <input
+                  type="checkbox"
+                  id="autoReviewToggle"
+                  checked={autoReviewRequest}
+                  onChange={e => setAutoReviewRequest(e.target.checked)}
+                  style={{ width: '18px', height: '18px', accentColor: '#E87A38', cursor: 'pointer' }}
+                />
+                <label htmlFor="autoReviewToggle" style={{ cursor: 'pointer', margin: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#F3F0E8' }}>
+                    Auto-Send WhatsApp Review Request
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#9E9B93' }}>
+                    Triggered after patient visit ends or when marked completed
+                  </div>
+                </label>
+              </div>
+
+              <div>
+                <label className="label"><span>⏱️</span> Send Review Request</label>
+                <select
+                  className="input"
+                  value={reviewRequestDelayMinutes}
+                  onChange={e => setReviewRequestDelayMinutes(Number(e.target.value))}
+                  disabled={!autoReviewRequest}
+                >
+                  <option value={15}>15 minutes after appointment</option>
+                  <option value={30}>30 minutes after appointment</option>
+                  <option value={60}>1 hour after appointment (Recommended)</option>
+                  <option value={120}>2 hours after appointment</option>
+                  <option value={1440}>Next morning (24 hours later)</option>
+                </select>
+                <span style={{ fontSize: '0.72rem', color: '#9E9B93', marginTop: '0.25rem', display: 'block' }}>
+                  Gives the patient time to finish consultation and head home before reviewing
+                </span>
+              </div>
+            </div>
+
+            {/* WhatsApp Message Template & Live Preview */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+              {/* Template Editor */}
+              <div>
+                <label className="label"><span>📝</span> Review Request WhatsApp Message</label>
+                <textarea
+                  className="input"
+                  rows={6}
+                  style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: '0.85rem', lineHeight: 1.4 }}
+                  value={reviewRequestTemplate}
+                  onChange={e => setReviewRequestTemplate(e.target.value)}
+                  placeholder={DEFAULT_REVIEW_TEMPLATE}
+                />
+                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.35rem' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#9E9B93' }}>Available tags:</span>
+                  {['{patient_name}', '{clinic_name}', '{service_name}', '{review_link}'].map(tag => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setReviewRequestTemplate(prev => (prev ? `${prev} ${tag}` : `${DEFAULT_REVIEW_TEMPLATE} ${tag}`))}
+                      style={{
+                        fontSize: '0.7rem',
+                        background: 'rgba(243, 240, 232, 0.06)',
+                        border: '1px solid rgba(243, 240, 232, 0.1)',
+                        color: '#E87A38',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Realistic Live WhatsApp Bubble Preview */}
+              <div>
+                <label className="label"><span>📱</span> Patient WhatsApp Preview</label>
+                <div style={{
+                  background: '#0B141A',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  border: '1px solid rgba(243, 240, 232, 0.08)',
+                  minHeight: '160px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                }}>
+                  <div style={{
+                    background: '#005C4B',
+                    color: '#E9EDEF',
+                    borderRadius: '8px 8px 0 8px',
+                    padding: '0.75rem 0.85rem',
+                    fontSize: '0.825rem',
+                    lineHeight: 1.45,
+                    whiteSpace: 'pre-line',
+                    boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)',
+                    maxWidth: '92%',
+                    alignSelf: 'flex-end',
+                  }}>
+                    {formatReviewMessage(reviewRequestTemplate, {
+                      patientName: 'Priya',
+                      clinicName: clinicName || 'Your Clinic',
+                      reviewLink: googleReviewLink || 'https://g.page/r/your-clinic/review',
+                      serviceName: 'Dental Checkup',
+                    })}
+                    <div style={{ textAlign: 'right', fontSize: '0.65rem', color: 'rgba(233, 237, 239, 0.6)', marginTop: '4px' }}>
+                      Just now ✓✓
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </>
       )}
 
       {/* Tab 2: AI Agent Persona */}

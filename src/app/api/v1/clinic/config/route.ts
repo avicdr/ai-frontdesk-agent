@@ -71,6 +71,13 @@ export async function GET(request: NextRequest) {
         city: profile?.city || '',
         timezone: profile?.timezone || org?.timezone || 'Asia/Kolkata',
         businessType: profile?.business_type || 'dental_clinic',
+        googleMapsUrl: profile?.google_maps_url || '',
+        latitude: profile?.latitude ? Number(profile.latitude) : null,
+        longitude: profile?.longitude ? Number(profile.longitude) : null,
+        googleReviewLink: profile?.google_review_link || '',
+        autoReviewRequest: profile?.auto_review_request ?? true,
+        reviewRequestDelayMinutes: profile?.review_request_delay_minutes ?? 60,
+        reviewRequestTemplate: profile?.review_request_template || '',
       },
       agent: {
         assistantName: agent?.assistant_name || 'Roma',
@@ -158,6 +165,28 @@ export async function POST(request: NextRequest) {
 
       if (clinic.businessType && CLINIC_TYPES.some(t => t.id === clinic.businessType)) {
         profileUpdates.business_type = clinic.businessType;
+      }
+
+      if (clinic.googleMapsUrl !== undefined) {
+        profileUpdates.google_maps_url = clinic.googleMapsUrl || null;
+      }
+      if (clinic.latitude !== undefined) {
+        profileUpdates.latitude = clinic.latitude || null;
+      }
+      if (clinic.longitude !== undefined) {
+        profileUpdates.longitude = clinic.longitude || null;
+      }
+      if (clinic.googleReviewLink !== undefined) {
+        profileUpdates.google_review_link = clinic.googleReviewLink || null;
+      }
+      if (clinic.autoReviewRequest !== undefined) {
+        profileUpdates.auto_review_request = Boolean(clinic.autoReviewRequest);
+      }
+      if (clinic.reviewRequestDelayMinutes !== undefined) {
+        profileUpdates.review_request_delay_minutes = Number(clinic.reviewRequestDelayMinutes);
+      }
+      if (clinic.reviewRequestTemplate !== undefined) {
+        profileUpdates.review_request_template = clinic.reviewRequestTemplate || null;
       }
 
       await admin

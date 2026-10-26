@@ -15,6 +15,8 @@ interface Appointment {
   status: 'confirmed' | 'completed' | 'cancelled' | 'no_show';
   source: string;
   notes?: string;
+  review_requested_at?: string | null;
+  review_status?: string | null;
   services?: {
     name: string;
     duration_minutes: number;
@@ -34,6 +36,8 @@ export default function AppointmentsPage() {
   const [newStartsAt, setNewStartsAt] = useState('');
   const [newNotes, setNewNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reviewSendingId, setReviewSendingId] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const fetchAppointments = async () => {
     try {
@@ -66,6 +70,39 @@ export default function AppointmentsPage() {
       fetchAppointments();
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleSendReview = async (appointmentId: string) => {
+    setReviewSendingId(appointmentId);
+    setActionFeedback(null);
+    try {
+      const res = await fetch('/api/v1/appointments/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appointmentId }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setActionFeedback({
+          type: 'success',
+          message: '⭐ Google Review request sent to patient on WhatsApp!',
+        });
+        fetchAppointments();
+      } else {
+        setActionFeedback({
+          type: 'error',
+          message: json.error?.message || 'Failed to send review request. Ensure Google Review Link is set in Clinic Configuration.',
+        });
+      }
+    } catch (err: any) {
+      setActionFeedback({
+        type: 'error',
+        message: err.message || 'Network error while sending review request',
+      });
+    } finally {
+      setReviewSendingId(null);
+      setTimeout(() => setActionFeedback(null), 5000);
     }
   };
 
@@ -202,6 +239,28 @@ export default function AppointmentsPage() {
         })}
       </div>
 
+      {/* Action Feedback Banner */}
+      {actionFeedback && (
+        <div
+          style={{
+            marginBottom: '1rem',
+            padding: '0.75rem 1rem',
+            borderRadius: '8px',
+            background: actionFeedback.type === 'success' ? 'rgba(99, 199, 162, 0.12)' : 'rgba(232, 75, 44, 0.12)',
+            border: `1px solid ${actionFeedback.type === 'success' ? 'rgba(99, 199, 162, 0.3)' : 'rgba(232, 75, 44, 0.3)'}`,
+            color: actionFeedback.type === 'success' ? '#63C7A2' : '#E84B2C',
+            fontSize: '0.85rem',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+          }}
+        >
+          <span>{actionFeedback.type === 'success' ? '✓' : '✕'}</span>
+          <span>{actionFeedback.message}</span>
+        </div>
+      )}
+
       {/* Appointments Data Table */}
       <div className="card table-responsive" style={{ padding: 0, overflow: 'hidden', border: '1px solid rgba(243, 240, 232, 0.08)' }}>
         <table>
@@ -270,7 +329,48 @@ export default function AppointmentsPage() {
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <div style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      {/* Review Status Pill */}
+                      {appt.review_requested_at && (
+                        <span
+                          title={`Review invitation sent on ${new Date(appt.review_requested_at).toLocaleString()}`}
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            color: '#63C7A2',
+                            background: 'rgba(99, 199, 162, 0.12)',
+                            border: '1px solid rgba(99, 199, 162, 0.25)',
+                            padding: '3px 7px',
+                            borderRadius: '6px',
+                          }}
+                        >
+                          ⭐ Review Sent
+                        </span>
+                      )}
+
+                      {/* Manual Ask Review Button (for completed or confirmed without review sent) */}
+                      {!appt.review_requested_at && (appt.status === 'completed' || appt.status === 'confirmed') && (
+                        <button
+                          type="button"
+                          onClick={() => handleSendReview(appt.id)}
+                          disabled={reviewSendingId === appt.id}
+                          title="Send Google Review invitation to patient WhatsApp"
+                          style={{
+                            background: 'rgba(232, 122, 56, 0.12)',
+                            border: '1px solid rgba(232, 122, 56, 0.3)',
+                            borderRadius: '6px',
+                            color: '#E87A38',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            cursor: reviewSendingId === appt.id ? 'wait' : 'pointer',
+                            padding: '4px 8px',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          {reviewSendingId === appt.id ? '⏳ Sending...' : '⭐ Ask Review'}
+                        </button>
+                      )}
+
                       {appt.status === 'confirmed' && (
                         <>
                           <button
@@ -306,9 +406,6 @@ export default function AppointmentsPage() {
                             ✕ Cancel
                           </button>
                         </>
-                      )}
-                      {appt.status !== 'confirmed' && (
-                        <span style={{ fontSize: '0.75rem', color: '#9E9B93' }}>—</span>
                       )}
                     </div>
                   </td>

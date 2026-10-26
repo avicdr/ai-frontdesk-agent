@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server';
 import { successResponse, Errors } from '@/lib/api/response';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { createNotification } from '@/lib/notifications/service';
+import { processPendingAppointmentReviews } from '@/lib/reviews/review-service';
 
 export async function GET(request: NextRequest) {
   // Verify cron secret if provided
@@ -20,10 +21,23 @@ export async function GET(request: NextRequest) {
     expirationsProcessed: 0,
     suspended: 0,
     warningsSent: 0,
+    reviewsProcessed: 0,
+    reviewsSent: 0,
+    reviewsFailed: 0,
   };
 
   try {
-    // 1. Find subscriptions that expired
+    // 1. Process pending automated Google review requests for finished/completed appointments
+    try {
+      const reviewResults = await processPendingAppointmentReviews();
+      results.reviewsProcessed = reviewResults.processed;
+      results.reviewsSent = reviewResults.sent;
+      results.reviewsFailed = reviewResults.failed;
+    } catch (revErr) {
+      console.error('Error during automated review dispatch:', revErr);
+    }
+
+    // 2. Find subscriptions that expired
     const { data: expiredSubs } = await admin
       .from('subscriptions')
       .select('id, organization_id, status, expires_at, grace_period_end')

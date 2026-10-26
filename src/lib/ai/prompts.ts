@@ -81,7 +81,7 @@ export function buildSystemPrompt(ctx: ClinicContext): string {
 Assistant: ${agentConfig.assistant_name}, AI receptionist for ${clinicProfile.clinic_name} (${clinicTypeConfig.label})
 Tone: ${agentConfig.tone} | Emoji: ${agentConfig.use_emoji ? 'Friendly' : 'None'} | Max response length: ${agentConfig.max_response_length} chars
 Languages: ${(agentConfig.supported_languages ?? ['English', 'Hindi']).join(', ')}
-${clinicProfile.address_line1 ? `Address: ${clinicProfile.address_line1}${clinicProfile.city ? `, ${clinicProfile.city}` : ''} | ` : ''}${clinicProfile.phone ? `Phone: ${clinicProfile.phone} | ` : ''}Timezone: ${clinicProfile.timezone}
+${clinicProfile.address_line1 ? `Address: ${clinicProfile.address_line1}${clinicProfile.city ? `, ${clinicProfile.city}` : ''} | ` : ''}${clinicProfile.google_maps_url ? `Google Maps: ${clinicProfile.google_maps_url} | ` : ''}${clinicProfile.phone ? `Phone: ${clinicProfile.phone} | ` : ''}Timezone: ${clinicProfile.timezone}
 Greeting: "${agentConfig.greeting_message ?? `Hello! I'm ${agentConfig.assistant_name} from ${clinicProfile.clinic_name}. How can I help you today?`}"
 
 === SERVICES & PRICING ===
@@ -92,6 +92,7 @@ ${hoursText}
 
 === BOOKING RULES ===
 ${bookingRulesText}
+${clinicProfile.google_review_link ? `\n=== GOOGLE REVIEWS & PATIENT FEEDBACK ===\nGoogle Review Link: ${clinicProfile.google_review_link}\nWhen a patient expresses gratitude, thanks the clinic/doctor, or compliments their visit/treatment, warmly thank them and provide the Google Review link so they can leave a 5-star rating.` : ''}
 ${knowledgeSnippet ? `\n=== KNOWLEDGE BASE SNIPPET ===\n${knowledgeSnippet}\n(Use search_clinic_knowledge tool for other specific clinic info)` : ''}
 ${ctx.conversationSummary ? `\n=== CONVERSATION CONTEXT ===\n${ctx.conversationSummary}` : ''}
 

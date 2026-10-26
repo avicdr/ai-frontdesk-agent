@@ -750,11 +750,22 @@ export async function createAppointment(
     console.warn('Notification dispatch error:', notifErr);
   }
 
+  // Fetch clinic profile for location & Google Maps link
+  const { data: profile } = await admin
+    .from('clinic_profiles')
+    .select('address_line1, city, google_maps_url')
+    .eq('organization_id', ctx.organizationId)
+    .maybeSingle();
+
+  const locationMsg = profile?.address_line1
+    ? ` 📍 Location: ${profile.address_line1}${profile.city ? `, ${profile.city}` : ''}.${profile.google_maps_url ? ` Directions: ${profile.google_maps_url}` : ''}`
+    : '';
+
   return {
     success: true,
     appointmentId: appointment.id,
     externalEventId: calendarEventId,
-    message: `Your appointment has been booked for ${displayDate} at ${displayTime}.`,
+    message: `Your appointment has been booked for ${displayDate} at ${displayTime}.${locationMsg}`,
   };
 }
 

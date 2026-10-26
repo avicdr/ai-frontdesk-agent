@@ -10,7 +10,8 @@ export type NotificationType =
   | 'appointment_rescheduled'
   | 'human_handoff_requested'
   | 'subscription_expiring'
-  | 'payment_received';
+  | 'payment_received'
+  | 'review_requested';
 
 interface NotificationPayload {
   organizationId: string;

@@ -78,6 +78,14 @@ export interface ClinicProfile {
   timezone: string;
   supported_languages: string[];
   emergency_instructions: string | null;
+  google_maps_url?: string | null;
+  google_place_id?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  google_review_link?: string | null;
+  auto_review_request?: boolean;
+  review_request_delay_minutes?: number;
+  review_request_template?: string | null;
   onboarding_step: number;
   onboarding_completed_at: string | null;
   created_at: string;
@@ -248,6 +256,8 @@ export interface Appointment {
   external_event_id: string | null;
   external_calendar_id: string | null;
   idempotency_key: string | null;
+  review_requested_at?: string | null;
+  review_status?: string | null;
   created_at: string;
   updated_at: string;
 }
