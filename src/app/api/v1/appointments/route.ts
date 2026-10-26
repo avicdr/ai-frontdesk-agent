@@ -240,8 +240,11 @@ export async function PATCH(request: NextRequest) {
           organizationId: membership.organization_id,
           calendarEventId: existingAppt.external_event_id,
         });
-      } catch (e) {
-        console.warn('Calendar delete event warning:', e);
+      } catch (e: any) {
+        const statusCode = e?.status || e?.code || e?.response?.status;
+        if (statusCode !== 410 && statusCode !== 404) {
+          console.warn('Calendar delete event warning:', e?.message || e);
+        }
       }
     }
 

@@ -337,10 +337,19 @@ export async function deleteCalendarAppointment(params: {
   if (!auth) return null;
 
   const { calendar, calendarId } = auth;
-  await calendar.events.delete({
-    calendarId,
-    eventId: params.calendarEventId,
-  });
-
-  return true;
+  try {
+    await calendar.events.delete({
+      calendarId,
+      eventId: params.calendarEventId,
+    });
+    return true;
+  } catch (err: any) {
+    // 410 Gone = Resource has already been deleted in Google Calendar
+    // 404 Not Found = Event does not exist in calendar
+    const statusCode = err?.status || err?.code || err?.response?.status;
+    if (statusCode === 410 || statusCode === 404) {
+      return true; // Already deleted, desired state achieved
+    }
+    throw err;
+  }
 }

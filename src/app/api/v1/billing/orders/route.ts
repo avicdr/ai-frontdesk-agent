@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user belongs to this org (or is super admin)
-    const tenant = await resolveTenantContext(targetOrgId);
+    const tenant = await resolveTenantContext(targetOrgId, user);
 
     const result = await createPaymentOrder(
       targetOrgId,

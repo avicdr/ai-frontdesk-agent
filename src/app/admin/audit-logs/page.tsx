@@ -8,7 +8,7 @@ export default async function AdminAuditLogsPage() {
 
   const { data: logs } = await admin
     .from('audit_logs')
-    .select('*')
+    .select('id, created_at, action, actor_type, actor_id, entity_type, entity_id, new_state, metadata')
     .order('created_at', { ascending: false })
     .limit(50);
 

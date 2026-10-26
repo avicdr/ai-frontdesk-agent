@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server';
 import { successResponse, Errors } from '@/lib/api/response';
 import { requireServerUser, createSupabaseAdminClient } from '@/lib/supabase/server';
 import { isSuperAdminEmail } from '@/lib/security/admin';
+import { getCachedSubscriptionPlans } from '@/lib/cache/plans';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,21 +26,17 @@ export async function GET(request: NextRequest) {
       return Errors.forbidden('Super-admin privileges required');
     }
 
-    const [orgsRes, plansRes] = await Promise.all([
+    const [orgsRes, plans] = await Promise.all([
       admin
         .from('organizations')
         .select('id, name, slug, status, created_at')
         .order('name', { ascending: true }),
-      admin
-        .from('subscription_plans')
-        .select('id, name, slug, price_inr, included_ai_requests, is_active')
-        .eq('is_active', true)
-        .order('price_inr', { ascending: true }),
+      getCachedSubscriptionPlans(),
     ]);
 
     return successResponse({
       organizations: orgsRes.data ?? [],
-      plans: plansRes.data ?? [],
+      plans: plans ?? [],
     });
   } catch (err: any) {
     console.error('Admin data fetch error:', err);

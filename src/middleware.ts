@@ -35,10 +35,19 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired — IMPORTANT for SSR
-  const { data: { user } } = await supabase.auth.getUser();
-
   const pathname = request.nextUrl.pathname;
+
+  // API endpoints independently enforce authentication, authorization, and RLS
+  // in their respective route handlers (via requireServerUser() / requireSuperAdmin())
+  // and return typed JSON 401s rather than HTML page redirects.
+  // Skipping the remote Supabase Auth network call in middleware eliminates 200ms–500ms of latency
+  // on every API request.
+  if (pathname.startsWith('/api/')) {
+    return supabaseResponse;
+  }
+
+  // Refresh session if expired — IMPORTANT for SSR page navigations
+  const { data: { user } } = await supabase.auth.getUser();
 
   // Redirect unauthenticated users away from protected routes
   const isProtected = PROTECTED_ROUTES.some(r => pathname.startsWith(r));

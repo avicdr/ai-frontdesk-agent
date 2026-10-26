@@ -58,16 +58,20 @@ export function createSupabaseAdminClient() {
   );
 }
 
+import { cache } from 'react';
+import type { User } from '@supabase/supabase-js';
+
 /**
  * Gets the current authenticated user server-side.
- * Returns null if not authenticated.
+ * Memoized per-request using React cache to eliminate redundant remote Auth calls
+ * within the same request lifecycle without leaking state across users.
  */
-export async function getServerUser() {
+export const getServerUser = cache(async (): Promise<User | null> => {
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return null;
   return user;
-}
+});
 
 import { redirect } from 'next/navigation';
 

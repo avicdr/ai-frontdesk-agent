@@ -2,8 +2,9 @@
 // Tenant resolution and authorization helpers
 // NEVER trust tenant IDs from client requests — always resolve from session
 
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient, createSupabaseAdminClient, getServerUser } from '@/lib/supabase/server';
 import type { Organization, OrganizationMembership, OrgRole } from '@/lib/types/database';
+import type { User } from '@supabase/supabase-js';
 
 export interface TenantContext {
   organization: Organization;
@@ -14,44 +15,55 @@ export interface TenantContext {
 
 /**
  * Resolves the current user's tenant context for a given organization.
- * Verifies the user is actually a member of the org.
+ * Verifies the user is actually a member of the org (or platform super-admin).
+ * Optimized to reuse verified user and run organization, profile, and membership checks in parallel.
  * Throws descriptive errors — callers must handle them.
  */
 import { isSuperAdminEmail } from '@/lib/security/admin';
 
-export async function resolveTenantContext(organizationId: string): Promise<TenantContext> {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+export async function resolveTenantContext(
+  organizationId: string,
+  providedUser?: User | null
+): Promise<TenantContext> {
+  const user = providedUser || (await getServerUser());
 
-  if (authError || !user) {
+  if (!user) {
     throw new Error('UNAUTHENTICATED');
   }
 
-  // Check super-admin status
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('is_super_admin')
-    .eq('id', user.id)
-    .maybeSingle();
+  const supabase = await createSupabaseServerClient();
 
-  const isSuperAdmin = (profile?.is_super_admin ?? false) || isSuperAdminEmail(user.email);
+  // Run organization, super-admin profile check, and org membership lookup concurrently
+  const [orgRes, profileRes, memberRes] = await Promise.all([
+    supabase
+      .from('organizations')
+      .select('*')
+      .eq('id', organizationId)
+      .single(),
+    supabase
+      .from('user_profiles')
+      .select('is_super_admin')
+      .eq('id', user.id)
+      .maybeSingle(),
+    supabase
+      .from('organization_memberships')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('user_id', user.id)
+      .maybeSingle(),
+  ]);
 
-  // Get organization
-  const { data: org, error: orgError } = await supabase
-    .from('organizations')
-    .select('*')
-    .eq('id', organizationId)
-    .single();
-
-  if (orgError || !org) {
+  if (orgRes.error || !orgRes.data) {
     throw new Error('ORG_NOT_FOUND');
   }
+
+  const isSuperAdmin = (profileRes.data?.is_super_admin ?? false) || isSuperAdminEmail(user.email);
 
   // Super admins can access any org but still need a virtual context
   if (isSuperAdmin) {
     return {
-      organization: org,
-      membership: {
+      organization: orgRes.data,
+      membership: memberRes.data || {
         id: 'super-admin',
         organization_id: organizationId,
         user_id: user.id,
@@ -60,27 +72,20 @@ export async function resolveTenantContext(organizationId: string): Promise<Tena
         accepted_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
       },
-      role: 'owner',
+      role: (memberRes.data?.role as OrgRole) || 'owner',
       isSuperAdmin: true,
     };
   }
 
   // Regular user: verify membership
-  const { data: membership, error: memberError } = await supabase
-    .from('organization_memberships')
-    .select('*')
-    .eq('organization_id', organizationId)
-    .eq('user_id', user.id)
-    .single();
-
-  if (memberError || !membership) {
+  if (!memberRes.data) {
     throw new Error('FORBIDDEN');
   }
 
   return {
-    organization: org,
-    membership,
-    role: membership.role as OrgRole,
+    organization: orgRes.data,
+    membership: memberRes.data,
+    role: memberRes.data.role as OrgRole,
     isSuperAdmin: false,
   };
 }

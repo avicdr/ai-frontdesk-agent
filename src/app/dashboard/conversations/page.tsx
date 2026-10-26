@@ -125,7 +125,7 @@ export default function ConversationsPage() {
     const fetchTimeline = async () => {
       setLoadingMessages(true);
       try {
-        const res = await fetch(`/api/v1/conversations/${selectedConvId}`);
+        const res = await fetch(`/api/v1/conversations?conversationId=${encodeURIComponent(selectedConvId)}`);
         const json = await res.json();
         if (isMounted && json.data?.messages) {
           setMessages(json.data.messages);
@@ -156,13 +156,12 @@ export default function ConversationsPage() {
     const newStatus = newOwner === 'human' ? 'handed_off' : 'active';
 
     try {
-      const res = await fetch(`/api/v1/conversations/${selectedConvId}/takeover`, {
+      const res = await fetch('/api/v1/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          owner: newOwner,
-          status: newStatus,
-          reason: newOwner === 'human' ? 'Staff took over live chat via dashboard' : undefined,
+          conversationId: selectedConvId,
+          action: newOwner === 'human' ? 'takeover' : 'release_to_ai',
         }),
       });
 
@@ -184,10 +183,14 @@ export default function ConversationsPage() {
     setActionInProgress(true);
 
     try {
-      const res = await fetch(`/api/v1/conversations/${selectedConvId}/reply`, {
+      const res = await fetch('/api/v1/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: replyText.trim() }),
+        body: JSON.stringify({
+          conversationId: selectedConvId,
+          action: 'send_message',
+          message: replyText.trim(),
+        }),
       });
 
       if (res.ok) {
@@ -196,7 +199,7 @@ export default function ConversationsPage() {
           role: 'assistant',
           content: replyText.trim(),
           created_at: new Date().toISOString(),
-          metadata: { from_dashboard: true },
+          metadata: { from_dashboard: true, sent_by_owner: true },
         };
         setMessages(prev => [...prev, optimisticMsg]);
         setReplyText('');

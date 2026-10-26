@@ -5,12 +5,10 @@
 // Redesigned with Cinematic Obsidian × Phoenix Ember Design System
 
 import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export default function AdminPaymentsPage() {
-  const [payments, setPayments] = useState<any[]>([]);
-  const [organizations, setOrganizations] = useState<any[]>([]);
-  const [plans, setPlans] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [approvingId, setApprovingId] = useState<string | null>(null);
 
   // Manual approval form state
@@ -21,44 +19,35 @@ export default function AdminPaymentsPage() {
   const [submittingManual, setSubmittingManual] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const fetchPayments = async () => {
-    try {
+  // TanStack Query: orders cache with 30s stale time (0ms load on tab return)
+  const { data: payments = [], isLoading: loadingPayments } = useQuery<any[]>({
+    queryKey: ['admin', 'orders'],
+    queryFn: async () => {
       const res = await fetch('/api/v1/billing/orders');
       const json = await res.json();
-      if (json.data?.orders) {
-        setPayments(json.data.orders);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return json.data?.orders ?? [];
+    },
+    staleTime: 30 * 1000,
+  });
 
-  const fetchAdminData = async () => {
-    try {
+  // TanStack Query: static org & plan reference data (5 min stale time)
+  const { data: adminData, isLoading: loadingAdminData } = useQuery<{ organizations: any[]; plans: any[] }>({
+    queryKey: ['admin', 'referenceData'],
+    queryFn: async () => {
       const res = await fetch('/api/v1/admin/data');
       const json = await res.json();
-      if (json.data) {
-        setOrganizations(json.data.organizations || []);
-        setPlans(json.data.plans || []);
-        if (json.data.organizations?.length > 0) {
-          setSelectedOrgId(json.data.organizations[0].id);
-        }
-        if (json.data.plans?.length > 0) {
-          const pro = json.data.plans.find((p: any) => p.slug === 'pro') || json.data.plans[0];
-          setSelectedPlanId(pro.id);
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load admin data:', e);
-    }
-  };
+      return json.data ?? { organizations: [], plans: [] };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    fetchPayments();
-    fetchAdminData();
-  }, []);
+  const organizations = adminData?.organizations ?? [];
+  const plans = adminData?.plans ?? [];
+  const loading = loadingPayments && payments.length === 0;
+
+  const effectiveOrgId = selectedOrgId || organizations[0]?.id || '';
+  const defaultPlan = plans.find((p: any) => p.slug === 'pro') || plans[0];
+  const effectivePlanId = selectedPlanId || defaultPlan?.id || '';
 
   const handleApprove = async (orderId: string) => {
     setApprovingId(orderId);
@@ -77,7 +66,7 @@ export default function AdminPaymentsPage() {
         throw new Error(json.error?.message || 'Failed to approve payment');
       }
       setStatusMessage({ type: 'success', text: json.data?.message || 'Payment approved successfully!' });
-      fetchPayments();
+      queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
     } catch (e: any) {
       console.error(e);
       setStatusMessage({ type: 'error', text: e.message || 'Error approving payment' });
@@ -87,7 +76,7 @@ export default function AdminPaymentsPage() {
   };
 
   const handleManualPaymentApproval = async (action: 'create_and_approve_payment' | 'assign_plan') => {
-    if (!selectedOrgId || !selectedPlanId) {
+    if (!effectiveOrgId || !effectivePlanId) {
       setStatusMessage({ type: 'error', text: 'Please select both a clinic and a plan.' });
       return;
     }
@@ -101,8 +90,8 @@ export default function AdminPaymentsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action,
-          organizationId: selectedOrgId,
-          planId: selectedPlanId,
+          organizationId: effectiveOrgId,
+          planId: effectivePlanId,
           utrNumber: customUtr.trim() || undefined,
           durationDays,
         }),
@@ -115,7 +104,7 @@ export default function AdminPaymentsPage() {
 
       setStatusMessage({ type: 'success', text: json.data?.message || 'Action executed successfully!' });
       setCustomUtr('');
-      fetchPayments();
+      queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] });
     } catch (e: any) {
       console.error(e);
       setStatusMessage({ type: 'error', text: e.message || 'Failed to execute action' });
@@ -178,7 +167,7 @@ export default function AdminPaymentsPage() {
           <div>
             <label className="label text-xs">Target Practice</label>
             <select
-              value={selectedOrgId}
+              value={effectiveOrgId}
               onChange={(e) => setSelectedOrgId(e.target.value)}
               className="input text-xs"
             >
@@ -193,7 +182,7 @@ export default function AdminPaymentsPage() {
           <div>
             <label className="label text-xs">Subscription Tier</label>
             <select
-              value={selectedPlanId}
+              value={effectivePlanId}
               onChange={(e) => setSelectedPlanId(e.target.value)}
               className="input text-xs"
             >
@@ -236,7 +225,7 @@ export default function AdminPaymentsPage() {
           <button
             type="button"
             className="btn btn-primary text-xs"
-            disabled={submittingManual || !selectedOrgId || !selectedPlanId}
+            disabled={submittingManual || !effectiveOrgId || !effectivePlanId}
             onClick={() => handleManualPaymentApproval('create_and_approve_payment')}
           >
             {submittingManual ? 'Processing...' : '💳 Approve Payment & Activate Plan'}
@@ -245,7 +234,7 @@ export default function AdminPaymentsPage() {
           <button
             type="button"
             className="btn btn-secondary text-xs"
-            disabled={submittingManual || !selectedOrgId || !selectedPlanId}
+            disabled={submittingManual || !effectiveOrgId || !effectivePlanId}
             onClick={() => handleManualPaymentApproval('assign_plan')}
           >
             {submittingManual ? 'Processing...' : '⚡ Assign Plan Directly (Admin Override)'}

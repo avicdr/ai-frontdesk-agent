@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -H 0.0.0.0 -p ${PORT:-10000}",
     "lint": "eslint",
     "test": "tsx --test tests/unit/core.test.ts tests/unit/crypto-billing.test.ts tests/unit/campaigns.test.ts"
   },

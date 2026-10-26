@@ -740,7 +740,7 @@ export async function autoResumeAllActiveBaileysSessions(): Promise<void> {
           if (fs.existsSync(credsFile)) {
             try {
               const creds = JSON.parse(fs.readFileSync(credsFile, 'utf-8'));
-              if ((creds.registered || creds.account) && creds.me?.id) {
+              if (Boolean(creds.registered) && creds.me?.id) {
                 orgsToResume.add(orgId);
               }
             } catch {
@@ -766,7 +766,7 @@ export async function autoResumeAllActiveBaileysSessions(): Promise<void> {
       for (const row of sessionRows) {
         if (row.organization_id && row.value) {
           const creds = row.value as any;
-          if ((creds.registered || creds.account) && creds.me?.id) {
+          if (Boolean(creds.registered) && creds.me?.id) {
             orgsToResume.add(row.organization_id);
           }
         }

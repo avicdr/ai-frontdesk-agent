@@ -11,6 +11,7 @@ export function successResponse<T>(
     status?: number;
     requestId?: string;
     pagination?: ApiSuccess<T>['meta']['pagination'];
+    headers?: HeadersInit;
   }
 ): NextResponse {
   const body: ApiSuccess<T> = {
@@ -21,7 +22,10 @@ export function successResponse<T>(
       ...(options?.pagination ? { pagination: options.pagination } : {}),
     },
   };
-  return NextResponse.json(body, { status: options?.status ?? 200 });
+  return NextResponse.json(body, {
+    status: options?.status ?? 200,
+    headers: options?.headers,
+  });
 }
 
 export function errorResponse(
@@ -32,6 +36,7 @@ export function errorResponse(
     retryable?: boolean;
     details?: unknown;
     requestId?: string;
+    headers?: HeadersInit;
   }
 ): NextResponse {
   const body: ApiError = {
@@ -46,7 +51,10 @@ export function errorResponse(
       requestId: options?.requestId ?? nanoid(12),
     },
   };
-  return NextResponse.json(body, { status: options?.status ?? 400 });
+  return NextResponse.json(body, {
+    status: options?.status ?? 400,
+    headers: options?.headers,
+  });
 }
 
 // Common error responses
