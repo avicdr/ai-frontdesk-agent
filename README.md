@@ -52,7 +52,7 @@ Clinics independently register, customize their AI receptionist's tone and servi
 - **Strict Tenant Isolation**: All clinic contexts, services, appointments, conversations, and usage records are isolated via Supabase Row-Level Security (RLS) and verified server-side.
 - **Provider Fallback Engine**: Primary natural language processing with Google Gemini 1.5 Flash with automated failover to OpenAI GPT-4o-mini on errors or rate limits.
 - **Calendar Synchronization**: Google OAuth 2.0 with automatic token refresh, timezone support, and conflict detection.
-- **Direct UPI Billing (Without Razorpay)**: Cashfree payment order integration and manual 12-digit UTR verification queue with super-admin approval.
+- **Automated Razorpay Payments**: Full Razorpay payment gateway integration supporting Domestic UPI, Credit/Debit cards, NetBanking in INR, and International cards in USD with automated HMAC signature verification and webhooks.
 - **8-Step Self-Service Onboarding**: End-to-end setup wizard covering clinic details, AI receptionist persona, dental fee schedule, operating hours, booking rules, WhatsApp, calendar, and activation.
 - **Interactive AI Playground**: Real-time browser WhatsApp simulator with live tool call execution inspection and token latency telemetry.
 
@@ -120,16 +120,15 @@ npm test
 
 ---
 
-## 💳 UPI Subscription & Billing (Without Razorpay)
-
-1. **Automated Cashfree UPI**:
-   - Create account on [Cashfree Payments](https://www.cashfree.com).
-   - Add `CASHFREE_APP_ID`, `CASHFREE_SECRET_KEY`, and `CASHFREE_WEBHOOK_SECRET`.
-   - Set webhook endpoint to `https://your-domain.com/api/v1/webhooks/payments`.
-2. **Manual UPI / QR Fallback**:
-   - Set `PLATFORM_UPI_ID` (e.g. `clinicfront@icici`).
-   - Clinic owners scan the dynamically generated QR code, pay via GPay / PhonePe / Paytm, and submit the 12-digit bank UTR reference.
-   - The platform super-admin reviews and approves payments in `/admin/payments`, activating the subscription instantaneously.
+## 💳 Razorpay Payments & Subscription Billing
+1. **Automated Razorpay Integration**:
+   - Create account on [Razorpay Dashboard](https://dashboard.razorpay.com).
+   - Add `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and `NEXT_PUBLIC_RAZORPAY_KEY_ID`.
+   - Configure webhook endpoint to `https://your-domain.com/api/v1/webhooks/payments` with events `order.paid` and `payment.captured`. Add `RAZORPAY_WEBHOOK_SECRET`.
+2. **Domestic (INR) & International (USD) Rails**:
+   - Indian practices pay via Instant UPI (GPay, PhonePe, Paytm, BHIM), Credit/Debit Cards, and NetBanking (₹999 Starter, ₹1,499 Pro, ₹2,999 Growth).
+   - International practices pay seamlessly via International Cards in USD ($100 Starter, $250 Pro, $400 Growth).
+   - Automated server-side HMAC-SHA256 signature verification immediately provisions and activates the practice subscription upon payment success.
 
 ---
 

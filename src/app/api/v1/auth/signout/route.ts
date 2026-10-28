@@ -6,5 +6,5 @@ import { getSafeRedirectUrl } from '@/lib/url';
 export async function POST(request: NextRequest) {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  return NextResponse.redirect(getSafeRedirectUrl('/login', request).toString());
+  return NextResponse.redirect(getSafeRedirectUrl('/login', request), { status: 303 });
 }

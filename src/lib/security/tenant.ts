@@ -19,7 +19,7 @@ export interface TenantContext {
  * Optimized to reuse verified user and run organization, profile, and membership checks in parallel.
  * Throws descriptive errors — callers must handle them.
  */
-import { isSuperAdminEmail } from '@/lib/security/admin';
+import { isSuperAdminEmail, isSuperAdminUser } from '@/lib/security/admin';
 
 export async function resolveTenantContext(
   organizationId: string,
@@ -57,7 +57,7 @@ export async function resolveTenantContext(
     throw new Error('ORG_NOT_FOUND');
   }
 
-  const isSuperAdmin = (profileRes.data?.is_super_admin ?? false) || isSuperAdminEmail(user.email);
+  const isSuperAdmin = isSuperAdminUser(user, profileRes.data);
 
   // Super admins can access any org but still need a virtual context
   if (isSuperAdmin) {
@@ -88,6 +88,56 @@ export async function resolveTenantContext(
     role: memberRes.data.role as OrgRole,
     isSuperAdmin: false,
   };
+}
+
+/**
+ * Resolves the primary active tenant context for a user.
+ * If preferredOrgId is given, verifies access to that organization.
+ * Otherwise, picks the user's active membership (or platform org if super-admin).
+ * Safe against multiple organization memberships (does not crash with PGRST116).
+ */
+export async function resolveUserPrimaryTenant(
+  user: User,
+  preferredOrgId?: string | null
+): Promise<TenantContext> {
+  const admin = createSupabaseAdminClient();
+
+  if (preferredOrgId) {
+    return resolveTenantContext(preferredOrgId, user);
+  }
+
+  // Lookup user's memberships without failing if multiple rows exist
+  const { data: memberships } = await admin
+    .from('organization_memberships')
+    .select('organization_id')
+    .eq('user_id', user.id)
+    .limit(1);
+
+  if (memberships && memberships.length > 0) {
+    return resolveTenantContext(memberships[0].organization_id, user);
+  }
+
+  // If super-admin has no direct membership, find the first available clinic
+  const { data: profile } = await admin
+    .from('user_profiles')
+    .select('is_super_admin')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (isSuperAdminUser(user, profile)) {
+    const { data: firstOrg } = await admin
+      .from('organizations')
+      .select('id')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (firstOrg?.id) {
+      return resolveTenantContext(firstOrg.id, user);
+    }
+  }
+
+  throw new Error('NO_ORGANIZATION');
 }
 
 /**

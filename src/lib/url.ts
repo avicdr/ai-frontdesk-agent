@@ -77,26 +77,68 @@ export function getAppBaseUrl(request?: NextRequest | Request | null): string {
 
 /**
  * Ensures that a target redirect path is safely resolved to an absolute URL
- * on the correct application domain, preventing open redirect vulnerabilities
- * or localhost leaks in production.
+ * on the correct application domain, strictly preventing open redirect vulnerabilities,
+ * protocol-relative bypasses, or external domain redirects.
  */
 export function getSafeRedirectUrl(targetPath: string, request?: NextRequest | Request | null): URL {
   const baseUrl = getAppBaseUrl(request);
-  let safePath = targetPath || '/dashboard/integrations';
+  const baseOrigin = new URL(baseUrl).origin;
+  const defaultPath = '/dashboard';
 
-  // If an absolute URL was passed, strip off any mismatched domain / localhost
-  if (safePath.startsWith('http://') || safePath.startsWith('https://')) {
+  if (!targetPath || typeof targetPath !== 'string') {
+    return new URL(defaultPath, baseUrl);
+  }
+
+  let raw = targetPath.trim();
+
+  // Decode URI component if encoded to catch %2f%2f tricks
+  try {
+    if (raw.includes('%')) {
+      const decoded = decodeURIComponent(raw);
+      if (!/[\x00-\x1F\x7F]/.test(decoded)) {
+        raw = decoded;
+      }
+    }
+  } catch {
+    return new URL(defaultPath, baseUrl);
+  }
+
+  // Reject dangerous schemes or protocol-relative patterns
+  // Examples: //attacker.com, /\attacker.com, \\attacker.com, javascript:, data:, vbscript:
+  if (
+    /^\s*(\/\/|\\\\|\/\\|\\\/)/.test(raw) ||
+    /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)
+  ) {
     try {
-      const parsed = new URL(safePath);
-      safePath = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      const parsed = new URL(raw, baseUrl);
+      if (parsed.origin === baseOrigin) {
+        // Safe same-origin URL: extract just pathname, search, and hash
+        raw = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      } else {
+        // Disallowed external domain or dangerous protocol: reset to default
+        return new URL(defaultPath, baseUrl);
+      }
     } catch {
-      safePath = '/dashboard/integrations';
+      return new URL(defaultPath, baseUrl);
     }
   }
 
-  if (!safePath.startsWith('/')) {
-    safePath = `/${safePath}`;
+  // Ensure it starts with single leading slash and not double slashes or backslashes
+  if (!raw.startsWith('/')) {
+    raw = `/${raw}`;
   }
 
-  return new URL(safePath, baseUrl);
+  // Clean duplicate leading slashes or leading backslashes (e.g. ///foo -> /foo)
+  raw = raw.replace(/^[\/\\]+/, '/');
+
+  // Verify that creating the URL on baseUrl stays on the exact same origin
+  try {
+    const finalUrl = new URL(raw, baseUrl);
+    if (finalUrl.origin !== baseOrigin) {
+      return new URL(defaultPath, baseUrl);
+    }
+    return finalUrl;
+  } catch {
+    return new URL(defaultPath, baseUrl);
+  }
 }

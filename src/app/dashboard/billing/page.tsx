@@ -1,12 +1,13 @@
 'use client';
 
 // src/app/dashboard/billing/page.tsx
-// Clinic Billing & Usage Dashboard — Plan details, quota meters, Crypto / UPI renewal, payment history
+// Clinic Billing & Usage Dashboard — Razorpay Payment Gateway Integration
+// Supports Domestic INR (₹999, ₹1,499, ₹2,999) & International USD ($100, $250, $400)
 // Redesigned with Cinematic Obsidian × Phoenix Ember Design System
 
 import React, { useState, useEffect } from 'react';
-import { PRICING_PLANS, PLATFORM_UPI_VPA, isInternationalClient, getCryptoExplorerUrl } from '@/lib/constants/billing';
-import { CryptoPaymentWidget } from '@/components/billing/CryptoPaymentWidget';
+import { PRICING_PLANS, isInternationalClient } from '@/lib/constants/billing';
+import { openRazorpayModal } from '@/lib/billing/razorpay-client';
 
 interface SubscriptionData {
   id: string;
@@ -47,19 +48,14 @@ interface PaymentOrderData {
 export default function BillingPage() {
   const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'growth'>('pro');
   const [isInternational, setIsInternational] = useState<boolean>(false);
-  const [utrNumber, setUtrNumber] = useState('');
-  const [isSubmittingUtr, setIsSubmittingUtr] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentSuccessMessage, setPaymentSuccessMessage] = useState<string | null>(null);
-  const [showUpiModal, setShowUpiModal] = useState(false);
-  const [showCryptoModal, setShowCryptoModal] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [orders, setOrders] = useState<PaymentOrderData[]>([]);
   const [orgName, setOrgName] = useState<string>('');
-
-  const upiVpa = PLATFORM_UPI_VPA;
 
   const currentPlans = PRICING_PLANS.map(p => ({
     id: p.id,
@@ -117,53 +113,75 @@ export default function BillingPage() {
       .catch(() => {});
   }, []);
 
-  const handleUtrSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!utrNumber.trim()) return;
-    setIsSubmittingUtr(true);
+  const handlePayWithRazorpay = async (planIdToPay?: 'starter' | 'pro' | 'growth') => {
+    const targetPlan = planIdToPay || selectedPlan;
+    setIsProcessingPayment(true);
     setSubmitError(null);
 
     try {
-      // 1. Create order for the selected plan
       const orderRes = await fetch('/api/v1/billing/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          planId: selectedPlan,
-          currency: 'INR',
-          provider: 'manual',
+          planId: targetPlan,
+          currency: isInternational ? 'USD' : 'INR',
+          provider: 'razorpay',
         }),
       });
+
       const orderJson = await orderRes.json();
       if (!orderRes.ok || !orderJson.data?.orderId) {
-        throw new Error(orderJson.error?.message || 'Failed to initiate payment order.');
+        throw new Error(orderJson.error?.message || 'Failed to initiate Razorpay payment order.');
       }
 
-      const orderId = orderJson.data.orderId;
+      const { orderId, providerOrderId, amountSubunits, currency, planName, razorpayKeyId } = orderJson.data;
 
-      // 2. Submit UTR reference for manual verification
-      const payRes = await fetch('/api/v1/billing/manual-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId,
-          utrNumber: utrNumber.trim(),
-        }),
+      await openRazorpayModal({
+        key: razorpayKeyId,
+        amount: amountSubunits,
+        currency,
+        name: 'Arenova AI Front Desk',
+        description: `${planName || 'Practice'} Subscription`,
+        order_id: providerOrderId,
+        prefill: {
+          name: orgName,
+        },
+        handler: async (response) => {
+          try {
+            const verifyRes = await fetch('/api/v1/billing/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderId,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyJson = await verifyRes.json();
+            if (verifyJson.success) {
+              setPaymentSuccessMessage(`Payment successful! Your ${planName} subscription is now active.`);
+              fetchBillingData();
+            } else {
+              setSubmitError(verifyJson.error?.message || 'Payment verification failed');
+            }
+          } catch (err: any) {
+            setSubmitError(err?.message || 'Failed to verify payment with server.');
+          } finally {
+            setIsProcessingPayment(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setIsProcessingPayment(false);
+          },
+        },
       });
-      const payJson = await payRes.json();
-      if (!payRes.ok) {
-        throw new Error(payJson.error?.message || 'Failed to submit UTR reference.');
-      }
-
-      setPaymentSuccessMessage('UPI payment reference submitted successfully! Pending verification.');
-      setShowUpiModal(false);
-      setUtrNumber('');
-      fetchBillingData();
-    } catch (e: any) {
-      console.error(e);
-      setSubmitError(e?.message || 'Failed to submit payment. Please verify UTR and try again.');
-    } finally {
-      setIsSubmittingUtr(false);
+    } catch (err: any) {
+      console.error(err);
+      setSubmitError(err?.message || 'Unable to open Razorpay payment gateway.');
+      setIsProcessingPayment(false);
     }
   };
 
@@ -209,29 +227,51 @@ export default function BillingPage() {
           <p className="text-sm text-[#9E9B93] mt-1">
             {orgName ? <span className="text-[#D0CBC1] font-medium">{orgName} • </span> : ''}
             {isInternational
-              ? 'International billing via Web3 Settlement (USDT, USDC, BTC, ETH).'
-              : 'Domestic practice billing via Instant Real-Time UPI.'}
+              ? 'International billing powered by Razorpay (USD Cards & Netbanking).'
+              : 'Domestic practice billing powered by Razorpay (Instant UPI, Cards & Netbanking).'}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          {isInternational ? (
+          {/* Currency Toggle for convenience */}
+          <div className="inline-flex items-center bg-[#1C1916] border border-[#F3F0E8]/10 rounded-xl p-1 text-xs font-mono">
             <button
               type="button"
-              className="btn btn-primary"
-              onClick={() => setShowCryptoModal(true)}
+              onClick={() => setIsInternational(false)}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                !isInternational
+                  ? 'bg-[#E84B2C] text-[#F3F0E8] font-bold shadow-[0_0_10px_#E84B2C]'
+                  : 'text-[#9E9B93] hover:text-[#F3F0E8]'
+              }`}
             >
-              <span className="text-xs">🪙</span> Pay &amp; Renew via Crypto
+              INR (₹)
             </button>
-          ) : (
             <button
               type="button"
-              className="btn btn-primary"
-              onClick={() => setShowUpiModal(true)}
+              onClick={() => setIsInternational(true)}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                isInternational
+                  ? 'bg-[#E84B2C] text-[#F3F0E8] font-bold shadow-[0_0_10px_#E84B2C]'
+                  : 'text-[#9E9B93] hover:text-[#F3F0E8]'
+              }`}
             >
-              <span className="text-xs">⚡</span> Renew / Upgrade (UPI)
+              USD ($)
             </button>
-          )}
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => handlePayWithRazorpay(selectedPlan)}
+            disabled={isProcessingPayment}
+          >
+            <span className="text-xs">💳</span>
+            <span>
+              {isProcessingPayment
+                ? 'Opening Razorpay...'
+                : `Pay ${isInternational ? selectedPlanConfig.priceUsdDisplay : selectedPlanConfig.priceInrDisplay} via Razorpay`}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -239,6 +279,19 @@ export default function BillingPage() {
         <div className="p-4 rounded-xl bg-[#63C7A2]/10 border border-[#63C7A2]/25 text-[#63C7A2] text-sm flex items-center gap-3">
           <span className="text-base">✦</span>
           <span>{paymentSuccessMessage}</span>
+        </div>
+      )}
+
+      {submitError && (
+        <div className="p-4 rounded-xl bg-[#E84B2C]/10 border border-[#E84B2C]/25 text-[#E84B2C] text-sm flex items-center justify-between gap-3">
+          <span>{submitError}</span>
+          <button
+            type="button"
+            onClick={() => setSubmitError(null)}
+            className="text-xs text-[#E87A38] underline"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
@@ -266,7 +319,7 @@ export default function BillingPage() {
                       <span className="font-mono text-[var(--color-text-secondary)] font-semibold bg-[var(--color-surface-secondary)] px-2 py-0.5 rounded border border-[var(--color-border-subtle)]">
                         {isInternational
                           ? `${selectedPlanConfig.priceUsdDisplay} USD / month`
-                          : `₹${(subscription.subscription_plans?.price_inr || 0).toLocaleString('en-IN')} / month`}
+                          : `₹${(subscription.subscription_plans?.price_inr || selectedPlanConfig.priceInr).toLocaleString('en-IN')} / month`}
                       </span>
                       <span className="text-[var(--color-text-muted)]">•</span>
                       <span className="text-[var(--color-text-secondary)]">
@@ -309,7 +362,7 @@ export default function BillingPage() {
                 {subscription?.daysRemaining ?? 0}
               </div>
               <div className="text-[10px] font-mono text-[var(--color-text-muted)] mt-1">
-                {(subscription?.daysRemaining ?? 0) > 3 ? 'Auto-renews via UPI' : 'Renewal required'}
+                {(subscription?.daysRemaining ?? 0) > 3 ? 'Active Subscription' : 'Renewal required'}
               </div>
             </div>
           </div>
@@ -352,9 +405,9 @@ export default function BillingPage() {
                 </span>
               </div>
               <div className="flex justify-between items-center gap-2 py-1.5 border-b border-[var(--color-border-subtle)]">
-                <span className="text-[var(--color-text-muted)]">Fallback Resilience</span>
-                <span className="font-mono text-xs text-[var(--color-text-secondary)] bg-[var(--color-surface-secondary)] px-2 py-0.5 rounded border border-[var(--color-border-standard)] font-medium">
-                  GPT-4o mini
+                <span className="text-[var(--color-text-muted)]">Payment Gateway</span>
+                <span className="font-mono text-xs text-[#63C7A2] bg-[#63C7A2]/10 px-2 py-0.5 rounded border border-[#63C7A2]/20 font-semibold">
+                  Razorpay (Secured)
                 </span>
               </div>
               <div className="flex justify-between items-center gap-2 py-1.5 border-b border-[var(--color-border-subtle)]">
@@ -381,20 +434,20 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Available Plans (Redesigned High-Converting Pricing Cards) */}
+      {/* Available Plans (Razorpay Integrated) */}
       <div>
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#E87A38]" />
             <span className="text-xs font-mono uppercase tracking-wider text-[#E87A38] font-semibold">
-              {isInternational ? 'Global Web3 Tiers' : 'Verified Domestic Tiers'}
+              {isInternational ? 'International Pricing Tiers (USD)' : 'Verified Domestic Tiers (INR)'}
             </span>
           </div>
           <h2 className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text-primary)]">
-            {isInternational ? 'International Subscription Tiers (Crypto)' : 'Subscription Plans (Instant UPI)'}
+            Subscription Plans &amp; Instant Checkout
           </h2>
           <p className="text-xs text-[var(--color-text-muted)] mt-1">
-            Scale your clinic reception capacity with transparent pricing, instant activation, and zero hidden platform charges.
+            Seamless payments via Razorpay (UPI, Credit/Debit Cards, NetBanking, International Cards). Instant automated provisioning.
           </p>
         </div>
 
@@ -425,7 +478,6 @@ export default function BillingPage() {
                 )}
 
                 <div>
-                  {/* Plan Tier Identifier */}
                   <div className="text-[11px] font-mono uppercase tracking-wider font-semibold text-[#E87A38] mb-1">
                     {p.id === 'starter' ? '🌱 Starter Tier' : p.id === 'pro' ? '⭐ Practice Standard' : '🚀 Multi-Doctor Suite'}
                   </div>
@@ -453,7 +505,7 @@ export default function BillingPage() {
                     {p.description}
                   </p>
 
-                  {/* Features List with Rich Circular Checkmarks */}
+                  {/* Features List */}
                   <div className="space-y-2.5 mb-6 pt-3 border-t border-[var(--color-border-subtle)]">
                     <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-2">
                       Included Capabilities:
@@ -469,17 +521,14 @@ export default function BillingPage() {
                   </div>
                 </div>
 
-                {/* Primary Action Button */}
+                {/* Primary Razorpay Action Button */}
                 <button
                   type="button"
                   onClick={() => {
                     setSelectedPlan(p.id as any);
-                    if (isInternational) {
-                      setShowCryptoModal(true);
-                    } else {
-                      setShowUpiModal(true);
-                    }
+                    handlePayWithRazorpay(p.id as any);
                   }}
+                  disabled={isProcessingPayment}
                   style={{
                     width: '100%',
                     padding: '0.75rem 1.25rem',
@@ -504,9 +553,10 @@ export default function BillingPage() {
                       : '0 4px 16px rgba(232, 75, 44, 0.4)',
                   }}
                 >
-                  {isInternational
-                    ? (isCurrentPlan ? `🪙 Renew via Crypto (${p.price})` : `Pay with Crypto (${p.price}) →`)
-                    : (isCurrentPlan ? `⚡ Renew ${p.name} (UPI)` : `Switch to ${p.name} →`)}
+                  <span>💳</span>
+                  <span>
+                    {isCurrentPlan ? `Renew ${p.name} (${p.price})` : `Upgrade to ${p.name} (${p.price}) →`}
+                  </span>
                 </button>
               </div>
             );
@@ -514,14 +564,14 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Payment History Table (Fixed Header Visibility) */}
+      {/* Payment History Table */}
       <div>
         <div className="mb-4">
           <h2 className="font-heading text-lg font-semibold text-[var(--color-text-primary)]">
             Payment Ledger &amp; Invoices
           </h2>
           <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-            Audit-grade history of all domestic UPI &amp; international blockchain settlements.
+            Audit-grade history of all automated Razorpay subscription settlements.
           </p>
         </div>
 
@@ -533,36 +583,33 @@ export default function BillingPage() {
                   <th style={{ color: 'var(--color-text-primary, #F3F0E8)', fontWeight: 600, padding: '0.85rem 1rem' }}>Timestamp</th>
                   <th style={{ color: 'var(--color-text-primary, #F3F0E8)', fontWeight: 600, padding: '0.85rem 1rem' }}>Plan Tier</th>
                   <th style={{ color: 'var(--color-text-primary, #F3F0E8)', fontWeight: 600, padding: '0.85rem 1rem' }}>Settlement Amount</th>
-                  <th style={{ color: 'var(--color-text-primary, #F3F0E8)', fontWeight: 600, padding: '0.85rem 1rem' }}>Method</th>
+                  <th style={{ color: 'var(--color-text-primary, #F3F0E8)', fontWeight: 600, padding: '0.85rem 1rem' }}>Payment Gateway</th>
                   <th style={{ color: 'var(--color-text-primary, #F3F0E8)', fontWeight: 600, padding: '0.85rem 1rem' }}>State</th>
-                  <th style={{ color: 'var(--color-text-primary, #F3F0E8)', fontWeight: 600, padding: '0.85rem 1rem' }}>Ledger Reference / TxID</th>
+                  <th style={{ color: 'var(--color-text-primary, #F3F0E8)', fontWeight: 600, padding: '0.85rem 1rem' }}>Order / Transaction ID</th>
                 </tr>
               </thead>
-              <tbody>
-                {orders.filter(order => {
-                  const isOrderCrypto = order.currency === 'USD' || order.provider === 'crypto';
-                  return isInternational ? isOrderCrypto : !isOrderCrypto;
-                }).length === 0 ? (
+              <tbody className="divide-y divide-[var(--color-border-subtle)]">
+                {orders.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-12 text-[var(--color-text-muted)]">
-                      <div className="text-3xl mb-2">🧾</div>
-                      <div className="font-medium text-[var(--color-text-primary)]">No payment records registered yet</div>
+                    <td colSpan={6} className="text-center py-10 text-[var(--color-text-muted)]">
+                      <div className="text-sm font-medium text-[var(--color-text-secondary)]">No payments logged yet</div>
                       <div className="text-xs mt-1 text-[var(--color-text-muted)]">
-                        {isInternational
-                          ? 'When you settle subscription invoices via Web3 Crypto, verified records will display here.'
-                          : 'When you settle subscription invoices via UPI, verified records will display here.'}
+                        When you settle subscription invoices via Razorpay, verified records will display here.
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  orders.filter(order => {
-                    const isOrderCrypto = order.currency === 'USD' || order.provider === 'crypto';
-                    return isInternational ? isOrderCrypto : !isOrderCrypto;
-                  }).map(order => {
-                    const isOrderCrypto = order.currency === 'USD' || order.provider === 'crypto';
-                    const explorerUrl = isOrderCrypto && order.utr_number
-                      ? getCryptoExplorerUrl(order.metadata?.crypto_network || 'usdt_trc20', order.utr_number)
-                      : null;
+                  orders.map(order => {
+                    const isOrderUsd = order.currency === 'USD';
+                    const displayAmt = isOrderUsd
+                      ? `$${order.metadata?.amount || (order.amount_inr / 85).toFixed(0)} USD`
+                      : `₹${Number(order.amount_inr).toLocaleString('en-IN')}`;
+
+                    const txRef =
+                      order.metadata?.razorpay_payment_id ||
+                      order.utr_number ||
+                      order.metadata?.razorpay_order_id ||
+                      order.id.slice(0, 13);
 
                     return (
                       <tr key={order.id} className="hover:bg-[var(--color-surface-hover,#26201B)] transition-colors">
@@ -577,34 +624,12 @@ export default function BillingPage() {
                           {order.subscription_plans?.name || 'Clinic Subscription'}
                         </td>
                         <td className="font-mono font-bold text-[#63C7A2] text-sm">
-                          {isOrderCrypto
-                            ? `$${order.metadata?.amount_usd || 100} USD`
-                            : `₹${Number(order.amount_inr).toLocaleString('en-IN')}`}
+                          {displayAmt}
                         </td>
                         <td>
-                          {isOrderCrypto ? (
-                            <span className="badge bg-[#C86938]/15 border border-[#C86938]/30 text-[#E87A38] text-[11px] font-mono">
-                              🪙 {order.metadata?.crypto_network?.toUpperCase() || 'USDT'}
-                            </span>
-                          ) : (
-                            <span
-                              style={{
-                                padding: '0.2rem 0.55rem',
-                                borderRadius: '6px',
-                                fontSize: '0.7rem',
-                                fontFamily: 'var(--font-mono)',
-                                fontWeight: 600,
-                                background: 'rgba(232, 122, 56, 0.12)',
-                                color: '#E87A38',
-                                border: '1px solid rgba(232, 122, 56, 0.3)',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.25rem',
-                              }}
-                            >
-                              ⚡ UPI
-                            </span>
-                          )}
+                          <span className="badge bg-[#E84B2C]/15 border border-[#E84B2C]/30 text-[#E87A38] text-[11px] font-mono flex items-center gap-1 w-fit">
+                            💳 Razorpay
+                          </span>
                         </td>
                         <td>
                           <span className={`badge font-mono text-[10px] ${
@@ -618,24 +643,9 @@ export default function BillingPage() {
                           </span>
                         </td>
                         <td>
-                          {order.utr_number ? (
-                            explorerUrl ? (
-                              <a
-                                href={explorerUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[#E87A38] hover:text-[#E84B2C] underline font-mono text-xs inline-flex items-center gap-1 transition-colors"
-                                title="Verify on Blockchain Explorer"
-                              >
-                                <span>{order.utr_number.slice(0, 8)}...{order.utr_number.slice(-6)}</span>
-                                <span className="text-[10px]">↗</span>
-                              </a>
-                            ) : (
-                              <span className="font-mono text-xs text-[var(--color-text-secondary)]">{order.utr_number}</span>
-                            )
-                          ) : (
-                            <span className="text-[var(--color-text-muted)] text-xs font-mono">—</span>
-                          )}
+                          <span className="font-mono text-xs text-[var(--color-text-secondary)]">
+                            {txRef}
+                          </span>
                         </td>
                       </tr>
                     );
@@ -646,97 +656,6 @@ export default function BillingPage() {
           </div>
         </div>
       </div>
-
-      {/* Crypto Payment Modal - International Only */}
-      {isInternational && showCryptoModal && (
-        <CryptoPaymentWidget
-          planId={selectedPlan}
-          planName={selectedPlanDetails.name}
-          amountUsd={selectedPlanConfig.priceUsd}
-          onSuccess={() => {
-            setPaymentSuccessMessage('Crypto transaction hash submitted! Your plan will activate upon network confirmation.');
-            setShowCryptoModal(false);
-            fetchBillingData();
-          }}
-          onCancel={() => setShowCryptoModal(false)}
-        />
-      )}
-
-      {/* UPI QR & Manual UTR Modal - Domestic India Only */}
-      {!isInternational && showUpiModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="card max-w-md w-full p-6 bg-[var(--color-surface-elevated)] border border-[var(--color-border-standard)] shadow-hero relative animate-scale-in text-[var(--color-text-primary)]">
-            <div className="flex justify-between items-center mb-5 pb-3 border-b border-[var(--color-border-subtle)]">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#E84B2C] shadow-[0_0_8px_#E84B2C]" />
-                <h2 className="font-heading text-lg font-semibold text-[var(--color-text-primary)]">
-                  UPI Practice Settlement
-                </h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowUpiModal(false)}
-                className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors text-lg p-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="text-center mb-6">
-              <div className="max-w-[190px] mx-auto mb-4 bg-white rounded-2xl p-3 shadow-[0_0_20px_rgba(232,75,44,0.15)] border border-[#F3F0E8]/20 flex flex-col items-center">
-                <img
-                  src="/upi-qr.png"
-                  alt="UPI QR Code for AI Front Desk"
-                  className="w-full h-auto rounded-lg"
-                />
-                <div className="text-[#111110] text-[11px] font-bold mt-2">
-                  Scan with any UPI App
-                </div>
-                <div className="text-[#706C65] text-[10px]">
-                  Paytm • GPay • PhonePe • BHIM
-                </div>
-              </div>
-
-              <div className="font-heading text-2xl font-bold text-[#F3F0E8]">
-                {PRICING_PLANS.find(p => p.id === selectedPlan)?.priceInrDisplay || '₹1,599'}
-              </div>
-              <div className="text-xs font-semibold text-[#E87A38] mt-0.5">
-                {PRICING_PLANS.find(p => p.id === selectedPlan)?.name || 'Pro Clinic'}
-              </div>
-              <div className="text-xs text-[#9E9B93] mt-2 font-mono bg-[#111110] px-3 py-1.5 rounded-lg border border-[#F3F0E8]/08 inline-block">
-                VPA: <span className="text-[#F3F0E8] font-semibold">{upiVpa}</span>
-              </div>
-            </div>
-
-            {submitError && (
-              <div className="mb-4 p-3 rounded-lg bg-[#E84B2C]/10 border border-[#E84B2C]/25 text-[#E84B2C] text-xs">
-                {submitError}
-              </div>
-            )}
-
-            <form onSubmit={handleUtrSubmit} className="space-y-4">
-              <div>
-                <label className="label text-xs">Enter 12-digit UTR from your UPI App</label>
-                <input
-                  className="input font-mono text-sm"
-                  required
-                  value={utrNumber}
-                  onChange={e => setUtrNumber(e.target.value)}
-                  placeholder="e.g. 429104928104"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary w-full py-2.5 text-xs font-medium"
-                disabled={isSubmittingUtr || !utrNumber.trim()}
-              >
-                {isSubmittingUtr ? 'Verifying Reference...' : 'Submit UTR & Activate Receptionist'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

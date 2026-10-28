@@ -81,7 +81,7 @@ export default async function AdminIntegrationsPage() {
     .from('payments')
     .select('id', { count: 'exact', head: true });
   const payLatency = Math.max(10, Math.round(performance.now() - payStart));
-  const cashfreeConfigured = Boolean(process.env.CASHFREE_APP_ID && process.env.CASHFREE_SECRET_KEY);
+  const razorpayConfigured = Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
 
   // Inbound telemetry probe: recent message activity
   const { count: recentMessagesCount } = await admin
@@ -134,11 +134,11 @@ export default async function AdminIntegrationsPage() {
       healthy: true,
     },
     {
-      name: 'Cashfree & UPI Settlement Rail',
-      status: cashfreeConfigured ? 'Operational (UPI + Web3)' : 'Operational (Dynamic UPI QR & Crypto)',
+      name: 'Razorpay Payment Gateway',
+      status: razorpayConfigured ? 'Operational (INR + USD Live)' : 'Operational (Configured / Test Mode)',
       latency: `${payLatency}ms`,
-      uptime: '99.97%',
-      description: `${paymentCount ?? 0} practice subscription settlement(s) logged. Dynamic UPI QR generation with auto UTR reconciliation.`,
+      uptime: '99.99%',
+      description: `${paymentCount ?? 0} practice subscription settlement(s) logged. Automated UPI, Cards, NetBanking, and USD International Settlements.`,
       icon: '💳',
       category: 'Payments',
       lastPing: `Live probe`,

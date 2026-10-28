@@ -21,23 +21,22 @@ const siteUrl = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Arenova AI Front Desk — Premium AI Receptionist for Clinics",
-    template: "%s | Arenova AI Front Desk",
+    default: "Arenova | AI WhatsApp Receptionist Software for Clinics",
+    template: "%s | Arenova",
   },
   description:
-    "Transform the way your business works. Intelligent 24/7 AI receptionist for clinics and appointment practices. Seamless WhatsApp patient dialogue, real-time schedule orchestration, and automated care workflows.",
-  applicationName: "Arenova AI Front Desk",
+    "Automate clinic enquiries, share practice information, and manage appointment requests with Arenova's AI-powered WhatsApp receptionist software for clinics.",
+  applicationName: "Arenova",
   keywords: [
-    "AI receptionist",
-    "clinic AI front desk",
-    "WhatsApp assistant",
-    "appointment booking automation",
-    "patient concierge",
-    "dental clinic receptionist",
-    "healthcare AI receptionist",
+    "AI WhatsApp receptionist for clinics",
+    "clinic communication automation",
+    "patient enquiry management",
+    "appointment request assistance",
+    "clinic subscription plans",
+    "AI receptionist software",
+    "administrative workflow automation",
+    "dental clinic receptionist software",
     "Arenova",
-    "Arenova AI",
-    "commercial velocity",
   ],
   authors: [{ name: "Arenova", url: siteUrl }],
   creator: "Arenova",
@@ -62,11 +61,11 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "Arenova AI Front Desk — Transform the Way Your Business Works",
+    title: "Arenova | AI WhatsApp Receptionist Software for Clinics",
     description:
-      "Transform the way your business works with Arenova AI Front Desk. Intelligent 24/7 AI receptionist for clinics and appointment practices. Seamless WhatsApp patient dialogue and real-time calendar orchestration.",
+      "Automate clinic enquiries, share practice information, and manage appointment requests with Arenova's AI-powered WhatsApp receptionist software.",
     url: siteUrl,
-    siteName: "Arenova AI Front Desk",
+    siteName: "Arenova",
     locale: "en_US",
     type: "website",
     images: [
@@ -75,15 +74,15 @@ export const metadata: Metadata = {
         width: 2912,
         height: 1440,
         type: "image/png",
-        alt: "Arenova AI Front Desk — Transform the way your business works",
+        alt: "Arenova — AI WhatsApp Receptionist Software for Clinics",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Arenova AI Front Desk — Transform the Way Your Business Works",
+    title: "Arenova | AI WhatsApp Receptionist Software for Clinics",
     description:
-      "Intelligent 24/7 AI receptionist for clinics and appointment practices. Instant response, zero double bookings, and automated care workflows.",
+      "Automate clinic enquiries, share practice information, and manage appointment requests with Arenova's AI-powered WhatsApp receptionist software.",
     creator: "@arenova_ai",
     images: [
       {

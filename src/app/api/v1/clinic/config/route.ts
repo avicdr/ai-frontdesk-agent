@@ -4,7 +4,7 @@
 import { NextRequest } from 'next/server';
 import { successResponse, Errors } from '@/lib/api/response';
 import { requireServerUser, createSupabaseAdminClient } from '@/lib/supabase/server';
-import { isSuperAdminEmail } from '@/lib/security/admin';
+import { isSuperAdminEmail, isSuperAdminUser } from '@/lib/security/admin';
 import { CLINIC_TYPES } from '@/lib/constants/clinic-types';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +13,14 @@ export async function GET(request: NextRequest) {
   try {
     const user = await requireServerUser();
     const admin = createSupabaseAdminClient();
-    const isSuperAdminByEmail = isSuperAdminEmail(user.email);
+
+    // Check user profile for verified super-admin rights
+    const { data: userProfile } = await admin
+      .from('user_profiles')
+      .select('is_super_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+    const isSuperAdmin = isSuperAdminUser(user, userProfile);
 
     // Get user's organization
     let { data: membership } = await admin
@@ -26,13 +33,13 @@ export async function GET(request: NextRequest) {
 
     // If super admin has no org or wants to inspect a specific org via query param
     const requestedOrgId = request.nextUrl.searchParams.get('organizationId');
-    if (requestedOrgId && isSuperAdminByEmail) {
+    if (requestedOrgId && isSuperAdmin) {
       orgId = requestedOrgId;
     }
 
     if (!orgId) {
       // Find or fallback to the first active organization if super admin
-      if (isSuperAdminByEmail) {
+      if (isSuperAdmin) {
         const { data: firstOrg } = await admin
           .from('organizations')
           .select('id')
@@ -117,7 +124,14 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireServerUser();
     const admin = createSupabaseAdminClient();
-    const isSuperAdminByEmail = isSuperAdminEmail(user.email);
+
+    // Check user profile for verified super-admin rights
+    const { data: userProfile } = await admin
+      .from('user_profiles')
+      .select('is_super_admin')
+      .eq('id', user.id)
+      .maybeSingle();
+    const isSuperAdmin = isSuperAdminUser(user, userProfile);
 
     // Get user's organization
     let { data: membership } = await admin
@@ -129,12 +143,12 @@ export async function POST(request: NextRequest) {
     let orgId = membership?.organization_id;
 
     const requestedOrgId = request.nextUrl.searchParams.get('organizationId');
-    if (requestedOrgId && isSuperAdminByEmail) {
+    if (requestedOrgId && isSuperAdmin) {
       orgId = requestedOrgId;
     }
 
     if (!orgId) {
-      if (isSuperAdminByEmail) {
+      if (isSuperAdmin) {
         const { data: firstOrg } = await admin
           .from('organizations')
           .select('id')

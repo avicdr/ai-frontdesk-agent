@@ -44,7 +44,7 @@ export default async function AdminRevenuePage() {
   }, 0);
 
   const arr = mrr * 12;
-  const avgRevenuePerClinic = activeSubs.length > 0 ? Math.round(mrr / activeSubs.length) : (paymentCount > 0 ? Math.round(totalRevenue / paymentCount) : 1599);
+  const avgRevenuePerClinic = activeSubs.length > 0 ? Math.round(mrr / activeSubs.length) : (paymentCount > 0 ? Math.round(totalRevenue / paymentCount) : 1499);
 
   // Group subscriptions by plan
   const planStats = plans.map((plan: any) => {

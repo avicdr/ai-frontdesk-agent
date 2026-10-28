@@ -1,7 +1,7 @@
 import { requireServerUser } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { isSuperAdminEmail } from '@/lib/security/admin';
+import { isSuperAdminEmail, isSuperAdminUser } from '@/lib/security/admin';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 
 export const dynamic = 'force-dynamic';
@@ -29,7 +29,6 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   }
 
   const admin = createSupabaseAdminClient();
-  const isSuperAdminByEmail = isSuperAdminEmail(user.email);
 
   // 1. Fetch user profile
   const { data: profile } = await admin
@@ -38,7 +37,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
     .eq('id', user.id)
     .maybeSingle();
 
-  const isSuperAdmin = isSuperAdminByEmail || Boolean(profile?.is_super_admin);
+  const isSuperAdmin = isSuperAdminUser(user, profile);
 
   // 2. Fetch user's organization membership
   const { data: membership } = await admin

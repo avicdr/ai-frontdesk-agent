@@ -45,18 +45,16 @@ export function LandingPricing() {
           color: 'var(--color-text-primary)',
           letterSpacing: '-0.025em',
         }}>
-          Simple plans for growing practices
+          Transparent software subscriptions for modern clinics
         </h2>
         <p style={{
           color: 'var(--color-text-muted)',
           fontSize: 'clamp(0.95rem, 2vw, 1.1rem)',
-          maxWidth: '580px',
+          maxWidth: '640px',
           margin: '0 auto',
           lineHeight: 1.6,
         }}>
-          {isInternational
-            ? 'Monthly subscriptions via Crypto (USDT, USDC, BTC, ETH). All tiers include 2-way Google Calendar sync & human takeover.'
-            : 'Monthly subscriptions via Instant UPI. All tiers include 2-way Google Calendar sync & human takeover.'}
+          Simple monthly and annual software access tiers in Indian Rupees (INR). All plans include clinic WhatsApp integration, 2-way Google Calendar synchronization, and human staff takeover.
         </p>
       </div>
 
@@ -168,16 +166,10 @@ export function LandingPricing() {
                     {f}
                   </li>
                 ))}
-                {isInternational && (
-                  <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', fontSize: '0.875rem', color: 'var(--color-amber)' }}>
-                    <span style={{ flexShrink: 0, marginTop: '0.1rem' }}>🪙</span>
-                    Pay via USDT (TRC-20/ERC-20), USDC, or BTC
-                  </li>
-                )}
               </ul>
 
               <Link
-                href={`/onboarding?plan=${plan.id}`}
+                href={`/register?plan=${plan.id}`}
                 className={isHighlighted ? 'btn btn-primary' : 'btn btn-secondary'}
                 style={{
                   width: '100%',
@@ -188,11 +180,51 @@ export function LandingPricing() {
                   justifyContent: 'center',
                 }}
               >
-                {plan.id === 'pro' ? 'Start Free Trial →' : plan.id === 'growth' ? 'Get Started' : 'Choose Starter'}
+                {plan.id === 'pro' ? 'Get Started →' : plan.id === 'growth' ? 'Choose Growth' : 'Choose Starter'}
               </Link>
             </div>
           );
         })}
+      </div>
+
+      {/* Mandatory Statutory Statement Box */}
+      <div
+        style={{
+          marginTop: '2.5rem',
+          padding: '1.25rem 1.5rem',
+          borderRadius: '14px',
+          background: 'var(--color-surface-elevated)',
+          border: '1px solid var(--color-border-standard)',
+          textAlign: 'center',
+          maxWidth: '920px',
+          margin: '2.5rem auto 0 auto',
+        }}
+      >
+        <p
+          style={{
+            fontSize: '0.825rem',
+            color: 'var(--color-text-secondary)',
+            lineHeight: 1.6,
+            margin: '0 0 0.85rem 0',
+          }}
+        >
+          <strong style={{ color: 'var(--color-text-primary)' }}>Subscription Terms:</strong> Your subscription provides access to Arenova&apos;s clinic communication software and AI receptionist services. It does not include medical consultations, medical treatment, or payments to healthcare providers.
+        </p>
+        <Link
+          href="/pricing"
+          style={{
+            fontSize: '0.825rem',
+            color: 'var(--color-amber)',
+            fontWeight: 600,
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+          }}
+        >
+          <span>View Full Pricing Details, Feature Breakdown &amp; Annual Billing Terms</span>
+          <span>→</span>
+        </Link>
       </div>
     </section>
   );

@@ -14,18 +14,20 @@ interface NavLinkItem {
 const navLinks: NavLinkItem[] = [
   { label: 'Features', href: '/#features' },
   { label: 'How It Works', href: '/#how-it-works' },
-  { label: 'Pricing', href: '/#pricing' },
+  { label: 'Pricing', href: '/pricing' },
+  { label: 'Contact', href: '/contact' },
 ];
 
 export function LandingNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
-
   // Close mobile menu on route change
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setMobileMenuOpen(false);
-  }, [pathname]);
+  }
 
   // Close on Escape key
   useEffect(() => {
@@ -108,17 +110,31 @@ export function LandingNavbar() {
             }}
             priority
           />
-          <span
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 600,
-              fontSize: '1.25rem',
-              letterSpacing: '-0.02em',
-              color: 'var(--color-text-primary)',
-            }}
-          >
-            AI Front Desk
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+            <span
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 600,
+                fontSize: '1.25rem',
+                letterSpacing: '-0.02em',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              Arenova
+            </span>
+            <span
+              style={{
+                fontSize: '0.62rem',
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--color-amber)',
+                letterSpacing: '0.04em',
+                fontWeight: 500,
+                textTransform: 'uppercase',
+              }}
+            >
+              Clinic AI Receptionist
+            </span>
+          </div>
         </Link>
 
         {/* Desktop Center Navigation Links */}
@@ -268,16 +284,28 @@ export function LandingNavbar() {
                 flexShrink: 0,
               }}
             />
-            <span
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 600,
-                fontSize: '1.1rem',
-                color: 'var(--color-text-primary)',
-              }}
-            >
-              AI Front Desk
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  fontSize: '1.15rem',
+                  color: 'var(--color-text-primary)',
+                }}
+              >
+                Arenova
+              </span>
+              <span
+                style={{
+                  fontSize: '0.62rem',
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--color-amber)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Clinic AI Receptionist
+              </span>
+            </div>
           </div>
 
           <button
@@ -305,16 +333,19 @@ export function LandingNavbar() {
         </div>
 
         {/* Drawer Navigation Links */}
-        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1, overflowY: 'auto' }}>
+          <div style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+            Menu
+          </div>
           {navLinks.map((item) => (
             <Link
               key={item.label}
               href={item.href}
               onClick={handleLinkClick}
               style={{
-                padding: '0.75rem 0.85rem',
+                padding: '0.65rem 0.85rem',
                 borderRadius: '8px',
-                fontSize: '0.95rem',
+                fontSize: '0.9rem',
                 fontWeight: 500,
                 color: 'var(--color-text-primary)',
                 textDecoration: 'none',
@@ -331,12 +362,55 @@ export function LandingNavbar() {
             </Link>
           ))}
 
-          <div className="divider" style={{ margin: '1rem 0' }} />
+          <div style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', color: 'var(--color-text-muted)', marginTop: '0.75rem', marginBottom: '0.25rem' }}>
+            Policies &amp; Legal
+          </div>
+          <Link
+            href="/terms-of-service"
+            onClick={handleLinkClick}
+            style={{
+              padding: '0.5rem 0.85rem',
+              borderRadius: '8px',
+              fontSize: '0.82rem',
+              color: 'var(--color-text-secondary)',
+              textDecoration: 'none',
+            }}
+          >
+            Terms of Service
+          </Link>
+          <Link
+            href="/privacy-policy"
+            onClick={handleLinkClick}
+            style={{
+              padding: '0.5rem 0.85rem',
+              borderRadius: '8px',
+              fontSize: '0.82rem',
+              color: 'var(--color-text-secondary)',
+              textDecoration: 'none',
+            }}
+          >
+            Privacy Policy
+          </Link>
+          <Link
+            href="/refund-policy"
+            onClick={handleLinkClick}
+            style={{
+              padding: '0.5rem 0.85rem',
+              borderRadius: '8px',
+              fontSize: '0.82rem',
+              color: 'var(--color-text-secondary)',
+              textDecoration: 'none',
+            }}
+          >
+            Refund Policy
+          </Link>
+
+          <div className="divider" style={{ margin: '0.85rem 0' }} />
 
           <Link
             href="/login"
             onClick={handleLinkClick}
-            className="btn btn-secondary"
+            className="btn btn-secondary btn-sm"
             style={{ width: '100%', justifyContent: 'center', marginBottom: '0.5rem' }}
           >
             Sign In
@@ -345,10 +419,10 @@ export function LandingNavbar() {
           <Link
             href="/register"
             onClick={handleLinkClick}
-            className="btn btn-primary"
+            className="btn btn-primary btn-sm"
             style={{ width: '100%', justifyContent: 'center' }}
           >
-            Start Free Trial →
+            Get Started →
           </Link>
         </div>
 

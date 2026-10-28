@@ -1,26 +1,71 @@
 // src/app/api/v1/admin/init/route.ts
-// Provision or check platform super-admin account
+// Provision platform super-admin account (Protected One-Time Setup Endpoint)
 
 import { NextRequest } from 'next/server';
 import { successResponse, Errors } from '@/lib/api/response';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+function verifyInitToken(request: NextRequest): boolean {
+  const secret = process.env.ADMIN_INIT_SECRET || process.env.CRON_SECRET;
+  if (!secret) {
+    // In production, refuse unauthenticated provisioning if no secret is configured
+    if (process.env.NODE_ENV === 'production') {
+      return false;
+    }
+  }
+
+  const authHeader = request.headers.get('authorization') || '';
+  const customHeader = request.headers.get('x-admin-init-secret') || '';
+
+  let providedToken = '';
+  if (authHeader.startsWith('Bearer ')) {
+    providedToken = authHeader.slice(7).trim();
+  } else if (customHeader) {
+    providedToken = customHeader.trim();
+  }
+
+  if (!providedToken || !secret) {
+    return false;
+  }
+
+  try {
+    const expectedBuf = Buffer.from(secret, 'utf-8');
+    const providedBuf = Buffer.from(providedToken, 'utf-8');
+    if (expectedBuf.length !== providedBuf.length) {
+      return false;
+    }
+    return crypto.timingSafeEqual(expectedBuf, providedBuf);
+  } catch {
+    return false;
+  }
+}
+
+async function handleInit(request: NextRequest) {
+  // Enforce secure administrative authorization token
+  if (!verifyInitToken(request)) {
+    return Errors.forbidden('Admin initialization endpoint is locked. Valid authorization secret is required.');
+  }
+
   try {
     const admin = createSupabaseAdminClient();
     const adminEmail = process.env.ADMIN_EMAIL;
     const adminPassword = process.env.ADMIN_PASSWORD;
 
+    if (!adminEmail || !adminPassword) {
+      return Errors.badRequest('ADMIN_EMAIL and ADMIN_PASSWORD environment variables must be configured.');
+    }
+
     // Check if user already exists
     const { data: { users }, error: listError } = await admin.auth.admin.listUsers();
     if (listError) {
       console.error('List users error:', listError);
-      return Errors.internalError(listError.message);
+      return Errors.internalError('Failed to verify existing administrator accounts');
     }
 
-    let adminUser = users.find((u: any) => u.email === adminEmail);
+    let adminUser = users.find((u: any) => u.email?.toLowerCase().trim() === adminEmail.toLowerCase().trim());
 
     if (!adminUser) {
       // Create super-admin user in Supabase auth
@@ -41,7 +86,7 @@ export async function GET(request: NextRequest) {
 
       adminUser = newUserData.user;
     } else {
-      // Make sure password is synchronized and email is confirmed
+      // Synchronize confirmed status and metadata
       await admin.auth.admin.updateUserById(adminUser.id, {
         password: adminPassword,
         email_confirm: true,
@@ -62,22 +107,26 @@ export async function GET(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    const { data: upsertedProfile, error: profileError } = await admin
+    const { error: profileError } = await admin
       .from('user_profiles')
       .upsert(profilePayload)
-      .select('*')
+      .select('id')
       .maybeSingle();
 
-    // Also check if admin has an organization for full clinic dashboard compatibility
+    if (profileError) {
+      console.error('Admin profile error:', profileError);
+    }
+
+    // Ensure super-admin has an organization membership for clinic operations
     const { data: existingMembership } = await admin
       .from('organization_memberships')
-      .select('organization_id, role')
+      .select('organization_id')
       .eq('user_id', adminUser.id)
+      .limit(1)
       .maybeSingle();
 
     let orgId = existingMembership?.organization_id;
     if (!orgId) {
-      // Check if there is an existing platform or dental organization
       const { data: firstOrg } = await admin
         .from('organizations')
         .select('id')
@@ -112,25 +161,23 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Read back final profile to verify
-    const { data: verifiedProfile } = await admin
-      .from('user_profiles')
-      .select('*')
-      .eq('id', adminUser.id)
-      .maybeSingle();
-
     return successResponse({
-      message: 'Super-admin credentials and profile configured successfully',
+      message: 'Super-admin account provisioned and synchronized successfully',
       email: adminEmail,
       userId: adminUser.id,
-      verifiedProfile,
-      profileError: profileError ? profileError.message : null,
       loginUrl: '/login',
       adminConsoleUrl: '/admin',
-      credentialsNotice: 'Default credentials set: admin@aifrontdesk.com / Admin@FrontDesk2025!',
     });
   } catch (err: any) {
     console.error('Admin init unexpected error:', err);
-    return Errors.internalError(err?.message || 'Initialization failed');
+    return Errors.internalError('Initialization failed');
   }
+}
+
+export async function POST(request: NextRequest) {
+  return handleInit(request);
+}
+
+export async function GET(request: NextRequest) {
+  return handleInit(request);
 }

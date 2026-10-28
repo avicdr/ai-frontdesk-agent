@@ -87,10 +87,10 @@ export async function requireServerUser() {
   return user;
 }
 
-import { isSuperAdminEmail } from '@/lib/security/admin';
+import { isSuperAdminEmail, isSuperAdminUser } from '@/lib/security/admin';
 
 /**
- * Ensures user is authenticated and is a platform super-admin.
+ * Ensures user is authenticated and is a verified platform super-admin.
  * Auto-provisions and maintains admin profile, redirects gracefully if unauthorized.
  */
 export async function requireSuperAdmin() {
@@ -100,7 +100,6 @@ export async function requireSuperAdmin() {
   }
 
   const admin = createSupabaseAdminClient();
-  const isSuperAdminByEmail = isSuperAdminEmail(user.email);
 
   const { data: profile } = await admin
     .from('user_profiles')
@@ -108,7 +107,9 @@ export async function requireSuperAdmin() {
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!profile?.is_super_admin && !isSuperAdminByEmail) {
+  const isAuthorized = isSuperAdminUser(user, profile);
+
+  if (!isAuthorized) {
     redirect('/dashboard');
   }
 
@@ -140,3 +141,4 @@ export async function requireSuperAdmin() {
 
   return { user, profile: finalProfile, admin };
 }
+

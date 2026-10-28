@@ -1,35 +1,35 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 import { LandingNavbar } from '@/components/navigation/LandingNavbar';
 import { LandingPricing } from '@/components/landing/LandingPricing';
+import { LandingFooter } from '@/components/navigation/LandingFooter';
 import { InteractiveBotComparison } from '@/components/landing/InteractiveBotComparison';
 import { HeroInteractivePreview } from '@/components/landing/HeroInteractivePreview';
 
 export const metadata: Metadata = {
-  title: 'AI Front Desk - Premium AI Receptionist for Clinics & Practices',
+  title: 'Arenova | AI WhatsApp Receptionist Software for Clinics',
   description:
-    'Transform the way your practice works. Deploy a cinematic, intelligent 24/7 AI receptionist on WhatsApp. Answers queries, coordinates doctor availability, and books appointments seamlessly.',
+    "Arenova helps clinics automate patient enquiries, share clinic information, and manage appointment requests through WhatsApp — so your team can spend less time answering repetitive questions and more time caring for patients.",
   openGraph: {
-    title: 'Arenova AI Front Desk - Transform the Way Your Business Works',
+    title: 'Arenova | AI WhatsApp Receptionist Software for Clinics',
     description:
-      'Transform the way your practice works. Deploy an intelligent 24/7 AI receptionist on WhatsApp for modern clinics and appointment practices.',
+      'Automate clinic enquiries, share practice information, and manage appointment requests with Arenova’s AI-powered WhatsApp receptionist software.',
     url: '/',
-    siteName: 'Arenova AI Front Desk',
+    siteName: 'Arenova',
     images: [
       {
         url: '/metadata.png',
         width: 2912,
         height: 1440,
-        alt: 'Arenova AI Front Desk — Transform the way your business works',
+        alt: 'Arenova — AI WhatsApp Receptionist Software for Clinics',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Arenova AI Front Desk — Transform the Way Your Business Works',
+    title: 'Arenova | AI WhatsApp Receptionist Software for Clinics',
     description:
-      'Transform the way your practice works. Intelligent 24/7 AI receptionist for clinics and appointment practices.',
+      'Automate clinic enquiries, share practice information, and manage appointment requests with Arenova’s AI-powered WhatsApp receptionist software.',
     images: ['/metadata.png'],
   },
 };
@@ -37,45 +37,45 @@ export const metadata: Metadata = {
 const featureBento = [
   {
     icon: '💬',
-    tag: 'AUTONOMOUS RECEPTION',
-    title: '24/7 WhatsApp Conversational Receptionist',
-    description: 'Empathetic, context-aware AI that answers patient questions, explains clinic procedures, quotes standard pricing, and confirms operational hours — day or night.',
+    tag: 'CLINIC COMMUNICATION',
+    title: '24/7 WhatsApp AI Receptionist for Clinics',
+    description: 'Empathetic, context-aware AI assistant that answers routine patient enquiries, explains clinic procedures, operating hours, and location details on behalf of your practice.',
     highlight: 'Instant 1.2s response time',
   },
   {
     icon: '📅',
-    tag: 'SCHEDULE ORCHESTRATION',
-    title: 'Zero-Conflict Google Calendar 2-Way Sync',
-    description: 'Reads your real doctor schedule in real time. Offers open consultation slots, books confirmed appointments directly, and frees cancelled slots automatically.',
+    tag: 'ADMINISTRATIVE WORKFLOW',
+    title: 'Appointment Request Assistance & Calendar Coordination',
+    description: 'Assists patients with appointment booking requests according to your clinic schedule rules. Connects directly with your clinic Google Calendar to eliminate scheduling collisions.',
     highlight: 'Zero double bookings',
   },
   {
     icon: '🏷️',
-    tag: 'CLINICAL TRIAGE',
-    title: 'Custom Service Catalog & Pricing Calculator',
-    description: 'Configure doctor consultation fees, procedure durations, and preparation guidelines. The AI accurately quotes treatments according to your clinic rules.',
-    highlight: 'Accurate treatment quoting',
+    tag: 'PRACTICE INFORMATION',
+    title: 'Custom Procedure FAQ & Standard Fee Guidance',
+    description: 'Configure standard consultation fees, procedure durations, and preparation guidelines. The AI accurately shares clinic guidelines according to your practice rules.',
+    highlight: 'Accurate clinic quoting',
   },
   {
     icon: '🚨',
-    tag: 'CLINICAL SAFETY',
-    title: 'Medical Emergency Safety Sentinel',
-    description: 'Trained to recognize acute red flag symptoms. Immediately provides local emergency dispatch numbers (112 / 911) and alerts clinic staff for urgent intervention.',
+    tag: 'PATIENT SAFETY',
+    title: 'Emergency Red-Flag Detection & Referral',
+    description: 'Equipped with safety rails to recognize acute symptoms. Immediately instructs patients to contact emergency services (112 / 911) or visit the nearest emergency hospital.',
     highlight: 'Patient safety protocols',
   },
   {
     icon: '👥',
-    tag: 'HUMAN TAKEOVER',
-    title: 'Instant Human Staff Takeover',
-    description: 'Your clinic team can pause the AI and chat directly with any patient from the inbox canvas at any moment. Seamless handover with zero patient disruption.',
+    tag: 'HUMAN OVERSIGHT',
+    title: '1-Click Clinic Staff Takeover',
+    description: 'Your clinic reception team can pause the AI and chat directly with any patient from the inbox canvas at any moment. Seamless handover with zero disruption.',
     highlight: '1-click manual override',
   },
   {
-    icon: '⚡',
-    tag: 'FINANCIAL SETTLEMENT',
-    title: 'Domestic UPI & Global Web3 Crypto Billing',
-    description: 'Activate your clinic tier instantly via UPI QR or international cryptocurrency settlement (USDT, USDC on Polygon/TRON/Ethereum) with zero payment friction.',
-    highlight: 'Automated instant activation',
+    icon: '💳',
+    tag: 'TRANSPARENT BILLING',
+    title: 'Predictable Indian Rupee (INR) SaaS Subscriptions',
+    description: 'Subscribe your clinic with simple monthly or annual software tiers. Instant activation via UPI or Netbanking with GST invoices and no long-term lock-in.',
+    highlight: 'Standard B2B SaaS pricing',
   },
 ];
 
@@ -123,52 +123,56 @@ const steps = [
     number: '01',
     tag: 'CLINIC ONBOARDING',
     title: 'Register & Calibrate AI Persona',
-    description: 'Enter your clinic name, doctors, operating hours, treatment catalog, and tone of voice in our guided 8-step console.',
+    description: 'Enter your clinic name, operating hours, procedure catalog, and tone of voice in our guided console.',
   },
   {
     number: '02',
     tag: 'CHANNELS',
     title: 'Connect WhatsApp & Google Calendar',
-    description: 'Pair your clinic WhatsApp number just like WhatsApp Web, and authorize Google Calendar with 1-click OAuth sync.',
+    description: 'Pair your clinic WhatsApp number directly via QR code, and authorize Google Calendar with 1-click OAuth sync.',
   },
   {
     number: '03',
     tag: 'SANDBOX TESTING',
     title: 'Verify in Live Testing Playground',
-    description: 'Simulate patient inquiries in the built-in test sandbox. Verify procedure quotes, emergency escalations, and schedule booking.',
+    description: 'Simulate patient inquiries in the built-in sandbox. Verify clinic procedure details, emergency escalations, and appointment coordination.',
   },
   {
     number: '04',
     tag: 'AUTONOMOUS RECEPTION',
     title: 'Go Live with 24/7 Coverage',
-    description: 'Activate your subscription. Your AI receptionist immediately handles incoming patient chats and synchronizes doctor appointments.',
+    description: 'Activate your software subscription. Your AI receptionist immediately answers routine patient chats on behalf of your clinic.',
   },
 ];
 
 const faqs = [
   {
-    q: 'Does AI Front Desk replace my existing human receptionist?',
-    a: 'No. AI Front Desk acts as an autonomous co-pilot that handles high-volume routine inquiries, pricing questions, after-hours messages, and calendar scheduling. Your staff is freed from answering the same questions all day and can focus entirely on in-person patient hospitality.',
+    q: 'Does Arenova replace my clinic’s human receptionist?',
+    a: 'No. Arenova operates as an administrative co-pilot that handles high-volume routine patient enquiries, clinic information, opening hours, and appointment requests on WhatsApp. Your staff is freed from answering repetitive phone calls all day and can focus entirely on in-person patient hospitality.',
   },
   {
-    q: 'How does WhatsApp pairing work? Do I need Meta developer credentials?',
-    a: 'No Meta developer account or API approval is required. You can connect any existing clinic phone number directly using WhatsApp Linked Devices (scanning a QR code or entering an 8-character code), exactly like WhatsApp Web. It takes less than 60 seconds.',
+    q: 'How does clinic WhatsApp connection work? Do I need Meta developer credentials?',
+    a: 'No Meta developer account or API approval is required. Clinics connect their dedicated clinic phone number directly using WhatsApp Linked Devices (scanning a QR code or entering a linking code), exactly like WhatsApp Web. It takes less than 60 seconds.',
   },
   {
-    q: 'How does it prevent double-bookings on Google Calendar?',
-    a: 'Before offering any slot to a patient on WhatsApp, the AI makes a live real-time query to the doctor’s Google Calendar. It only suggests confirmed free openings between clinic operating hours and accounts for appointment buffer times.',
+    q: 'How does appointment request assistance work with our clinic calendar?',
+    a: 'Arenova acts strictly as an administrative coordination assistant for your individual clinic. When a patient requests an appointment, the assistant queries your clinic’s Google Calendar for open slots and writes the confirmed request into your calendar, preventing double-bookings.',
+  },
+  {
+    q: 'Does Arenova operate a doctor-booking marketplace or provide medical consultations?',
+    a: 'No. Arenova is strictly a B2B SaaS software provider. Arenova is NOT a doctor-booking marketplace, aggregator, or healthcare provider. We do NOT employ doctors, provide medical consultations, diagnose medical conditions, or prescribe treatments. Each subscribing clinic uses Arenova software independently for its own front-desk administrative communication.',
   },
   {
     q: 'Can the AI speak in Hindi or regional languages?',
-    a: 'Yes. Powered by Google Gemini AI, the receptionist fluently understands and responds in English, Hindi, Hinglish, Spanish, French, and over 10 other languages, adapting naturally to the patient’s phrasing.',
+    a: 'Yes. Powered by Google Gemini AI, the receptionist fluently understands and responds in English, Hindi, Hinglish, and over 10 other languages, adapting naturally to patient phrasing.',
   },
   {
-    q: 'What happens if a patient has a medical emergency?',
-    a: 'AI Front Desk is strictly an administrative coordination platform. It has built-in safety rails that immediately detect emergency red-flag symptoms (chest pain, shortness of breath, heavy trauma) and instructs the patient to call emergency services (112 / 911) or proceed to the nearest emergency room.',
+    q: 'What happens if a patient mentions a medical emergency?',
+    a: 'Arenova is strictly an administrative communication platform. Built-in clinical safety rails immediately recognize acute red-flag symptoms (chest pain, severe breathlessness, heavy trauma) and instruct the patient to contact national emergency services (112 / 911) or proceed immediately to the nearest hospital emergency room.',
   },
   {
-    q: 'What payment methods do you support for clinic subscriptions?',
-    a: 'We support instant domestic UPI (Google Pay, PhonePe, Paytm, BHIM) with transaction reference verification for Indian clinics, as well as multi-network Web3 cryptocurrency settlement (USDT TRC-20, USDT ERC-20, USDC Polygon, ETH, BTC) for international practices.',
+    q: 'What payment methods are supported for clinic software subscriptions?',
+    a: 'We support secure Indian Rupee (INR) subscriptions via UPI (Google Pay, PhonePe, Paytm, BHIM) and Netbanking / Cards for subscribing clinics. All subscriptions include GST tax invoices and renewal receipts.',
   },
 ];
 
@@ -220,45 +224,177 @@ export default function LandingPage() {
           boxShadow: '0 0 20px rgba(232, 75, 44, 0.18)',
         }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-flame)', boxShadow: '0 0 8px var(--color-flame)' }} />
-          Autonomous Healthcare Front Desk &bull; Powered by Google Gemini
+          B2B SaaS Software for Healthcare Practices &bull; Powered by Google Gemini
         </div>
 
         {/* Editorial Headline */}
         <h1 style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(2.5rem, 6.5vw, 5rem)',
-          fontWeight: 500,
-          lineHeight: 1.06,
-          maxWidth: '920px',
+          fontSize: 'clamp(2.4rem, 6vw, 4.75rem)',
+          fontWeight: 600,
+          lineHeight: 1.08,
+          maxWidth: '960px',
           marginBottom: '1.25rem',
           letterSpacing: '-0.03em',
           color: 'var(--color-text-primary)',
         }}>
-          Your clinic&apos;s front desk.{' '}
+          Your Clinic&apos;s AI Receptionist,{' '}
           <br />
-          <span className="text-gradient-flame">Always one step ahead.</span>
+          <span className="text-gradient-flame">Available 24/7.</span>
         </h1>
 
         <p style={{
-          fontSize: 'clamp(1rem, 2vw, 1.2rem)',
+          fontSize: 'clamp(1rem, 2vw, 1.18rem)',
           color: 'var(--color-text-secondary)',
-          maxWidth: '680px',
-          marginBottom: '2rem',
+          maxWidth: '740px',
+          marginBottom: '1.75rem',
           lineHeight: 1.65,
           fontWeight: 400,
         }}>
-          Deploy an intelligent, 24/7 AI receptionist on WhatsApp for your practice.
-          Answers patient inquiries, checks real-time doctor availability, quotes procedure fees, and locks appointments directly into Google Calendar.
+          Arenova helps clinics automate patient enquiries, share clinic information, and manage appointment requests through WhatsApp — so your team can spend less time answering repetitive questions and more time caring for patients.
         </p>
 
         {/* Hero CTAs */}
-        <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', justifyContent: 'center', width: '100%', maxWidth: '520px', marginBottom: '1.5rem' }}>
-          <Link href="/register" className="btn btn-primary btn-lg" style={{ flex: '1 1 210px', textAlign: 'center', height: '52px', fontSize: '1rem', fontWeight: 600 }}>
-            Start Free Trial →
+        <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', justifyContent: 'center', width: '100%', maxWidth: '520px', marginBottom: '1.75rem' }}>
+          <Link href="/register" className="btn btn-primary btn-lg" style={{ flex: '1 1 200px', textAlign: 'center', height: '52px', fontSize: '1rem', fontWeight: 600 }}>
+            Get Started →
           </Link>
-          <Link href="#bot-comparison" className="btn btn-secondary btn-lg" style={{ flex: '1 1 190px', textAlign: 'center', height: '52px', fontSize: '0.95rem' }}>
-            Compare With / Without AI
+          <Link href="/pricing" className="btn btn-secondary btn-lg" style={{ flex: '1 1 180px', textAlign: 'center', height: '52px', fontSize: '0.95rem' }}>
+            View Pricing
           </Link>
+        </div>
+
+        {/* Clear Business-Model Statement Callout */}
+        <div style={{
+          maxWidth: '820px',
+          width: '100%',
+          margin: '0 auto 1.5rem auto',
+          padding: '1rem 1.35rem',
+          borderRadius: '14px',
+          background: 'rgba(232, 75, 44, 0.08)',
+          border: '1px solid rgba(232, 75, 44, 0.25)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.35rem',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            fontSize: '0.88rem',
+            fontWeight: 600,
+            color: 'var(--color-text-primary)',
+          }}>
+            Built for clinics and healthcare practices. Subscription-based software for patient communication and administrative workflows.
+          </div>
+          <div style={{
+            fontSize: '0.8rem',
+            color: 'var(--color-text-secondary)',
+            lineHeight: 1.55,
+          }}>
+            Subscribe to Arenova to access AI-powered WhatsApp receptionist software, configure your clinic&apos;s assistant, and automate routine patient communications.
+          </div>
+        </div>
+
+        {/* 4 Core Visible SaaS Pillars */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '0.85rem',
+          width: '100%',
+          maxWidth: '920px',
+          margin: '0 auto 2rem auto',
+          textAlign: 'left',
+        }}>
+          <div style={{
+            padding: '1rem',
+            borderRadius: '12px',
+            background: 'var(--color-surface-elevated)',
+            border: '1px solid var(--color-border-standard)',
+          }}>
+            <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--color-amber)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.25rem' }}>
+              01 &bull; Who It Serves
+            </div>
+            <div style={{ fontSize: '0.825rem', color: 'var(--color-text-primary)', fontWeight: 600, marginBottom: '0.25rem' }}>
+              Healthcare Practices
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+              Clinics, dental clinics, physiotherapy centers, and medical offices.
+            </div>
+          </div>
+
+          <div style={{
+            padding: '1rem',
+            borderRadius: '12px',
+            background: 'var(--color-surface-elevated)',
+            border: '1px solid var(--color-border-standard)',
+          }}>
+            <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--color-amber)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.25rem' }}>
+              02 &bull; What It Provides
+            </div>
+            <div style={{ fontSize: '0.825rem', color: 'var(--color-text-primary)', fontWeight: 600, marginBottom: '0.25rem' }}>
+              Reception Automation
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+              AI-powered WhatsApp communication and virtual receptionist software.
+            </div>
+          </div>
+
+          <div style={{
+            padding: '1rem',
+            borderRadius: '12px',
+            background: 'var(--color-surface-elevated)',
+            border: '1px solid var(--color-border-standard)',
+          }}>
+            <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--color-amber)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.25rem' }}>
+              03 &bull; What It Automates
+            </div>
+            <div style={{ fontSize: '0.825rem', color: 'var(--color-text-primary)', fontWeight: 600, marginBottom: '0.25rem' }}>
+              Routine Enquiries
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+              Frequently asked questions, clinic hours, location details, and appointment requests.
+            </div>
+          </div>
+
+          <div style={{
+            padding: '1rem',
+            borderRadius: '12px',
+            background: 'var(--color-surface-elevated)',
+            border: '1px solid var(--color-border-standard)',
+          }}>
+            <div style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--color-amber)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.25rem' }}>
+              04 &bull; What You Pay For
+            </div>
+            <div style={{ fontSize: '0.825rem', color: 'var(--color-text-primary)', fontWeight: 600, marginBottom: '0.25rem' }}>
+              Software Access
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+              Software access, onboarding/setup, and ongoing AI receptionist usage according to plan.
+            </div>
+          </div>
+        </div>
+
+        {/* Medical & Healthcare Software Notice Banner */}
+        <div style={{
+          width: '100%',
+          maxWidth: '920px',
+          margin: '0 auto 2.25rem auto',
+          padding: '0.75rem 1.25rem',
+          borderRadius: '10px',
+          background: 'var(--color-surface-secondary)',
+          border: '1px solid var(--color-border-subtle)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.65rem',
+          fontSize: '0.76rem',
+          color: 'var(--color-text-secondary)',
+          lineHeight: 1.5,
+          textAlign: 'center',
+        }}>
+          <span style={{ color: 'var(--color-amber)', fontSize: '1rem' }}>🛡️</span>
+          <span>
+            <strong style={{ color: 'var(--color-text-primary)' }}>Important Notice:</strong> Arenova provides front-desk administrative software. Arenova does not employ doctors, provide medical consultations, diagnoses, or prescriptions, or operate an open doctor-booking marketplace. All consultations and medical services are provided independently by subscribing clinics.
+          </span>
         </div>
 
         {/* Micro Trust Pills */}
@@ -939,70 +1075,7 @@ export default function LandingPage() {
       </section>
 
       {/* ============ FOOTER ============ */}
-      <footer style={{
-        padding: '3rem clamp(1rem, 5vw, 3rem) 2rem',
-        borderTop: '1px solid var(--color-border-subtle)',
-        background: 'var(--color-charcoal)',
-        color: 'var(--color-text-muted)',
-        fontSize: '0.825rem',
-      }}>
-        <div style={{
-          maxWidth: '1240px',
-          margin: '0 auto',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1.5rem',
-          marginBottom: '2rem',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Image
-              src="/arenova.png"
-              alt="Arenova"
-              width={32}
-              height={32}
-              style={{
-                width: '32px',
-                height: '32px',
-                objectFit: 'contain',
-              }}
-            />
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', color: 'var(--color-text-primary)', fontWeight: 500 }}>
-              AI Front Desk
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', gap: '1.75rem', flexWrap: 'wrap' }}>
-            <Link href="#features" style={{ color: 'var(--color-text-muted)', textDecoration: 'none' }}>Features</Link>
-            <Link href="#bot-comparison" style={{ color: 'var(--color-text-muted)', textDecoration: 'none' }}>Comparison</Link>
-            <Link href="#pricing" style={{ color: 'var(--color-text-muted)', textDecoration: 'none' }}>Pricing</Link>
-            <Link href="/privacy" style={{ color: 'var(--color-text-muted)', textDecoration: 'none' }}>Privacy Policy</Link>
-            <Link href="/tos" style={{ color: 'var(--color-text-muted)', textDecoration: 'none' }}>Terms of Service</Link>
-            <Link href="/login" style={{ color: 'var(--color-amber)', textDecoration: 'none', fontWeight: 600 }}>Sign In</Link>
-          </div>
-        </div>
-
-        <div style={{
-          maxWidth: '1240px',
-          margin: '0 auto',
-          paddingTop: '1.5rem',
-          borderTop: '1px solid var(--color-border-subtle)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          fontSize: '0.75rem',
-        }}>
-          <div>
-            &copy; {new Date().getFullYear()} Arenova AI Front Desk. All rights reserved.
-          </div>
-          <div>
-            Google Calendar API Limited Use Compliant &bull; Meta WhatsApp Multi-Device Direct
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }

@@ -264,7 +264,7 @@ export default function IntegrationsPage() {
           Channels &amp; Integrations
         </h1>
         <p style={{ color: '#9E9B93', fontSize: '0.95rem' }}>
-          Connect your clinic WhatsApp channel via Linked Devices and synchronize real-time doctor availability with Google Calendar.
+          Connect your clinic WhatsApp channel via Linked Devices and synchronize clinic appointment schedules with Google Calendar.
         </p>
       </div>
 

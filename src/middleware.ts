@@ -3,6 +3,8 @@
 
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { getSafeRedirectUrl } from '@/lib/url';
+import { isSuperAdminEmail } from '@/lib/security/admin';
 
 // Routes that require authentication
 const PROTECTED_ROUTES = ['/dashboard', '/onboarding', '/admin'];
@@ -60,14 +62,14 @@ export async function middleware(request: NextRequest) {
   // Redirect authenticated users away from auth routes
   const isAuthRoute = AUTH_ROUTES.some(r => pathname.startsWith(r));
   if (isAuthRoute && user) {
-    const isSuperAdminEmail = user.email?.toLowerCase().trim() === 'admin@aifrontdesk.com';
+    const isSuperAdmin = isSuperAdminEmail(user.email);
     const redirectParam = request.nextUrl.searchParams.get('returnUrl') || request.nextUrl.searchParams.get('redirectTo');
     
     if (redirectParam && redirectParam !== '/login' && redirectParam !== '/dashboard') {
-      return NextResponse.redirect(new URL(redirectParam, request.url));
+      return NextResponse.redirect(getSafeRedirectUrl(redirectParam, request));
     }
     
-    return NextResponse.redirect(new URL(isSuperAdminEmail ? '/admin' : '/dashboard', request.url));
+    return NextResponse.redirect(getSafeRedirectUrl(isSuperAdmin ? '/admin' : '/dashboard', request));
   }
 
   // Admin route protection (additional check via API)

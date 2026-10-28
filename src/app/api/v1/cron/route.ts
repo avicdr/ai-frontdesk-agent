@@ -6,12 +6,33 @@ import { successResponse, Errors } from '@/lib/api/response';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { createNotification } from '@/lib/notifications/service';
 import { processPendingAppointmentReviews } from '@/lib/reviews/review-service';
+import crypto from 'crypto';
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret if provided
-  const authHeader = request.headers.get('authorization');
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return Errors.unauthorized('Invalid cron secret');
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret) {
+    if (process.env.NODE_ENV === 'production') {
+      return Errors.forbidden('Cron endpoint is disabled in production without CRON_SECRET configured.');
+    }
+  } else {
+    const authHeader = request.headers.get('authorization') || '';
+    const expectedHeader = `Bearer ${cronSecret}`;
+
+    let isAuthorized = false;
+    try {
+      const expectedBuf = Buffer.from(expectedHeader, 'utf-8');
+      const actualBuf = Buffer.from(authHeader, 'utf-8');
+      if (expectedBuf.length === actualBuf.length) {
+        isAuthorized = crypto.timingSafeEqual(expectedBuf, actualBuf);
+      }
+    } catch {
+      isAuthorized = false;
+    }
+
+    if (!isAuthorized) {
+      return Errors.unauthorized('Invalid cron secret');
+    }
   }
 
   const admin = createSupabaseAdminClient();

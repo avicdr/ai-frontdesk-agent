@@ -1,5 +1,1 @@
-import { redirect } from 'next/navigation';
-
-export default function TermsRedirect() {
-  redirect('/tos');
-}
+export { default, metadata } from '../terms-of-service/page';

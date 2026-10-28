@@ -7,13 +7,13 @@ import { requireServerUser, createSupabaseAdminClient } from '@/lib/supabase/ser
 import { resolveTenantContext } from '@/lib/security/tenant';
 import { createPaymentOrder } from '@/lib/billing/service';
 import { z } from 'zod';
-import { isSuperAdminEmail } from '@/lib/security/admin';
+import { isSuperAdminEmail, isSuperAdminUser } from '@/lib/security/admin';
 
 const CreateOrderSchema = z.object({
   organizationId: z.string().uuid().optional(),
   planId: z.string().min(1),
   currency: z.enum(['INR', 'USD']).optional(),
-  provider: z.enum(['cashfree', 'manual', 'crypto']).optional(),
+  provider: z.enum(['razorpay', 'cashfree', 'manual', 'crypto']).optional().default('razorpay'),
   cryptoNetwork: z.string().optional(),
 });
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .maybeSingle();
 
-    if (profile?.is_super_admin || isSuperAdminEmail(user.email)) {
+    if (isSuperAdminUser(user, profile)) {
       // Super admin sees all orders across the platform for approval
       const { data: orders, error } = await admin
         .from('payment_orders')

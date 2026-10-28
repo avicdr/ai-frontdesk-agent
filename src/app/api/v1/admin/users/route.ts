@@ -4,20 +4,19 @@
 import { NextRequest } from 'next/server';
 import { successResponse, Errors } from '@/lib/api/response';
 import { requireServerUser, createSupabaseAdminClient } from '@/lib/supabase/server';
-import { isSuperAdminEmail } from '@/lib/security/admin';
+import { isSuperAdminEmail, isSuperAdminUser } from '@/lib/security/admin';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
 async function verifySuperAdmin(admin: any, user: any) {
-  const isSuperAdminByEmail = isSuperAdminEmail(user.email);
   const { data: profile } = await admin
     .from('user_profiles')
     .select('is_super_admin')
     .eq('id', user.id)
     .maybeSingle();
 
-  return profile?.is_super_admin || isSuperAdminByEmail;
+  return isSuperAdminUser(user, profile);
 }
 
 // ------------------------------------------------------------
@@ -79,7 +78,7 @@ export async function GET(request: NextRequest) {
     const combinedUsers = authData.users.map((authUser: any) => {
       const profile = profilesMap.get(authUser.id);
       const userMemberships = membershipsMap.get(authUser.id) || [];
-      const isSuper = profile?.is_super_admin || isSuperAdminEmail(authUser.email);
+      const isSuper = isSuperAdminUser(authUser, profile);
       const isBanned = authUser.banned_until ? new Date(authUser.banned_until) > new Date() : false;
 
       const memberships = userMemberships.map((m: any) => ({

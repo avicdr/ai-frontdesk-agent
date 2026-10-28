@@ -61,12 +61,68 @@ export function extractCoordinatesFromUrl(urlStr: string): { lat: number; lng: n
 }
 
 /**
+ * Strict validator to prevent Server-Side Request Forgery (SSRF).
+ * Ensures an outgoing URL targets legitimate Google Maps domains only.
+ */
+export function isAllowedGoogleMapsUrl(urlStr: string): boolean {
+  if (!urlStr || typeof urlStr !== 'string') return false;
+
+  let parsed: URL;
+  try {
+    const withScheme = urlStr.startsWith('http://') || urlStr.startsWith('https://')
+      ? urlStr
+      : `https://${urlStr}`;
+    parsed = new URL(withScheme);
+  } catch {
+    return false;
+  }
+
+  // Only allow HTTPS protocol
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    return false;
+  }
+
+  const host = parsed.hostname.toLowerCase();
+
+  // Reject IP literals (IPv4 and IPv6) to block internal cloud metadata & intranet SSRF
+  if (
+    /^\d+\.\d+\.\d+\.\d+$/.test(host) ||
+    host.startsWith('[') ||
+    host.endsWith(']') ||
+    host === 'localhost' ||
+    host.endsWith('.internal') ||
+    host.endsWith('.local')
+  ) {
+    return false;
+  }
+
+  // Allowlist of verified Google Maps domains
+  const allowedExact = ['maps.app.goo.gl', 'goo.gl', 'maps.google.com', 'www.google.com', 'google.com'];
+  if (allowedExact.includes(host)) {
+    return true;
+  }
+
+  // Regional Google Maps domains (e.g., maps.google.co.in)
+  if (/^maps\.google\.[a-z]{2,3}(\.[a-z]{2})?$/.test(host)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Resolves a short Google Maps URL (e.g., maps.app.goo.gl or goo.gl/maps) to its final canonical URL.
+ * Hardened against SSRF: refuses to contact unauthorized domains or internal network targets.
  */
 export async function followGoogleMapsRedirect(shortUrl: string): Promise<string> {
   let target = shortUrl.trim();
   if (!target.startsWith('http://') && !target.startsWith('https://')) {
     target = `https://${target}`;
+  }
+
+  // SSRF defense: enforce domain allowlist
+  if (!isAllowedGoogleMapsUrl(target)) {
+    return target;
   }
 
   try {
@@ -87,6 +143,11 @@ export async function followGoogleMapsRedirect(shortUrl: string): Promise<string
 
     const finalUrl = res.url || target;
 
+    // Verify redirected URL is still within allowed Google domain
+    if (!isAllowedGoogleMapsUrl(finalUrl)) {
+      return target;
+    }
+
     // If finalUrl already contains coordinates, return it
     if (extractCoordinatesFromUrl(finalUrl)) {
       return finalUrl;
@@ -96,12 +157,18 @@ export async function followGoogleMapsRedirect(shortUrl: string): Promise<string
     const html = await res.text();
     const metaRefresh = html.match(/content=["']\d+;\s*url=([^"']+)["']/i);
     if (metaRefresh && metaRefresh[1]) {
-      return metaRefresh[1].replace(/&amp;/g, '&');
+      const candidate = metaRefresh[1].replace(/&amp;/g, '&');
+      if (isAllowedGoogleMapsUrl(candidate)) {
+        return candidate;
+      }
     }
 
     const ogUrl = html.match(/<meta property=["']og:url["'] content=["']([^"']+)["']/i);
     if (ogUrl && ogUrl[1]) {
-      return ogUrl[1].replace(/&amp;/g, '&');
+      const candidate = ogUrl[1].replace(/&amp;/g, '&');
+      if (isAllowedGoogleMapsUrl(candidate)) {
+        return candidate;
+      }
     }
 
     const ogImage = html.match(/<meta property=["']og:image["'] content=["']([^"']+)["']/i);

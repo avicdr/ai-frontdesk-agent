@@ -10,6 +10,8 @@ import { AIProviderFactory } from '@/lib/ai/provider';
 import { executeTool } from '@/lib/ai/tools';
 import { z } from 'zod';
 
+import { rateLimitRequest } from '@/lib/security/rate-limit';
+
 const TestChatSchema = z.object({
   messages: z.array(z.object({
     role: z.enum(['user', 'assistant', 'system']),
@@ -19,13 +21,19 @@ const TestChatSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Rate limit AI playground to 20 requests per minute per IP
+  const rateLimit = rateLimitRequest(request, { limit: 20, windowMs: 60 * 1000, prefix: 'chat_test' });
+  if (!rateLimit.success) {
+    return Errors.rateLimited('AI Playground request rate exceeded. Please slow down.');
+  }
+
   try {
     let user = await getServerUser();
     const admin = createSupabaseAdminClient();
 
-    // In local development or during sandbox playground testing, allow mock doctor user
+    // In local development mode ONLY, allow mock doctor user for previewing
     if (!user) {
-      if (process.env.NODE_ENV === 'development' || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      if (process.env.NODE_ENV === 'development') {
         user = { id: 'demo-doctor-user', email: 'doctor@apexdental.com' } as any;
       } else {
         return Errors.unauthorized();

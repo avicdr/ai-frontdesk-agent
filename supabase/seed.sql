@@ -28,7 +28,7 @@ INSERT INTO public.subscription_plans (
     'c3d4e5f6-a7b8-9012-cdef-123456789012',
     'Pro', 'pro',
     'For high-volume clinics requiring advanced features and larger quotas',
-    1599.00, 'monthly',
+    1499.00, 'monthly',
     2000, 2000, 2000,
     8000, 700, 5, 50, 30,
     500.00, 25.00, 500.00, 5,

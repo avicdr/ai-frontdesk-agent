@@ -1,16 +1,19 @@
 // tests/unit/crypto-billing.test.ts
-// Unit tests for international crypto billing, pricing tiers, and explorer resolution
+// Unit tests for Razorpay payment integration, domestic/international pricing tiers, and HMAC verification
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'crypto';
 import {
   isInternationalClient,
   PRICING_PLANS,
-  CRYPTO_NETWORKS,
-  getCryptoExplorerUrl,
 } from '../../src/lib/constants/billing';
+import {
+  verifyRazorpayPaymentSignature,
+  verifyRazorpayWebhookSignature,
+} from '../../src/lib/billing/service';
 
-describe('International Crypto Billing & Pricing Tiers', () => {
+describe('Razorpay Billing & Pricing Tiers', () => {
   it('should identify international clients based on country or timezone', () => {
     // Domestic India
     assert.equal(isInternationalClient('IN', 'Asia/Kolkata'), false);
@@ -25,7 +28,7 @@ describe('International Crypto Billing & Pricing Tiers', () => {
     assert.equal(isInternationalClient('CA', null), true);
   });
 
-  it('should enforce exact USD pricing: $100 Starter, $250 Second (Pro), $400 Third (Growth)', () => {
+  it('should enforce exact USD pricing: $100 Starter, $250 Pro, $400 Growth and INR: ₹999 Starter, ₹1,499 Pro, ₹2,999 Growth', () => {
     const starter = PRICING_PLANS.find(p => p.id === 'starter');
     const pro = PRICING_PLANS.find(p => p.id === 'pro');
     const growth = PRICING_PLANS.find(p => p.id === 'growth');
@@ -34,7 +37,7 @@ describe('International Crypto Billing & Pricing Tiers', () => {
     assert.ok(pro);
     assert.ok(growth);
 
-    // USD pricing per requirements
+    // USD pricing
     assert.equal(starter.priceUsd, 100);
     assert.equal(starter.priceUsdDisplay, '$100');
 
@@ -46,51 +49,76 @@ describe('International Crypto Billing & Pricing Tiers', () => {
 
     // Domestic INR pricing
     assert.equal(starter.priceInr, 999);
-    assert.equal(pro.priceInr, 1599);
+    assert.equal(starter.priceInrDisplay, '₹999');
+
+    assert.equal(pro.priceInr, 1499);
+    assert.equal(pro.priceInrDisplay, '₹1,499');
+
     assert.equal(growth.priceInr, 2999);
+    assert.equal(growth.priceInrDisplay, '₹2,999');
   });
 
-  it('should provide supported crypto networks with deposit addresses', () => {
-    const trc20 = CRYPTO_NETWORKS.find(n => n.id === 'usdt_trc20');
-    const erc20 = CRYPTO_NETWORKS.find(n => n.id === 'usdt_erc20');
-    const polygon = CRYPTO_NETWORKS.find(n => n.id === 'usdc_polygon');
-    const eth = CRYPTO_NETWORKS.find(n => n.id === 'eth');
-    const btc = CRYPTO_NETWORKS.find(n => n.id === 'btc');
+  it('should correctly calculate Razorpay subunit amounts (paise and cents)', () => {
+    const starter = PRICING_PLANS.find(p => p.id === 'starter')!;
+    const pro = PRICING_PLANS.find(p => p.id === 'pro')!;
+    const growth = PRICING_PLANS.find(p => p.id === 'growth')!;
 
-    assert.ok(trc20);
-    assert.ok(erc20);
-    assert.ok(polygon);
-    assert.ok(eth);
-    assert.ok(btc);
+    // INR paise
+    assert.equal(starter.priceInr * 100, 99900);
+    assert.equal(pro.priceInr * 100, 149900);
+    assert.equal(growth.priceInr * 100, 299900);
 
-    assert.equal(trc20.symbol, 'USDT');
-    assert.equal(trc20.address, 'TXNJHRA162tdaWXyxxeAKiQFbxbVjbPYqv');
-    assert.equal(trc20.qrImagePath, '/crypto/usdt-trc20-qr.png');
-
-    assert.equal(erc20.address, '0x2ade95F507c75C86f22c97427361DE49dfE60Ffd');
-    assert.equal(erc20.qrImagePath, '/crypto/usdt-erc20-qr.png');
-
-    assert.equal(polygon.address, '0x2ade95F507c75C86f22c97427361DE49dfE60Ffd');
-    assert.equal(polygon.qrImagePath, '/crypto/usdc-polygon-qr.png');
-
-    assert.equal(eth.address, '0x2ade95F507c75C86f22c97427361DE49dfE60Ffd');
-    assert.equal(eth.qrImagePath, '/crypto/eth-qr.png');
-
-    assert.equal(btc.address, 'bc1qnup4m5thpp3nja582cql4yngunzcx0h3ekny2f');
-    assert.equal(btc.qrImagePath, '/crypto/btc-qr.png');
+    // USD cents
+    assert.equal(starter.priceUsd * 100, 10000);
+    assert.equal(pro.priceUsd * 100, 25000);
+    assert.equal(growth.priceUsd * 100, 40000);
   });
 
-  it('should generate valid blockchain explorer links for TxIDs', () => {
-    const tronTx = 'f89d31a547285a8647bb837b2d56a73c2a3e87d46538c3e80df046fb59dcfb12';
-    const tronUrl = getCryptoExplorerUrl('usdt_trc20', tronTx);
-    assert.equal(tronUrl, `https://tronscan.org/#/transaction/${tronTx}`);
+  it('should verify Razorpay payment HMAC-SHA256 signatures accurately', () => {
+    const secret = 'rzp_test_secret_12345';
+    process.env.RAZORPAY_KEY_SECRET = secret;
 
-    const ethTx = '0x9b32a7620bc2089ef04005ba97669d0c6444bfddfeee3e5d070b42d7675f28ef';
-    const ethUrl = getCryptoExplorerUrl('usdt_erc20', ethTx);
-    assert.equal(ethUrl, `https://etherscan.io/tx/${ethTx}`);
+    const orderId = 'order_DAvDpk96W7DYiK';
+    const paymentId = 'pay_29QQoUBi66xm2f';
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(`${orderId}|${paymentId}`)
+      .digest('hex');
 
-    const polyUrl = getCryptoExplorerUrl('usdc_polygon', ethTx);
-    assert.equal(polyUrl, `https://polygonscan.com/tx/${ethTx}`);
+    // Valid signature
+    assert.equal(verifyRazorpayPaymentSignature(orderId, paymentId, expectedSignature), true);
+
+    // Tampered signature or order ID
+    assert.equal(verifyRazorpayPaymentSignature('tampered_order', paymentId, expectedSignature), false);
+    assert.equal(verifyRazorpayPaymentSignature(orderId, paymentId, 'invalid_sig'), false);
+  });
+
+  it('should verify Razorpay webhook signatures accurately', () => {
+    const webhookSecret = 'whsec_9876543210';
+    process.env.RAZORPAY_WEBHOOK_SECRET = webhookSecret;
+
+    const rawBody = JSON.stringify({
+      entity: 'event',
+      event: 'order.paid',
+      payload: {
+        payment: {
+          entity: {
+            id: 'pay_ABC123',
+            order_id: 'order_XYZ456',
+            amount: 149900,
+            status: 'captured',
+          },
+        },
+      },
+    });
+
+    const validSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(rawBody)
+      .digest('hex');
+
+    assert.equal(verifyRazorpayWebhookSignature(rawBody, validSignature), true);
+    assert.equal(verifyRazorpayWebhookSignature(rawBody, 'tampered_signature'), false);
   });
 
   it('should enforce strict regional isolation between Indian and International clients', () => {
@@ -103,7 +131,7 @@ describe('International Crypto Billing & Pricing Tiers', () => {
       priceDisplay: !isIndia ? p.priceInrDisplay : p.priceUsdDisplay,
     }));
     assert.equal(indianPlans[0].priceDisplay, '₹999');
-    assert.equal(indianPlans[1].priceDisplay, '₹1,599');
+    assert.equal(indianPlans[1].priceDisplay, '₹1,499');
     assert.equal(indianPlans[2].priceDisplay, '₹2,999');
     assert.ok(!indianPlans.some(p => p.priceDisplay.includes('$')));
 

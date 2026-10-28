@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p ${PORT:-10000}",
     "lint": "eslint",
-    "test": "tsx --test tests/unit/core.test.ts tests/unit/crypto-billing.test.ts tests/unit/campaigns.test.ts tests/unit/google-maps-reviews.test.ts"
+    "test": "tsx --test tests/unit/core.test.ts tests/unit/crypto-billing.test.ts tests/unit/campaigns.test.ts tests/unit/google-maps-reviews.test.ts tests/unit/contact-compliance.test.ts tests/unit/security-audit.test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -43,13 +43,13 @@
     "@supabase/supabase-js": "^2.109.0",
     "@tanstack/react-query": "^5.104.4",
     "@types/pg": "^8.23.1",
-    "@whiskeysockets/baileys": "^7.0.0-rc14",
+    "@whiskeysockets/baileys": "^6.17.16",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.4.0",
     "googleapis": "^178.0.0",
-    "jimp": "^1.6.1",
+    "jimp": "^0.22.12",
     "lucide-react": "^1.59.0",
     "nanoid": "^5.1.16",
     "next": "16.4.2",
@@ -59,6 +59,7 @@
     "pino": "^10.4.0",
     "prisma": "^7.10.1",
     "qrcode": "^1.5.4",
+    "razorpay": "^2.9.8",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-hook-form": "^7.90.0",

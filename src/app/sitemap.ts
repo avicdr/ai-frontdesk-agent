@@ -9,12 +9,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const siteUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
 
-  const routes = ['', '/login', '/register', '/privacy', '/tos'];
+  const routes: { route: string; priority: number; changeFrequency: 'daily' | 'weekly' | 'monthly' }[] = [
+    { route: '', priority: 1.0, changeFrequency: 'daily' },
+    { route: '/pricing', priority: 0.9, changeFrequency: 'weekly' },
+    { route: '/contact', priority: 0.8, changeFrequency: 'monthly' },
+    { route: '/terms-of-service', priority: 0.7, changeFrequency: 'monthly' },
+    { route: '/privacy-policy', priority: 0.7, changeFrequency: 'monthly' },
+    { route: '/refund-policy', priority: 0.7, changeFrequency: 'monthly' },
+    { route: '/login', priority: 0.6, changeFrequency: 'monthly' },
+    { route: '/register', priority: 0.8, changeFrequency: 'monthly' },
+  ];
 
-  return routes.map((route) => ({
-    url: `${siteUrl}${route}`,
+  return routes.map((item) => ({
+    url: `${siteUrl}${item.route}`,
     lastModified: new Date(),
-    changeFrequency: route === '' ? 'daily' : 'monthly',
-    priority: route === '' ? 1.0 : route === '/login' || route === '/register' ? 0.8 : 0.5,
+    changeFrequency: item.changeFrequency,
+    priority: item.priority,
   }));
 }

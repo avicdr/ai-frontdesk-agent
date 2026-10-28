@@ -1,9 +1,8 @@
 import { redirect } from 'next/navigation';
 import { requireServerUser } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
-import { isSuperAdminEmail } from '@/lib/security/admin';
+import { isSuperAdminEmail, isSuperAdminUser } from '@/lib/security/admin';
 import Link from 'next/link';
-import { PostOnboardingCryptoPrompt } from '@/components/dashboard/PostOnboardingCryptoPrompt';
 
 export const metadata = { title: 'Dashboard' };
 export const dynamic = 'force-dynamic';
@@ -23,7 +22,13 @@ async function getDashboardData(userId: string, userEmail?: string) {
 
     // If user has no organization membership, check if super-admin
     if (!orgId) {
-      const isSuperAdmin = isSuperAdminEmail(userEmail);
+      const { data: profile } = await admin
+        .from('user_profiles')
+        .select('is_super_admin')
+        .eq('id', userId)
+        .maybeSingle();
+
+      const isSuperAdmin = isSuperAdminUser({ id: userId, email: userEmail, email_confirmed_at: 'confirmed' }, profile);
       if (!isSuperAdmin) {
         return null;
       }
@@ -124,13 +129,6 @@ export default async function DashboardPage() {
 
   return (
     <div style={{ width: '100%', maxWidth: '100%' }}>
-      {/* International Crypto Payment Prompt */}
-      <PostOnboardingCryptoPrompt
-        subscriptionStatus={subscription?.status}
-        orgCountry={(org as any)?.country}
-        orgTimezone={(org as any)?.timezone}
-        currentPlanSlug={(plan as any)?.slug}
-      />
 
       {/* Onboarding banner */}
       {!onboardingComplete && (

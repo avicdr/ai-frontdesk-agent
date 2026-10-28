@@ -24,11 +24,9 @@ const DEFAULT_SERVICES: ClinicServiceItem[] = getClinicTypeConfig('dental_clinic
 
 import {
   PRICING_PLANS,
-  CRYPTO_NETWORKS,
-  PLATFORM_UPI_VPA,
   isInternationalClient,
-  CryptoNetworkOption,
 } from '@/lib/constants/billing';
+import { openRazorpayModal } from '@/lib/billing/razorpay-client';
 
 const POPULAR_DENTAL_PRESETS = [
   { name: 'Invisible Aligners Consultation', duration: 30, price: '1500' },
@@ -119,15 +117,11 @@ export default function OnboardingPage() {
   const [calendarName, setCalendarName] = useState<string | null>(null);
   const [isLiveGoogleConfigured, setIsLiveGoogleConfigured] = useState(false);
 
-  // Step 8: Plan & Payment (UPI for India, Crypto for International)
+  // Step 8: Plan & Payment via Razorpay
   const [selectedPlan, setSelectedPlan] = useState<'starter' | 'pro' | 'growth'>('pro');
   const [isInternational, setIsInternational] = useState<boolean>(false);
-  const [utrNumber, setUtrNumber] = useState('');
-  const [copiedVpa, setCopiedVpa] = useState(false);
-  const [selectedCryptoNetwork, setSelectedCryptoNetwork] = useState<CryptoNetworkOption>(CRYPTO_NETWORKS[0]);
-  const [cryptoTxHash, setCryptoTxHash] = useState('');
-  const [copiedCryptoAddress, setCopiedCryptoAddress] = useState(false);
-  const [copiedCryptoAmount, setCopiedCryptoAmount] = useState(false);
+  const [isOpeningRazorpay, setIsOpeningRazorpay] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Auto-detect international based on timezone selection
   useEffect(() => {
@@ -404,11 +398,6 @@ export default function OnboardingPage() {
     }, 2500);
   };
 
-  const handleCopyVpa = () => {
-    navigator.clipboard?.writeText(PLATFORM_UPI_VPA);
-    setCopiedVpa(true);
-    setTimeout(() => setCopiedVpa(false), 2500);
-  };
 
   // Next step handler
   const handleNext = async () => {
@@ -459,8 +448,9 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleCompleteActivation = async () => {
+  const handleCompleteActivation = async (skipPayment = false) => {
     setErrorMsg(null);
+    setPaymentError(null);
     setIsSubmitting(true);
 
     try {
@@ -491,50 +481,76 @@ export default function OnboardingPage() {
         }),
       });
 
-      // 3. If payment proof was provided (UTR or Crypto TxID), create order and submit verification
-      const reference = isInternational ? cryptoTxHash : utrNumber;
-      let orderCreated = false;
+      if (skipPayment) {
+        router.push('/dashboard?activated=true&trial=active');
+        return;
+      }
 
-      if (reference && reference.trim()) {
-        try {
-          const orderRes = await fetch('/api/v1/billing/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              planId: selectedPlan,
-              currency: isInternational ? 'USD' : 'INR',
-              provider: isInternational ? 'crypto' : 'manual',
-              cryptoNetwork: isInternational ? selectedCryptoNetwork.id : undefined,
-            }),
-          });
-          const orderJson = await orderRes.json();
-          if (orderJson.data?.orderId) {
-            await fetch('/api/v1/billing/manual-payment', {
+      // 3. Initiate Razorpay Checkout
+      setIsOpeningRazorpay(true);
+      const orderRes = await fetch('/api/v1/billing/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planId: selectedPlan,
+          currency: isInternational ? 'USD' : 'INR',
+          provider: 'razorpay',
+        }),
+      });
+
+      const orderJson = await orderRes.json();
+      if (!orderRes.ok || !orderJson.data?.orderId) {
+        throw new Error(orderJson.error?.message || 'Failed to create Razorpay payment order');
+      }
+
+      const { orderId, providerOrderId, amountSubunits, currency, planName, razorpayKeyId } = orderJson.data;
+
+      await openRazorpayModal({
+        key: razorpayKeyId,
+        amount: amountSubunits,
+        currency,
+        name: 'Arenova AI Front Desk',
+        description: `${planName || 'Practice'} Subscription`,
+        order_id: providerOrderId,
+        prefill: {
+          name: clinicName || ownerName,
+          contact: phone,
+        },
+        handler: async (response) => {
+          try {
+            const verifyRes = await fetch('/api/v1/billing/verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                orderId: orderJson.data.orderId,
-                utrNumber: reference.trim(),
-                cryptoNetwork: isInternational ? selectedCryptoNetwork.id : undefined,
+                orderId,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
               }),
             });
-            orderCreated = true;
+            const verifyJson = await verifyRes.json();
+            if (verifyJson.success) {
+              router.push('/dashboard?activated=true&payment_success=true');
+            } else {
+              setPaymentError(verifyJson.error?.message || 'Payment verification failed');
+              router.push('/dashboard?activated=true');
+            }
+          } catch (err: any) {
+            console.error('Payment verification error:', err);
+            router.push('/dashboard?activated=true');
           }
-        } catch (payErr) {
-          console.error('Failed to submit onboarding payment reference:', payErr);
-        }
-      }
-
-      const redirectUrl = isInternational
-        ? `/dashboard?onboarding=complete&plan=${selectedPlan}${orderCreated ? '&payment_submitted=true' : '&require_crypto=true'}`
-        : `/dashboard?activated=true${orderCreated ? '&payment_submitted=true' : ''}`;
-
-      router.push(redirectUrl);
-    } catch (err) {
+        },
+        modal: {
+          ondismiss: () => {
+            setIsOpeningRazorpay(false);
+            setIsSubmitting(false);
+          },
+        },
+      });
+    } catch (err: any) {
       console.error(err);
-      // Still navigate so user is never trapped
-      router.push('/dashboard');
-    } finally {
+      setPaymentError(err?.message || 'Unable to open Razorpay payment gateway.');
+      setIsOpeningRazorpay(false);
       setIsSubmitting(false);
     }
   };
@@ -690,7 +706,7 @@ export default function OnboardingPage() {
                       onChange={e => setOwnerName(e.target.value)}
                       placeholder="e.g. Dr. Sarah Verma, BDS, MDS"
                     />
-                    <span className="form-hint">Principal dentist quoted when confirming doctor availability</span>
+                    <span className="form-hint">Principal clinician quoted when confirming clinic consultation schedules</span>
                   </div>
                 </div>
 
@@ -1684,17 +1700,17 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* STEP 8: Plan Selection & Payment Activation (UPI for India, Crypto for International) */}
+          {/* STEP 8: Plan Selection & Razorpay Payment Activation */}
           {currentStep === 8 && (
             <div>
               <div style={{ marginBottom: '1.75rem' }}>
                 <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                  {isInternational ? 'Step 8: Plan Selection & Crypto Activation' : 'Step 8: Plan Selection & Instant UPI Activation'}
+                  Step 8: Plan Selection &amp; Razorpay Activation
                 </h2>
                 <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
                   {isInternational
-                    ? 'Select your clinic’s subscription tier ($100 Starter, $250 Pro, $400 Growth). Pay via Web3 Crypto with instant hash confirmation.'
-                    : 'Select your clinic’s subscription tier (₹999 Starter, ₹1,599 Pro, ₹2,999 Growth). Pay directly via Instant UPI for instant activation.'}
+                    ? 'Select your clinic’s subscription tier ($100 Starter, $250 Pro, $400 Growth). Pay securely via Razorpay in USD.'
+                    : 'Select your clinic’s subscription tier (₹999 Starter, ₹1,499 Pro, ₹2,999 Growth). Pay instantly via Razorpay (UPI, Cards & NetBanking).'}
                 </p>
               </div>
 
@@ -1732,175 +1748,88 @@ export default function OnboardingPage() {
                             <span className="text-[#63C7A2] text-xs">✓</span> {f}
                           </li>
                         ))}
-                        {isInternational && (
-                          <li className="flex items-center gap-2 text-[#E87A38] font-mono text-[11px]">
-                            <span>🪙</span> Crypto (USDT / USDC / BTC / ETH)
-                          </li>
-                        )}
                       </ul>
                     </div>
                   );
                 })}
               </div>
 
-              {/* PAYMENT CARD: Either Crypto (International) or UPI (Domestic India) */}
-              {isInternational ? (
-                /* International Crypto Gateway Card */
-                <div className="p-6 rounded-2xl bg-[#171614] border border-[#E84B2C]/25 shadow-[0_4px_24px_rgba(232,75,44,0.08)] space-y-5">
-                  <div className="flex justify-between items-center flex-wrap gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E84B2C] to-[#C86938] flex items-center justify-center text-lg text-[#F3F0E8] shadow-[0_0_12px_rgba(232,75,44,0.3)]">
-                        🪙
-                      </div>
-                      <div>
-                        <div className="font-semibold text-sm text-[#F3F0E8]">
-                          International Web3 Settlement Gateway
-                        </div>
-                        <div className="text-xs text-[#9E9B93]">
-                          Selected Tier: <strong className="text-[#E87A38]">{PRICING_PLANS.find(p => p.id === selectedPlan)?.name}</strong> — <strong className="text-[#F3F0E8] font-mono">{PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsdDisplay} USD</strong>
-                        </div>
-                      </div>
+              {/* Razorpay Gateway Activation Card */}
+              <div className="p-6 rounded-2xl bg-[#171614] border border-[#E84B2C]/30 shadow-[0_4px_24px_rgba(232,75,44,0.08)] space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#E84B2C] to-[#C86938] flex items-center justify-center text-xl text-[#F3F0E8] shadow-[0_0_14px_rgba(232,75,44,0.35)] shrink-0">
+                      💳
                     </div>
-
-                    <div className="px-3 py-1.5 rounded-lg bg-[#63C7A2]/10 border border-[#63C7A2]/25 text-[#63C7A2] font-mono text-xs font-semibold">
-                      Required: {PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsd} {selectedCryptoNetwork.symbol}
-                    </div>
-                  </div>
-
-                  {/* Network Tabs */}
-                  <div>
-                    <div className="text-[10px] font-mono uppercase text-[#9E9B93] tracking-wider mb-2">
-                      Select Blockchain Network:
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {CRYPTO_NETWORKS.map(net => {
-                        const isNetActive = selectedCryptoNetwork.id === net.id;
-                        return (
-                          <button
-                            key={net.id}
-                            type="button"
-                            onClick={() => setSelectedCryptoNetwork(net)}
-                            className={`p-2.5 rounded-xl text-xs font-mono transition-all text-center border ${
-                              isNetActive
-                                ? 'bg-[#1C1916] border-[#E84B2C] text-[#E87A38] shadow-[0_0_12px_rgba(232,75,44,0.2)]'
-                                : 'bg-[#111110] border-[#F3F0E8]/08 text-[#9E9B93] hover:border-[#F3F0E8]/16'
-                            }`}
-                          >
-                            <div>{net.name}</div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* QR & Deposit Details */}
-                  <div className="p-4 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 flex flex-col sm:flex-row items-center gap-5">
-                    {/* Real Crypto QR Image */}
-                    <div className="bg-white rounded-xl p-2 text-center shrink-0 shadow-[0_0_20px_rgba(232,75,44,0.15)]">
-                      <img
-                        src={selectedCryptoNetwork.qrImagePath}
-                        alt={`${selectedCryptoNetwork.name} Deposit QR`}
-                        className="w-24 h-24 object-contain rounded-lg"
-                      />
-                      <div className="text-[#111110] text-[10px] font-mono font-bold mt-1">
-                        {selectedCryptoNetwork.symbol}
-                      </div>
-                    </div>
-
-                    {/* Deposit Address Box & TxID input */}
-                    <div className="flex-1 w-full space-y-3">
-                      <div>
-                        <div className="text-[10px] font-mono uppercase tracking-wider text-[#9E9B93]">
-                          Official {selectedCryptoNetwork.name} Deposit Address:
-                        </div>
-                        <div className="p-2.5 rounded-lg bg-[#171614] border border-[#F3F0E8]/10 flex items-center justify-between gap-2 mt-1">
-                          <span className="font-mono text-xs text-[#E87A38] break-all">
-                            {selectedCryptoNetwork.address}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard?.writeText(selectedCryptoNetwork.address);
-                              setCopiedCryptoAddress(true);
-                              setTimeout(() => setCopiedCryptoAddress(false), 2000);
-                            }}
-                            className="btn btn-secondary text-xs px-2.5 py-1 font-mono shrink-0"
-                          >
-                            {copiedCryptoAddress ? '✓ Copied' : '📋 Copy'}
-                          </button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="label text-xs">Transaction Hash / TxID *</label>
-                        <input
-                          className="input font-mono text-xs"
-                          value={cryptoTxHash}
-                          onChange={e => setCryptoTxHash(e.target.value)}
-                          placeholder="e.g. 0x8f... or Tron TxID from withdrawal"
-                        />
-                        <span className="text-[11px] text-[#9E9B93] block mt-1">
-                          💡 Submit your transaction hash. System verifies and provisions active receptionist availability automatically.
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* Domestic UPI Instant Payment Card */
-                <div className="p-6 rounded-2xl bg-[#171614] border border-[#E84B2C]/25 shadow-[0_4px_24px_rgba(232,75,44,0.08)] flex flex-col sm:flex-row items-center gap-6">
-                  {/* Official Paytm UPI QR Card */}
-                  <div className="bg-white rounded-2xl p-3 flex flex-col items-center text-center shrink-0 shadow-[0_0_20px_rgba(232,75,44,0.15)] max-w-[190px]">
-                    <img
-                      src="/upi-qr.png"
-                      alt="UPI QR Code for AI Front Desk"
-                      className="w-full h-auto rounded-lg"
-                    />
-                    <div className="text-[#111110] text-[11px] font-bold mt-2">
-                      Scan with any UPI App
-                    </div>
-                    <div className="text-[#706C65] text-[10px]">
-                      Paytm • GPay • PhonePe • BHIM
-                    </div>
-                  </div>
-
-                  {/* VPA Details & UTR Input */}
-                  <div className="flex-1 w-full space-y-4">
-                    <div className="p-3.5 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 flex items-center justify-between">
-                      <div>
-                        <div className="text-[10px] font-mono uppercase text-[#9E9B93]">
-                          Practice UPI VPA:
-                        </div>
-                        <div className="text-base font-mono font-bold text-[#F3F0E8] mt-0.5">
-                          {PLATFORM_UPI_VPA}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleCopyVpa}
-                        className="btn btn-secondary text-xs font-mono"
-                      >
-                        {copiedVpa ? '✓ Copied' : '📋 Copy VPA'}
-                      </button>
-                    </div>
-
                     <div>
-                      <label className="label text-xs">
-                        12-Digit Bank UTR / UPI Transaction Reference
-                      </label>
-                      <input
-                        className="input font-mono text-sm"
-                        value={utrNumber}
-                        onChange={e => setUtrNumber(e.target.value)}
-                        placeholder="e.g. 429104928104 (from your UPI receipt)"
-                      />
-                      <span className="text-[11px] text-[#9E9B93] block mt-1">
-                        💡 Automated verification activates your AI receptionist within seconds of UTR submission.
-                      </span>
+                      <div className="font-semibold text-base text-[#F3F0E8]">
+                        Razorpay Automated Payment Gateway
+                      </div>
+                      <div className="text-xs text-[#9E9B93] mt-0.5">
+                        Selected Tier: <strong className="text-[#E87A38]">{PRICING_PLANS.find(p => p.id === selectedPlan)?.name}</strong> — <strong className="text-[#F3F0E8] font-mono">{isInternational ? PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsdDisplay : PRICING_PLANS.find(p => p.id === selectedPlan)?.priceInrDisplay}</strong>
+                      </div>
                     </div>
                   </div>
+
+                  <div className="px-3 py-1.5 rounded-lg bg-[#63C7A2]/10 border border-[#63C7A2]/25 text-[#63C7A2] font-mono text-xs font-semibold">
+                    Instant Automated Activation
+                  </div>
                 </div>
-              )}
+
+                <div className="p-4 rounded-xl bg-[#111110] border border-[#F3F0E8]/08 space-y-2 text-xs text-[#D0CBC1]">
+                  <div className="font-mono text-[11px] text-[#E87A38] uppercase tracking-wider font-semibold">
+                    Supported Payment Rails:
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {!isInternational ? (
+                      <>
+                        <span className="px-2.5 py-1 rounded-md bg-[#1C1916] border border-[#F3F0E8]/10 text-xs">⚡ UPI (Google Pay, PhonePe, Paytm, BHIM)</span>
+                        <span className="px-2.5 py-1 rounded-md bg-[#1C1916] border border-[#F3F0E8]/10 text-xs">💳 Credit &amp; Debit Cards</span>
+                        <span className="px-2.5 py-1 rounded-md bg-[#1C1916] border border-[#F3F0E8]/10 text-xs">🏦 NetBanking (50+ Banks)</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="px-2.5 py-1 rounded-md bg-[#1C1916] border border-[#F3F0E8]/10 text-xs">🌐 International Credit/Debit Cards (USD)</span>
+                        <span className="px-2.5 py-1 rounded-md bg-[#1C1916] border border-[#F3F0E8]/10 text-xs">🔒 3D Secure / Razorpay Global</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-[#9E9B93] pt-2">
+                    🔒 256-bit SSL encrypted checkout. No crypto or manual static QR required.
+                  </div>
+                </div>
+
+                {paymentError && (
+                  <div className="p-3 rounded-lg bg-[#E84B2C]/10 border border-[#E84B2C]/25 text-[#E84B2C] text-xs">
+                    {paymentError}
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleCompleteActivation(false)}
+                    disabled={isSubmitting || isOpeningRazorpay}
+                    className="btn btn-primary w-full sm:w-auto px-6 py-2.5 text-xs font-bold bg-gradient-to-r from-[#E84B2C] to-[#C86938] shadow-[0_0_20px_rgba(232,75,44,0.35)] flex items-center justify-center gap-2"
+                  >
+                    <span>💳</span>
+                    <span>
+                      {isOpeningRazorpay
+                        ? 'Opening Razorpay Gateway...'
+                        : `Pay ${isInternational ? PRICING_PLANS.find(p => p.id === selectedPlan)?.priceUsdDisplay : PRICING_PLANS.find(p => p.id === selectedPlan)?.priceInrDisplay} with Razorpay`}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleCompleteActivation(true)}
+                    disabled={isSubmitting || isOpeningRazorpay}
+                    className="text-xs text-[#9E9B93] hover:text-[#F3F0E8] transition-colors underline"
+                  >
+                    Skip to Dashboard (Free Operational Trial) →
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1932,7 +1861,7 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 className="btn btn-primary text-xs font-bold px-8 py-3 bg-gradient-to-r from-[#E84B2C] to-[#C86938] shadow-[0_0_25px_rgba(232,75,44,0.4)] hover:shadow-[0_0_35px_rgba(232,75,44,0.6)]"
-                onClick={handleCompleteActivation}
+                onClick={() => handleCompleteActivation(false)}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Activating Front Desk...' : '🚀 Complete Activation & Launch'}
