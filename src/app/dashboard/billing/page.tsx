@@ -131,10 +131,15 @@ export default function BillingPage() {
 
       const orderJson = await orderRes.json();
       if (!orderRes.ok || !orderJson.data?.orderId) {
-        throw new Error(orderJson.error?.message || 'Failed to initiate Razorpay payment order.');
+        const errorMsg =
+          orderJson.error?.message ||
+          (typeof orderJson.error === 'string' ? orderJson.error : null) ||
+          orderJson.message ||
+          'Failed to initiate Razorpay payment order.';
+        throw new Error(errorMsg);
       }
 
-      const { orderId, providerOrderId, amountSubunits, currency, planName, razorpayKeyId } = orderJson.data;
+      const { orderId, providerOrderId, amountSubunits, currency, planName, razorpayKeyId, customerEmail } = orderJson.data;
 
       await openRazorpayModal({
         key: razorpayKeyId,
@@ -145,6 +150,7 @@ export default function BillingPage() {
         order_id: providerOrderId,
         prefill: {
           name: orgName,
+          email: customerEmail || undefined,
         },
         handler: async (response) => {
           try {

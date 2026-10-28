@@ -12,17 +12,14 @@ import crypto from 'crypto';
 let razorpayInstance: Razorpay | null = null;
 
 export function getRazorpayClient(): Razorpay | null {
-  const key_id = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-  const key_secret = process.env.RAZORPAY_KEY_SECRET;
+  const key_id = (process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '').trim();
+  const key_secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
 
   if (!key_id || !key_secret || key_id.includes('your-') || key_id.includes('placeholder')) {
     return null;
   }
 
-  if (!razorpayInstance) {
-    razorpayInstance = new Razorpay({ key_id, key_secret });
-  }
-  return razorpayInstance;
+  return new Razorpay({ key_id, key_secret });
 }
 
 export interface CreatePaymentOrderOptions {
@@ -50,6 +47,7 @@ export async function createPaymentOrder(
   amount?: number;
   amountSubunits?: number;
   planName?: string;
+  customerEmail?: string;
   error?: string;
 }> {
   const admin = createSupabaseAdminClient();
@@ -78,31 +76,46 @@ export async function createPaymentOrder(
   const idempotencyKey = `order:${organizationId}:${plan.id}:${Date.now()}`;
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-  // Try creating Razorpay Order via Official API
-  let providerOrderId: string = `order_rzp_${nanoid(14)}`;
+  // Razorpay Client validation
   const razorpay = getRazorpayClient();
+  if (!razorpay) {
+    return {
+      success: false,
+      error:
+        'Razorpay credentials are not configured on the server. Please ensure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are set in your Render environment variables.',
+    };
+  }
 
-  if (razorpay) {
-    try {
-      const rzpOrder = await razorpay.orders.create({
-        amount: amountSubunits,
+  // Create real Razorpay order via Official API
+  let providerOrderId: string;
+  try {
+    const rzpOrder = await razorpay.orders.create({
+      amount: amountSubunits,
+      currency: finalCurrency,
+      receipt: `rcpt_${nanoid(10)}`,
+      notes: {
+        organizationId,
+        planId: plan.id,
+        planSlug,
+        organizationName,
         currency: finalCurrency,
-        receipt: `rcpt_${nanoid(10)}`,
-        notes: {
-          organizationId,
-          planId: plan.id,
-          planSlug,
-          organizationName,
-          currency: finalCurrency,
-        },
-      });
-      if (rzpOrder && rzpOrder.id) {
-        providerOrderId = rzpOrder.id;
-      }
-    } catch (rzpErr) {
-      console.warn('Razorpay order creation API notice:', rzpErr);
-      // If live keys aren't provisioned yet or sandbox rejected, keep deterministic order ID for resilient checkout
+      },
+    });
+
+    if (!rzpOrder || !rzpOrder.id) {
+      return { success: false, error: 'Razorpay order creation failed: No order ID returned.' };
     }
+    providerOrderId = rzpOrder.id;
+  } catch (rzpErr: any) {
+    console.error('Razorpay order creation API error:', rzpErr);
+    const errorDesc =
+      rzpErr?.error?.description ||
+      rzpErr?.message ||
+      'Failed to create order with Razorpay. Please verify Razorpay credentials and status.';
+    return {
+      success: false,
+      error: `Razorpay Error: ${errorDesc}`,
+    };
   }
 
   // Insert payment order record
@@ -137,10 +150,11 @@ export async function createPaymentOrder(
     return { success: false, error: 'Unable to create payment order.' };
   }
 
-  const razorpayKeyId =
+  const razorpayKeyId = (
     process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
     process.env.RAZORPAY_KEY_ID ||
-    'rzp_test_placeholder';
+    ''
+  ).trim();
 
   return {
     success: true,
@@ -151,6 +165,7 @@ export async function createPaymentOrder(
     amount: finalAmount,
     amountSubunits,
     planName: plan.name,
+    customerEmail,
   };
 }
 
