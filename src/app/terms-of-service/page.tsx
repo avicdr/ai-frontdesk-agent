@@ -2,23 +2,24 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LandingNavbar } from '@/components/navigation/LandingNavbar';
 import { LandingFooter } from '@/components/navigation/LandingFooter';
+import { createPageMetadata } from '@/lib/seo/metadata';
+import { JsonLd, getBreadcrumbSchema } from '@/lib/seo/json-ld';
 
-export const metadata: Metadata = {
-  title: 'Terms of Service | Arenova',
-  description: 'Terms of Service and Conditions of Use for Arenova AI WhatsApp Receptionist software for clinics.',
-  openGraph: {
-    title: 'Terms of Service | Arenova',
-    description: 'B2B SaaS Terms of Service and Conditions of Use for Arenova clinic communication software.',
-    url: '/terms-of-service',
-    siteName: 'Arenova',
-  },
-};
+export const metadata: Metadata = createPageMetadata({
+  title: 'Terms of Service | Arenova Frontdesk',
+  description:
+    'Terms of Service and Conditions of Use for Arenova Frontdesk AI WhatsApp Receptionist software for healthcare clinics and practices.',
+  path: '/terms-of-service',
+});
 
 export default function TermsOfServicePage() {
   const lastUpdated = 'October 27, 2026';
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-obsidian)', color: 'var(--color-text-primary)', minHeight: '100vh' }}>
+      <JsonLd
+        schema={getBreadcrumbSchema([{ name: 'Terms of Service', path: '/terms-of-service' }])}
+      />
       <LandingNavbar />
 
       <main style={{ maxWidth: '920px', margin: '0 auto', padding: 'clamp(6.5rem, 11vw, 8.5rem) clamp(1.25rem, 5vw, 2.5rem) 4rem', position: 'relative', zIndex: 1 }}>

@@ -1,0 +1,41 @@
+# Arenova Frontdesk
+
+> AI-Powered WhatsApp Receptionist & Appointment Automation Software for Clinics
+
+Arenova Frontdesk (https://frontdesk.arenova.in) is a B2B Software-as-a-Service (SaaS) platform built for healthcare practices, dental clinics, dermatology clinics, and medical offices. It connects with a clinic's WhatsApp Business number and Google Calendar to handle patient enquiries, provide standard procedure fees and timings, and coordinate appointment requests 24/7.
+
+Arenova Frontdesk is a product of Arenova (https://arenova.in), an AI Automation & Marketing Agency.
+
+## Core Capabilities
+
+- **24/7 WhatsApp AI Receptionist**: Context-aware conversational AI that answers routine patient enquiries, practice hours, and clinic location.
+- **Appointment Request Coordination**: Directly coordinates booking requests with the clinic's Google Calendar to prevent double-bookings.
+- **Practice FAQ & Fee Guidance**: Accurately shares procedure prep, durations, and standard consultation fees.
+- **Clinical Safety Protocols**: Detects acute medical red flags and immediately directs patients to local emergency services (112 / 911).
+- **1-Click Human Takeover**: Reception teams can pause the AI and chat directly with any patient from the inbox canvas.
+- **Google Review Requests**: Automatically prompts patients post-appointment for feedback and Google reviews.
+
+## Pricing & Subscription (Indian Rupees - INR)
+
+- **Starter Practice**: ₹999/month (₹9,590/year) — 500 AI chats/mo, 1 WhatsApp number, 1 practice location.
+- **Pro Practice**: ₹1,499/month (₹14,390/year) — 1,500 AI chats/mo, priority response, calendar sync.
+- **Growth Clinic**: ₹2,999/month (₹28,790/year) — 4,000 AI chats/mo, multi-provider calendar scheduling.
+
+International plans are billed in USD ($100/mo Starter, $250/mo Pro, $400/mo Growth) with Crypto (USDT/USDC/ETH/SOL) support.
+
+## Canonical URLs
+
+- Homepage: https://frontdesk.arenova.in
+- Pricing: https://frontdesk.arenova.in/pricing
+- Contact & Support: https://frontdesk.arenova.in/contact
+- Terms of Service: https://frontdesk.arenova.in/terms-of-service
+- Privacy Policy: https://frontdesk.arenova.in/privacy-policy
+- Refund Policy: https://frontdesk.arenova.in/refund-policy
+
+## Legal & Compliance
+
+- Software Category: Healthcare Administrative B2B SaaS
+- Jurisdiction: India (Digital Personal Data Protection Act 2023 aligned)
+- Parent Brand: Arenova (Arenova Technologies)
+- Contact: support@arenova.in
+

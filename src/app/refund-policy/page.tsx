@@ -2,25 +2,24 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LandingNavbar } from '@/components/navigation/LandingNavbar';
 import { LandingFooter } from '@/components/navigation/LandingFooter';
+import { createPageMetadata } from '@/lib/seo/metadata';
+import { JsonLd, getBreadcrumbSchema } from '@/lib/seo/json-ld';
 
-export const metadata: Metadata = {
-  title: 'Refund and Cancellation Policy | Arenova',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Refund & Cancellation Policy | Arenova Frontdesk',
   description:
-    'Refund and Cancellation Policy for Arenova AI WhatsApp Receptionist software subscriptions. Clear terms for monthly, annual plans, and billing resolutions.',
-  openGraph: {
-    title: 'Refund and Cancellation Policy | Arenova',
-    description:
-      'Clear, transparent SaaS subscription refund and cancellation policy for Arenova clinic communication software.',
-    url: '/refund-policy',
-    siteName: 'Arenova',
-  },
-};
+    'Refund and Cancellation Policy for Arenova Frontdesk AI WhatsApp Receptionist software subscriptions. Clear terms for monthly, annual plans, and billing resolutions.',
+  path: '/refund-policy',
+});
 
 export default function RefundPolicyPage() {
   const lastUpdated = 'October 27, 2026';
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-obsidian)', color: 'var(--color-text-primary)', minHeight: '100vh' }}>
+      <JsonLd
+        schema={getBreadcrumbSchema([{ name: 'Refund Policy', path: '/refund-policy' }])}
+      />
       <LandingNavbar />
 
       <main style={{ maxWidth: '920px', margin: '0 auto', padding: 'clamp(6.5rem, 11vw, 8.5rem) clamp(1.25rem, 5vw, 2.5rem) 4rem', position: 'relative', zIndex: 1 }}>

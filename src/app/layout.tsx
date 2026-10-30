@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
+import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { SEO_CONFIG } from "@/lib/seo/config";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -10,44 +14,28 @@ export const viewport: Viewport = {
   themeColor: "#111110",
 };
 
-const rawUrl =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : "https://frontdesk.arenova.in");
-
-const siteUrl = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SEO_CONFIG.domain),
   title: {
-    default: "Arenova | AI WhatsApp Receptionist Software for Clinics",
-    template: "%s | Arenova",
+    default: SEO_CONFIG.defaultTitle,
+    template: SEO_CONFIG.titleTemplate,
   },
-  description:
-    "Automate clinic enquiries, share practice information, and manage appointment requests with Arenova's AI-powered WhatsApp receptionist software for clinics.",
-  applicationName: "Arenova",
-  keywords: [
-    "AI WhatsApp receptionist for clinics",
-    "clinic communication automation",
-    "patient enquiry management",
-    "appointment request assistance",
-    "clinic subscription plans",
-    "AI receptionist software",
-    "administrative workflow automation",
-    "dental clinic receptionist software",
-    "Arenova",
-  ],
-  authors: [{ name: "Arenova", url: siteUrl }],
-  creator: "Arenova",
-  publisher: "Arenova",
+  description: SEO_CONFIG.defaultDescription,
+  applicationName: SEO_CONFIG.siteName,
+  keywords: SEO_CONFIG.keywords,
+  authors: [{ name: SEO_CONFIG.brand, url: SEO_CONFIG.domain }],
+  creator: SEO_CONFIG.brand,
+  publisher: SEO_CONFIG.legalName,
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
   alternates: {
-    canonical: "/",
+    canonical: SEO_CONFIG.domain,
+  },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
   },
   icons: {
     icon: [
@@ -61,35 +49,33 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "Arenova | AI WhatsApp Receptionist Software for Clinics",
-    description:
-      "Automate clinic enquiries, share practice information, and manage appointment requests with Arenova's AI-powered WhatsApp receptionist software.",
-    url: siteUrl,
-    siteName: "Arenova",
-    locale: "en_US",
+    title: SEO_CONFIG.defaultTitle,
+    description: SEO_CONFIG.defaultDescription,
+    url: SEO_CONFIG.domain,
+    siteName: SEO_CONFIG.siteName,
+    locale: SEO_CONFIG.locale,
     type: "website",
     images: [
       {
-        url: "/metadata.png",
-        width: 2912,
-        height: 1440,
-        type: "image/png",
-        alt: "Arenova — AI WhatsApp Receptionist Software for Clinics",
+        url: SEO_CONFIG.ogImage.url,
+        width: SEO_CONFIG.ogImage.width,
+        height: SEO_CONFIG.ogImage.height,
+        type: SEO_CONFIG.ogImage.type,
+        alt: SEO_CONFIG.ogImage.alt,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Arenova | AI WhatsApp Receptionist Software for Clinics",
-    description:
-      "Automate clinic enquiries, share practice information, and manage appointment requests with Arenova's AI-powered WhatsApp receptionist software.",
-    creator: "@arenova_ai",
+    title: SEO_CONFIG.defaultTitle,
+    description: SEO_CONFIG.defaultDescription,
+    creator: SEO_CONFIG.twitterHandle,
     images: [
       {
-        url: "/metadata.png",
-        width: 2912,
-        height: 1440,
-        alt: "Arenova AI Front Desk — Transform the way your business works",
+        url: SEO_CONFIG.ogImage.url,
+        width: SEO_CONFIG.ogImage.width,
+        height: SEO_CONFIG.ogImage.height,
+        alt: SEO_CONFIG.ogImage.alt,
       },
     ],
   },
@@ -134,6 +120,10 @@ export default function RootLayout({
       <body className="antialiased">
         <ThemeProvider>
           <QueryProvider>
+            <Suspense fallback={null}>
+              <AnalyticsTracker />
+              <GoogleAnalytics />
+            </Suspense>
             {children}
           </QueryProvider>
         </ThemeProvider>

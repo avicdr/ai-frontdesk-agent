@@ -3,23 +3,25 @@ import Link from 'next/link';
 import { LandingNavbar } from '@/components/navigation/LandingNavbar';
 import { LandingFooter } from '@/components/navigation/LandingFooter';
 import { PricingTableClient } from './PricingTableClient';
+import { createPageMetadata } from '@/lib/seo/metadata';
+import { JsonLd, getSoftwareApplicationSchema, getBreadcrumbSchema } from '@/lib/seo/json-ld';
 
-export const metadata: Metadata = {
-  title: 'Pricing & Subscription Plans (INR) | Arenova',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Pricing & Subscription Plans (INR) | Arenova Frontdesk',
   description:
-    'Transparent subscription pricing for Arenova AI WhatsApp Receptionist software. Monthly and annual plans for dental clinics, healthcare practices, and medical offices.',
-  openGraph: {
-    title: 'Pricing & Subscription Plans | Arenova',
-    description:
-      'Transparent B2B SaaS subscription pricing in Indian Rupees (INR) for clinic WhatsApp communication software.',
-    url: '/pricing',
-    siteName: 'Arenova',
-  },
-};
+    'Transparent subscription pricing for Arenova Frontdesk AI WhatsApp Receptionist software. Monthly and annual plans for dental clinics, healthcare practices, and medical offices.',
+  path: '/pricing',
+});
 
 export default function PricingPage() {
   return (
     <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-obsidian)', color: 'var(--color-text-primary)', minHeight: '100vh' }}>
+      <JsonLd
+        schema={[
+          getSoftwareApplicationSchema(),
+          getBreadcrumbSchema([{ name: 'Pricing Plans', path: '/pricing' }]),
+        ]}
+      />
       <LandingNavbar />
 
       {/* Main Container */}

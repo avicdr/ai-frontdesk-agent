@@ -2,23 +2,25 @@ import type { Metadata } from 'next';
 import { LandingNavbar } from '@/components/navigation/LandingNavbar';
 import { LandingFooter } from '@/components/navigation/LandingFooter';
 import { ContactFormClient } from './ContactFormClient';
+import { createPageMetadata } from '@/lib/seo/metadata';
+import { JsonLd, getContactPageSchema, getBreadcrumbSchema } from '@/lib/seo/json-ld';
 
-export const metadata: Metadata = {
-  title: 'Contact Support & Clinic Enquiries | Arenova',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Contact Support & Clinic Enquiries | Arenova Frontdesk',
   description:
-    'Get in touch with Arenova. Contact our clinic support team for software questions, live demonstrations, subscription assistance, or partnership enquiries.',
-  openGraph: {
-    title: 'Contact Support & Clinic Enquiries | Arenova',
-    description:
-      'Contact Arenova clinic communication software team. Support, sales, and grievance redressal.',
-    url: '/contact',
-    siteName: 'Arenova',
-  },
-};
+    'Get in touch with Arenova Frontdesk. Contact our clinic support team for software questions, demonstrations, subscription assistance, or technical help.',
+  path: '/contact',
+});
 
 export default function ContactPage() {
   return (
     <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-obsidian)', color: 'var(--color-text-primary)', minHeight: '100vh' }}>
+      <JsonLd
+        schema={[
+          getContactPageSchema(),
+          getBreadcrumbSchema([{ name: 'Contact Support', path: '/contact' }]),
+        ]}
+      />
       <LandingNavbar />
 
       <main style={{ maxWidth: '1240px', margin: '0 auto', padding: 'clamp(6.5rem, 11vw, 8.5rem) clamp(1rem, 5vw, 3rem) 4rem', position: 'relative', zIndex: 1 }}>

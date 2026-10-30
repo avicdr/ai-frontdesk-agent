@@ -1,10 +1,14 @@
+import type { Metadata } from 'next';
 import { requireSuperAdmin } from '@/lib/supabase/server';
 import Link from 'next/link';
+import { createPrivatePageMetadata } from '@/lib/seo/metadata';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = createPrivatePageMetadata('Super Admin');
 
 const adminNavItems = [
   { href: '/admin', icon: '📊', label: 'Overview' },
+  { href: '/admin/analytics', icon: '📈', label: 'Traffic Analytics' },
   { href: '/admin/users', icon: '👥', label: 'Users' },
   { href: '/admin/subscribers', icon: '🏥', label: 'Subscribers' },
   { href: '/admin/revenue', icon: '💰', label: 'Revenue' },

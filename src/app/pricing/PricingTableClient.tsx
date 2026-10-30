@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { trackEvent } from '@/lib/analytics/tracker';
 
 interface PlanDetails {
   id: 'starter' | 'pro' | 'growth';
@@ -338,6 +339,13 @@ export function PricingTableClient() {
               {/* Action CTA Button */}
               <Link
                 href={`/register?plan=${plan.id}&interval=${billingCycle}`}
+                onClick={() => {
+                  trackEvent('plan_selected', {
+                    plan_id: plan.id,
+                    plan_name: plan.name,
+                    billing_cycle: billingCycle,
+                  });
+                }}
                 className={isPro ? 'btn btn-primary' : 'btn btn-secondary'}
                 style={{
                   width: '100%',

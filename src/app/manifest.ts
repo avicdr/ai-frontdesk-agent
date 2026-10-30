@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Arenova AI Front Desk',
-    short_name: 'AI Front Desk',
-    description: 'Transform the way your business works. Intelligent 24/7 AI Receptionist for Clinics & Practices.',
+    name: 'Arenova Frontdesk | AI WhatsApp Receptionist for Clinics',
+    short_name: 'Arenova Frontdesk',
+    description: 'Intelligent 24/7 AI-powered WhatsApp Receptionist and appointment automation software for healthcare clinics and practices.',
     start_url: '/',
     display: 'standalone',
     background_color: '#111110',

@@ -33,10 +33,10 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://api.dicebear.com",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://api.dicebear.com https://www.googletagmanager.com",
       "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.razorpay.com https://lumberjack.razorpay.com https://api.bigdatacloud.net https://nominatim.openstreetmap.org https://geocoding-api.open-meteo.com",
-      "img-src 'self' data: blob: https: https://api.dicebear.com https://lh3.googleusercontent.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.razorpay.com https://lumberjack.razorpay.com https://api.bigdatacloud.net https://nominatim.openstreetmap.org https://geocoding-api.open-meteo.com https://www.google-analytics.com https://*.google-analytics.com",
+      "img-src 'self' data: blob: https: https://api.dicebear.com https://lh3.googleusercontent.com https://www.googletagmanager.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
       "frame-ancestors 'none'",
@@ -61,6 +61,30 @@ const nextConfig: NextConfig = {
       {
         source: '/:path*',
         headers: securityHeaders,
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: '/terms',
+        destination: '/terms-of-service',
+        permanent: true,
+      },
+      {
+        source: '/tos',
+        destination: '/terms-of-service',
+        permanent: true,
+      },
+      {
+        source: '/privacy',
+        destination: '/privacy-policy',
+        permanent: true,
+      },
+      {
+        source: '/cancellation-policy',
+        destination: '/refund-policy',
+        permanent: true,
       },
     ];
   },

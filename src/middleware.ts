@@ -39,6 +39,18 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Enforce HTTP X-Robots-Tag noindex header on private, auth, and API routes
+  if (
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/onboarding') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register')
+  ) {
+    supabaseResponse.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
+
   // API endpoints independently enforce authentication, authorization, and RLS
   // in their respective route handlers (via requireServerUser() / requireSuperAdmin())
   // and return typed JSON 401s rather than HTML page redirects.

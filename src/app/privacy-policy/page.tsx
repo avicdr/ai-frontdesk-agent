@@ -2,23 +2,24 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LandingNavbar } from '@/components/navigation/LandingNavbar';
 import { LandingFooter } from '@/components/navigation/LandingFooter';
+import { createPageMetadata } from '@/lib/seo/metadata';
+import { JsonLd, getBreadcrumbSchema } from '@/lib/seo/json-ld';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy | Arenova',
-  description: 'Privacy Policy and Data Protection disclosures for Arenova AI WhatsApp Receptionist software for clinics.',
-  openGraph: {
-    title: 'Privacy Policy | Arenova',
-    description: 'Privacy Policy and data processing terms for Arenova clinic communication SaaS software.',
-    url: '/privacy-policy',
-    siteName: 'Arenova',
-  },
-};
+export const metadata: Metadata = createPageMetadata({
+  title: 'Privacy Policy | Arenova Frontdesk',
+  description:
+    'Privacy Policy and Data Protection disclosures for Arenova Frontdesk AI WhatsApp Receptionist software for clinics, aligned with Indian DPDP Act 2023.',
+  path: '/privacy-policy',
+});
 
 export default function PrivacyPolicyPage() {
   const lastUpdated = 'October 27, 2026';
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-obsidian)', color: 'var(--color-text-primary)', minHeight: '100vh' }}>
+      <JsonLd
+        schema={getBreadcrumbSchema([{ name: 'Privacy Policy', path: '/privacy-policy' }])}
+      />
       <LandingNavbar />
 
       <main style={{ maxWidth: '920px', margin: '0 auto', padding: 'clamp(6.5rem, 11vw, 8.5rem) clamp(1.25rem, 5vw, 2.5rem) 4rem', position: 'relative', zIndex: 1 }}>

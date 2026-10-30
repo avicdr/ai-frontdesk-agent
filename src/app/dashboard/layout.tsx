@@ -1,10 +1,13 @@
+import type { Metadata } from 'next';
 import { requireServerUser } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { isSuperAdminEmail, isSuperAdminUser } from '@/lib/security/admin';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
+import { createPrivatePageMetadata } from '@/lib/seo/metadata';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = createPrivatePageMetadata('Clinic Dashboard');
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

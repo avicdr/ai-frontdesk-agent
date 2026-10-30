@@ -1,29 +1,61 @@
+// src/app/sitemap.ts
+// Production XML Sitemap for Arenova Frontdesk
+
 import type { MetadataRoute } from 'next';
+import { SEO_CONFIG, getCanonicalUrl } from '@/lib/seo/config';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const rawUrl =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : 'https://frontdesk.arenova.in');
-
-  const siteUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
-
-  const routes: { route: string; priority: number; changeFrequency: 'daily' | 'weekly' | 'monthly' }[] = [
-    { route: '', priority: 1.0, changeFrequency: 'daily' },
-    { route: '/pricing', priority: 0.9, changeFrequency: 'weekly' },
-    { route: '/contact', priority: 0.8, changeFrequency: 'monthly' },
-    { route: '/terms-of-service', priority: 0.7, changeFrequency: 'monthly' },
-    { route: '/privacy-policy', priority: 0.7, changeFrequency: 'monthly' },
-    { route: '/refund-policy', priority: 0.7, changeFrequency: 'monthly' },
-    { route: '/login', priority: 0.6, changeFrequency: 'monthly' },
-    { route: '/register', priority: 0.8, changeFrequency: 'monthly' },
+  // Only canonical, publicly indexable marketing and policy URLs
+  // Strictly excludes private application routes (/dashboard, /admin, /onboarding)
+  // and authentication pages (/login, /register)
+  const staticRoutes: Array<{
+    path: string;
+    priority: number;
+    changeFrequency: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+    lastModified: string;
+  }> = [
+    {
+      path: '',
+      priority: 1.0,
+      changeFrequency: 'weekly',
+      lastModified: '2026-10-30T00:00:00.000Z',
+    },
+    {
+      path: '/pricing',
+      priority: 0.9,
+      changeFrequency: 'weekly',
+      lastModified: '2026-10-28T00:00:00.000Z',
+    },
+    {
+      path: '/contact',
+      priority: 0.8,
+      changeFrequency: 'monthly',
+      lastModified: '2026-10-27T00:00:00.000Z',
+    },
+    {
+      path: '/terms-of-service',
+      priority: 0.5,
+      changeFrequency: 'monthly',
+      lastModified: '2026-10-27T00:00:00.000Z',
+    },
+    {
+      path: '/privacy-policy',
+      priority: 0.5,
+      changeFrequency: 'monthly',
+      lastModified: '2026-10-27T00:00:00.000Z',
+    },
+    {
+      path: '/refund-policy',
+      priority: 0.5,
+      changeFrequency: 'monthly',
+      lastModified: '2026-10-27T00:00:00.000Z',
+    },
   ];
 
-  return routes.map((item) => ({
-    url: `${siteUrl}${item.route}`,
-    lastModified: new Date(),
-    changeFrequency: item.changeFrequency,
-    priority: item.priority,
+  return staticRoutes.map((route) => ({
+    url: getCanonicalUrl(route.path),
+    lastModified: new Date(route.lastModified),
+    changeFrequency: route.changeFrequency,
+    priority: route.priority,
   }));
 }

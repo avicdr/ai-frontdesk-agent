@@ -1,0 +1,50 @@
+# Arenova Frontdesk — Complete Technical & Product Specification
+
+## 1. Overview
+- **Product Name**: Arenova Frontdesk
+- **Website**: https://frontdesk.arenova.in
+- **Parent Organization**: Arenova (https://arenova.in)
+- **Primary Category**: Healthcare Practice Management & Patient Communication Software
+- **Software Type**: Cloud-hosted Software-as-a-Service (SaaS)
+
+## 2. Product Description
+Arenova Frontdesk provides dental clinics, doctors, and healthcare practices with an AI-driven WhatsApp receptionist that works 24 hours a day, 7 days a week. Instead of clinic staff spending hours answering repetitive WhatsApp messages about clinic hours, consultation fees, root canal costs, or doctor availability, Arenova Frontdesk handles routine patient interactions automatically.
+
+## 3. Key Features & Workflows
+1. **WhatsApp Patient Engagement**: Connects directly via WhatsApp Cloud API or Baileys multi-device protocol, receiving incoming messages and answering in under 2 seconds.
+2. **Calendar Coordination**: Queries Google Calendar in real-time, finds open working hours, respects doctor lunch and tea breaks, and reserves pending appointment requests.
+3. **Emergency Red-Flag Detection**: Scans patient queries for symptoms of cardiac arrest, severe bleeding, breathing difficulty, or anaphylaxis, advising immediate contact with emergency medical services.
+4. **Clinic Knowledge Base**: Stores clinic-specific consultation fees, doctor OPD hours, parking information, and pre-procedure fasting rules.
+5. **Staff Handover**: At any time, human receptionists can click "Take Over" in the web dashboard to pause the AI and chat directly with the patient.
+6. **Automated Review Collection**: Configurable post-appointment delay (e.g. 60 minutes) to send a polite thank-you message with a direct link to review the clinic on Google Maps.
+
+## 4. Supported Healthcare Specialties
+- Dental & Orthodontic Practices
+- Dermatology & Aesthetic Clinics
+- General Medicine & Paediatrics
+- Physiotherapy & Rehabilitation Centers
+- Ophthalmology & Optical Centers
+
+## 5. Pricing Structure
+- **Starter Plan**: ₹999/month (or ₹9,590/year)
+  - 500 patient conversations per month
+  - 1 WhatsApp clinic number
+  - 1 Google Calendar sync
+- **Pro Plan**: ₹1,499/month (or ₹14,390/year)
+  - 1,500 patient conversations per month
+  - Multi-staff dashboard access
+  - Automated Google Review requests
+- **Growth Plan**: ₹2,999/month (or ₹28,790/year)
+  - 4,000 patient conversations per month
+  - Multiple doctor calendar schedules
+  - Priority SLA support
+
+## 6. Official Resources & Canonical Endpoints
+- Homepage: https://frontdesk.arenova.in/
+- Pricing Plans: https://frontdesk.arenova.in/pricing
+- Contact & Support: https://frontdesk.arenova.in/contact
+- Terms of Service: https://frontdesk.arenova.in/terms-of-service
+- Privacy Policy: https://frontdesk.arenova.in/privacy-policy
+- Refund Policy: https://frontdesk.arenova.in/refund-policy
+- Parent Company: https://arenova.in/
+

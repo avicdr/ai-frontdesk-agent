@@ -5,34 +5,49 @@ import { LandingPricing } from '@/components/landing/LandingPricing';
 import { LandingFooter } from '@/components/navigation/LandingFooter';
 import { InteractiveBotComparison } from '@/components/landing/InteractiveBotComparison';
 import { HeroInteractivePreview } from '@/components/landing/HeroInteractivePreview';
+import { createPageMetadata } from '@/lib/seo/metadata';
+import {
+  JsonLd,
+  getOrganizationSchema,
+  getWebSiteSchema,
+  getSoftwareApplicationSchema,
+  getFaqSchema,
+} from '@/lib/seo/json-ld';
 
-export const metadata: Metadata = {
-  title: 'Arenova | AI WhatsApp Receptionist Software for Clinics',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Arenova Frontdesk | AI WhatsApp Receptionist Software for Clinics',
   description:
-    "Arenova helps clinics automate patient enquiries, share clinic information, and manage appointment requests through WhatsApp — so your team can spend less time answering repetitive questions and more time caring for patients.",
-  openGraph: {
-    title: 'Arenova | AI WhatsApp Receptionist Software for Clinics',
-    description:
-      'Automate clinic enquiries, share practice information, and manage appointment requests with Arenova’s AI-powered WhatsApp receptionist software.',
-    url: '/',
-    siteName: 'Arenova',
-    images: [
-      {
-        url: '/metadata.png',
-        width: 2912,
-        height: 1440,
-        alt: 'Arenova — AI WhatsApp Receptionist Software for Clinics',
-      },
-    ],
+    'Arenova Frontdesk helps clinics automate patient enquiries, share practice information, and manage appointment requests through WhatsApp 24/7 without repetitive manual front-desk tasks.',
+  path: '/',
+});
+
+const homeFaqs = [
+  {
+    question: 'Can clinic reception staff take over WhatsApp chats at any moment?',
+    answer:
+      'Yes, your clinic reception team can pause the AI and chat directly with any patient from the inbox canvas at any moment with a single click.',
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Arenova | AI WhatsApp Receptionist Software for Clinics',
-    description:
-      'Automate clinic enquiries, share practice information, and manage appointment requests with Arenova’s AI-powered WhatsApp receptionist software.',
-    images: ['/metadata.png'],
+  {
+    question: 'How does Arenova Frontdesk integrate with Google Calendar?',
+    answer:
+      'Arenova syncs 2-way with your clinic Google Calendar to eliminate scheduling collisions and automatically coordinate appointment requests according to your doctor availability rules.',
   },
-};
+  {
+    question: 'How does the AI handle patient medical emergencies?',
+    answer:
+      'Arenova includes clinical safety rails that recognize acute symptoms and immediately advise patients to call emergency services (112 / 911) or visit the nearest emergency hospital.',
+  },
+  {
+    question: 'What types of clinics can use Arenova Frontdesk?',
+    answer:
+      'Arenova Frontdesk is designed for dental practices, dermatology clinics, general medicine practices, pediatricians, physiotherapy centers, and specialty healthcare clinics.',
+  },
+  {
+    question: 'Is patient conversation data protected?',
+    answer:
+      'Yes, all patient data and credentials are encrypted using AES-256 and processed in strict alignment with the Indian Digital Personal Data Protection (DPDP) Act 2023.',
+  },
+];
 
 const featureBento = [
   {
@@ -179,6 +194,14 @@ const faqs = [
 export default function LandingPage() {
   return (
     <div style={{ position: 'relative', overflow: 'hidden', background: 'var(--color-obsidian)', color: 'var(--color-text-primary)' }}>
+      <JsonLd
+        schema={[
+          getOrganizationSchema(),
+          getWebSiteSchema(),
+          getSoftwareApplicationSchema(),
+          getFaqSchema(homeFaqs),
+        ]}
+      />
       {/* Ambient background glows */}
       <div style={{
         position: 'absolute',

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { trackEvent } from '@/lib/analytics/tracker';
 
 export function ContactFormClient() {
   const [formData, setFormData] = useState({
@@ -41,6 +42,13 @@ export function ContactFormClient() {
         id: json.data.ticketId,
         message: json.data.message,
       });
+
+      trackEvent('contact_form_submitted', {
+        form: 'contact',
+        source: 'contact_page',
+        enquiry_type: formData.enquiryType,
+      });
+
       setLoading(false);
     } catch (err) {
       console.error('Contact form submission error:', err);
